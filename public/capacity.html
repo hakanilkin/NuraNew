@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Surgical Services Capacity Analysis</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="capacity.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <h1>Surgical Services Capacity Analysis</h1>
+      <nav class="header-nav">
+        <a href="index.html">Operational Performance</a>
+        <span class="nav-active">Capacity</span>
+        <a href="blockutil.html">Block Utilization</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Filters ──────────────────────────────────────────────── -->
+    <section class="card filter-bar">
+      <div class="filter-row">
+
+        <div class="filter-group">
+          <label class="filter-label" for="start-date">From</label>
+          <input type="date" id="start-date" class="date-input" value="2025-01-01" />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="end-date">To</label>
+          <input type="date" id="end-date" class="date-input" value="2025-12-31" />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Location Group</label>
+          <div class="ms-wrap" id="ms-wrap">
+            <button type="button" class="ms-btn" id="ms-btn">
+              <span id="ms-label">All Locations</span>
+              <span class="ms-caret">&#9660;</span>
+            </button>
+            <div class="ms-menu hidden" id="ms-menu"></div>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Day of Week</label>
+          <div class="ms-wrap" id="dow-wrap">
+            <button type="button" class="ms-btn" id="dow-btn">
+              <span id="dow-label">Weekdays</span>
+              <span class="ms-caret">&#9660;</span>
+            </button>
+            <div class="ms-menu hidden" id="dow-menu"></div>
+          </div>
+        </div>
+
+        <button id="apply-btn" class="apply-btn">Apply</button>
+
+      </div>
+    </section>
+
+    <!-- ── Charts ───────────────────────────────────────────────── -->
+    <div class="charts-grid">
+
+      <!-- Prime Time Utilization -->
+      <section class="card">
+        <h2>Prime Time Utilization by Location Group</h2>
+        <div id="prime-status" class="status-msg">Loading&hellip;</div>
+        <div class="chart-wrap" id="prime-wrap">
+          <canvas id="prime-chart"></canvas>
+        </div>
+      </section>
+
+      <!-- Non-Prime Time Use -->
+      <section class="card">
+        <h2>% Non-Prime Time Use by Location Group</h2>
+        <div id="nonprime-status" class="status-msg">Loading&hellip;</div>
+        <div class="chart-wrap" id="nonprime-wrap">
+          <canvas id="nonprime-chart"></canvas>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <script src="capacity.js"></script>
+</body>
+</html>

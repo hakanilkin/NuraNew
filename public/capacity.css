@@ -1,0 +1,66 @@
+/* ── Header nav ────────────────────────────────────────────────── */
+.header-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.80rem;
+}
+
+.header-nav a {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.header-nav a:hover { color: #fff; }
+
+.nav-active {
+  color: #fff;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(255,255,255,0.7);
+  padding-bottom: 2px;
+}
+
+/* ── Charts grid ───────────────────────────────────────────────── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .charts-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Chart subtitle ────────────────────────────────────────────── */
+.chart-subtitle {
+  font-size: 0.72rem;
+  color: #6c757d;
+  margin-bottom: 10px;
+  margin-top: -6px;
+}
+
+/* ── Chart wrap — height set dynamically by JS ─────────────────── */
+.chart-wrap {
+  position: relative;
+  min-height: 220px;
+}
+
+
+/* ── Legend row (above/below target indicator) ─────────────────── */
+.legend-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+}

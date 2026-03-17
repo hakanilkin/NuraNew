@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Block Utilization – Surgical Services</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="capacity.css" />
+  <link rel="stylesheet" href="blockutil.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <h1>Block Utilization by Day &amp; Week of Month</h1>
+      <nav class="header-nav">
+        <a href="index.html">Operational Performance</a>
+        <a href="capacity.html">Capacity</a>
+        <span class="nav-active">Block Utilization</span>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Filters ──────────────────────────────────────────────── -->
+    <section class="card filter-bar">
+      <div class="filter-row">
+
+        <div class="filter-group">
+          <label class="filter-label" for="start-date">From</label>
+          <input type="date" id="start-date" class="date-input" value="2025-01-01" />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="end-date">To</label>
+          <input type="date" id="end-date" class="date-input" value="2025-12-31" />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Location Group</label>
+          <div class="ms-wrap" id="ms-wrap">
+            <button type="button" class="ms-btn" id="ms-btn">
+              <span id="ms-label">Loading&hellip;</span>
+              <span class="ms-caret">&#9660;</span>
+            </button>
+            <div class="ms-menu hidden" id="ms-menu"></div>
+          </div>
+        </div>
+
+        <button id="apply-btn" class="apply-btn">Apply</button>
+
+      </div>
+    </section>
+
+    <!-- ── Pivot Table ───────────────────────────────────────────── -->
+    <section class="card">
+
+      <div class="pivot-header">
+        <h2 id="table-title">Block Utilization</h2>
+        <div class="legend" id="pivot-legend" style="display:none">
+          <span class="leg-item"><span class="leg-swatch leg-cases"></span>Cases</span>
+          <span class="leg-item"><span class="leg-swatch leg-ptu"></span>Prime Time %</span>
+          <span class="leg-item leg-hover-note">&#9432; Hover cell for Non-Prime %</span>
+          <span class="leg-badge good">&ge;70% PT</span>
+          <span class="leg-badge warn">35–69% PT</span>
+          <span class="leg-badge low">&lt;35% PT</span>
+        </div>
+      </div>
+
+      <div id="table-status" class="status-msg">Loading&hellip;</div>
+
+      <div class="pivot-wrap">
+        <table class="pivot-table hidden" id="pivot-table">
+          <thead>
+            <tr class="thead-top">
+              <th rowspan="3" class="th-block">Case Block</th>
+              <th rowspan="3" class="th-week">Week</th>
+              <th colspan="5" class="th-dow-group">Day of Week</th>
+              <th rowspan="3" class="th-total">Total</th>
+            </tr>
+            <tr class="thead-days">
+              <th>Mon</th>
+              <th>Tue</th>
+              <th>Wed</th>
+              <th>Thu</th>
+              <th>Fri</th>
+            </tr>
+            <tr class="thead-metrics">
+              <th class="th-metric"><span class="mh-cases">Cases</span><span class="mh-sep">|</span><span class="mh-pt">PT%</span></th>
+              <th class="th-metric"><span class="mh-cases">Cases</span><span class="mh-sep">|</span><span class="mh-pt">PT%</span></th>
+              <th class="th-metric"><span class="mh-cases">Cases</span><span class="mh-sep">|</span><span class="mh-pt">PT%</span></th>
+              <th class="th-metric"><span class="mh-cases">Cases</span><span class="mh-sep">|</span><span class="mh-pt">PT%</span></th>
+              <th class="th-metric"><span class="mh-cases">Cases</span><span class="mh-sep">|</span><span class="mh-pt">PT%</span></th>
+            </tr>
+          </thead>
+          <tbody id="pivot-body"></tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="blockutil.js"></script>
+</body>
+</html>
