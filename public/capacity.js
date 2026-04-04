@@ -323,7 +323,7 @@ async function loadNonPrimeChart() {
 
     const labels  = rows.map(r => r.LocationGroup);
     const values  = rows.map(r => r.NonPrimeTimeUtil);
-    const axisMax = Math.ceil(Math.max(...values) + 5);
+    const axisMax = Math.ceil(Math.max(...values, 15) + 5);
 
     setChartHeight('nonprime-wrap', labels.length);
     status.style.display = 'none';
@@ -358,6 +358,28 @@ async function loadNonPrimeChart() {
           formatter: (v) => fmtPct(v),
           font: { size: 11, weight: '600' },
           color: '#333',
+        },
+        annotation: {
+          annotations: {
+            upperLimit: {
+              type: 'line',
+              scaleID: 'x',
+              value: 15,
+              borderColor: '#dc3545',
+              borderWidth: 2,
+              borderDash: [6, 3],
+              label: {
+                display: true,
+                content: 'Upper Limit',
+                position: 'start',
+                backgroundColor: 'rgba(220,53,69,0.08)',
+                color: '#dc3545',
+                font: { size: 11, weight: '600' },
+                padding: { x: 6, y: 3 },
+                yAdjust: -14,
+              },
+            },
+          },
         },
       },
       scales: {

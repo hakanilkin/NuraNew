@@ -12,6 +12,9 @@
 
   <header>
     <div class="header-inner">
+      <a href="index.html" class="header-brand">
+      </a>
+      <div class="header-vdivider"></div>
       <h1>Block Utilization by Day &amp; Week of Month</h1>
       <nav class="header-nav">
         <a href="index.html">Operational Performance</a>
@@ -48,6 +51,17 @@
           </div>
         </div>
 
+        <div class="filter-group">
+          <label class="filter-label">Case Block</label>
+          <div class="ms-wrap" id="cb-wrap">
+            <button type="button" class="ms-btn" id="cb-btn">
+              <span id="cb-label">All Blocks</span>
+              <span class="ms-caret">&#9660;</span>
+            </button>
+            <div class="ms-menu hidden" id="cb-menu"></div>
+          </div>
+        </div>
+
         <button id="apply-btn" class="apply-btn">Apply</button>
 
       </div>
@@ -61,7 +75,7 @@
         <div class="legend" id="pivot-legend" style="display:none">
           <span class="leg-item"><span class="leg-swatch leg-cases"></span>Cases</span>
           <span class="leg-item"><span class="leg-swatch leg-ptu"></span>Prime Time %</span>
-          <span class="leg-item leg-hover-note">&#9432; Hover cell for Non-Prime %</span>
+          <span class="leg-item leg-hover-note">&#9432; Hover cell for 3 month detail</span>
           <span class="leg-badge good">&ge;70% PT</span>
           <span class="leg-badge warn">35–69% PT</span>
           <span class="leg-badge low">&lt;35% PT</span>
@@ -70,11 +84,12 @@
 
       <div id="table-status" class="status-msg">Loading&hellip;</div>
 
-      <div class="pivot-wrap">
+      <div class="pivot-wrap" id="pivot-wrap">
         <table class="pivot-table hidden" id="pivot-table">
           <thead>
             <tr class="thead-top">
               <th rowspan="3" class="th-block">Case Block</th>
+              <th rowspan="3" class="th-service">Service</th>
               <th rowspan="3" class="th-week">Week</th>
               <th colspan="5" class="th-dow-group">Day of Week</th>
               <th rowspan="3" class="th-total">Total</th>

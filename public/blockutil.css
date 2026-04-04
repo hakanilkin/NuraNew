@@ -55,9 +55,11 @@
 }
 
 .thead-top th:first-child,
-.thead-top th:nth-child(2) { text-align: left; }
+.thead-top th:nth-child(2),
+.thead-top th:nth-child(3) { text-align: left; }
 
 .th-block   { min-width: 140px; text-align: left !important; }
+.th-service { min-width: 130px; text-align: left !important; }
 .th-week    { min-width: 52px; text-align: center !important; }
 .th-total   { background: #122a45 !important; }
 .th-dow-group { border-bottom: 1px solid #2a4a6c; }
@@ -75,6 +77,20 @@
   border-bottom: 1px solid #c9d4e0;
   min-width: 140px;
   max-width: 220px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* ── Service cell (row-spanning within each block) ─────────────── */
+.service-cell {
+  font-size: 0.72rem;
+  color: #2c4a6e;
+  padding: 4px 8px;
+  vertical-align: middle;
+  border-right: 1px solid #c9d4e0;
+  border-bottom: 1px solid #c9d4e0;
+  min-width: 130px;
+  max-width: 180px;
   white-space: normal;
   word-break: break-word;
 }
@@ -176,39 +192,90 @@
 .cell-ptu.warn { color: #c47a00; }
 .cell-ptu.low  { color: #dc3545; }
 
-/* ── NPT hover tooltip ─────────────────────────────────────────── */
-.data-cell[data-npt] {
-  position: relative;
+/* ── Rich hover tooltip ─────────────────────────────────────────── */
+.bu-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #c9d4e0;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.16);
+  min-width: 360px;
+  max-width: 440px;
+  pointer-events: none;
+  font-size: 0.75rem;
+  overflow: hidden;
 }
 
-.data-cell[data-npt]:hover::after {
-  content: attr(data-npt);
-  position: absolute;
-  bottom: calc(100% + 5px);
-  left: 50%;
-  transform: translateX(-50%);
+.bu-tt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
   background: #1a3a5c;
   color: #fff;
-  padding: 3px 9px;
-  border-radius: 4px;
-  font-size: 0.70rem;
-  font-weight: 600;
-  white-space: nowrap;
-  z-index: 100;
-  pointer-events: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  padding: 7px 12px;
+  font-size: 0.72rem;
 }
 
-.data-cell[data-npt]:hover::before {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 1px);
-  left: 50%;
-  transform: translateX(-50%);
-  border: 4px solid transparent;
-  border-top-color: #1a3a5c;
-  z-index: 100;
-  pointer-events: none;
+#bu-tt-block {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#bu-tt-meta {
+  font-weight: 400;
+  opacity: 0.75;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bu-tt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bu-tt-table thead th {
+  background: #eef2f7;
+  padding: 5px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #5a6577;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #e0e4ea;
+  text-align: right;
+  position: static;  /* override any inherited sticky */
+  top: unset;
+}
+
+.bu-tt-table thead th:first-child { text-align: left; }
+
+.bu-tt-table tbody td {
+  padding: 4px 10px;
+  border-bottom: 1px solid #f0f2f5;
+  color: #1a1a2e;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bu-tt-table tbody td.bu-tt-month { text-align: left; color: #5a6577; }
+
+.bu-tt-table tbody tr:last-child td { border-bottom: none; }
+
+/* PT% / NPT% colour classes matching main table */
+.bu-tt-table td.good { color: #198754; font-weight: 700; }
+.bu-tt-table td.warn { color: #c47a00; font-weight: 700; }
+.bu-tt-table td.low  { color: #dc3545; font-weight: 700; }
+
+/* Highlight hovered cell */
+td[data-block]:hover {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+  cursor: default;
 }
 
 /* ── Row background banding (alternating blocks) ───────────────── */

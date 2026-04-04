@@ -143,6 +143,18 @@ function addLocationsFilter(request, locParam) {
   return ` AND ISNULL(LocationGroup, 'Unknown') IN (${placeholders.join(', ')})`;
 }
 
+// Helper – builds parameterised IN clause for caseblocks CSV param
+function addCaseBlocksFilter(request, cbParam) {
+  if (!cbParam) return '';
+  const blocks = cbParam.split(',').map(s => s.trim()).filter(Boolean);
+  if (!blocks.length) return '';
+  const placeholders = blocks.map((b, i) => {
+    request.input(`cb${i}`, sql.NVarChar, b);
+    return `@cb${i}`;
+  });
+  return ` AND ISNULL(CaseBlock, 'Unknown') IN (${placeholders.join(', ')})`;
+}
+
 // Helper – builds DATEPART(WEEKDAY) IN clause from CSV of day numbers
 function addDowFilter(dowParam) {
   if (!dowParam) return '';
@@ -255,6 +267,36 @@ app.get('/api/capacity/non-prime-time', async (req, res) => {
 // =================================================================
 
 // -----------------------------------------------------------------
+// GET /api/blockutil/caseblocks?startDate=&endDate=&locations=
+// Distinct CaseBlock values for the filter dropdown
+// -----------------------------------------------------------------
+app.get('/api/blockutil/caseblocks', async (req, res) => {
+  try {
+    const db      = await getPool();
+    const request = db.request();
+    const startDate = req.query.startDate || '2025-01-01';
+    const endDate   = req.query.endDate   || '2025-12-31';
+    request.input('startDate', sql.Date, startDate);
+    request.input('endDate',   sql.Date, endDate);
+    const locFilter = addLocationsFilter(request, req.query.locations);
+
+    const result = await request.query(`
+      SELECT DISTINCT ISNULL(CaseBlock, 'Unknown') AS CaseBlock
+      FROM V4_BlockResultsView
+      WHERE BlockDate >= @startDate
+        AND BlockDate <= @endDate
+        ${locFilter}
+        AND DATEPART(WEEKDAY, BlockDate) IN (2, 3, 4, 5, 6)
+      ORDER BY CaseBlock
+    `);
+    res.json(result.recordset.map(r => r.CaseBlock));
+  } catch (err) {
+    console.error('/api/blockutil/caseblocks error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------
 // GET /api/blockutil/data?startDate=&endDate=&locations=
 // Returns block utilization by CaseBlock, WeekOfMonth, DayOfWeek
 // Restricted to weekdays (Mon–Fri) only
@@ -268,28 +310,80 @@ app.get('/api/blockutil/data', async (req, res) => {
     request.input('startDate', sql.Date, startDate);
     request.input('endDate',   sql.Date, endDate);
     const locFilter = addLocationsFilter(request, req.query.locations);
+    const cbFilter  = addCaseBlocksFilter(request, req.query.caseblocks);
 
     const result = await request.query(`
       SELECT
         ISNULL(CaseBlock, 'Unknown')              AS CaseBlock,
-        CAST(CEILING(DAY(BlockDate) / 7.0) AS INT) AS WeekOfMonth,
+        COALESCE(Group_Service, Surgeonservice)    AS Service,
+        dd_WeekofMonth                             AS WeekOfMonth,
         DATEPART(WEEKDAY, BlockDate)               AS DayOfWeek,
         COUNT(DISTINCT CaseID)                     AS CaseCount,
         SUM(ISNULL(Total_Prime_Time, 0))           AS SumPrimeTime,
         SUM(ISNULL(blockTime, 0))                  AS SumBlockTime,
         SUM(ISNULL(Total_Non_Prime_time, 0))       AS SumNonPrimeTime,
-        SUM(ISNULL(totalTime, 0))                  AS SumTotalTime
+        SUM(ISNULL(totalTime, 0))                  AS SumTotalTime,
+        SUM(ISNULL(ReleasedTime, 0))               AS SumReleasedTime
       FROM V4_BlockResultsView
       WHERE BlockDate >= @startDate
         AND BlockDate <= @endDate
         ${locFilter}
+        ${cbFilter}
         AND DATEPART(WEEKDAY, BlockDate) IN (2, 3, 4, 5, 6)
-      GROUP BY CaseBlock, CEILING(DAY(BlockDate) / 7.0), DATEPART(WEEKDAY, BlockDate)
+      GROUP BY CaseBlock,COALESCE(Group_Service, Surgeonservice), DD_WeekOfMonth, DATEPART(WEEKDAY, BlockDate)
       ORDER BY CaseBlock, 2, 3
     `);
     res.json(result.recordset);
   } catch (err) {
     console.error('/api/blockutil/data error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------
+// GET /api/blockutil/monthly-detail?startDate=&endDate=&locations=
+// Same as /data but also groups by Month — used for cell hover tooltips
+// -----------------------------------------------------------------
+app.get('/api/blockutil/monthly-detail', async (req, res) => {
+  try {
+    const db      = await getPool();
+    const request = db.request();
+    const startDate = req.query.startDate || '2025-01-01';
+    const endDate   = req.query.endDate   || '2025-12-31';
+    request.input('startDate', sql.Date, startDate);
+    request.input('endDate',   sql.Date, endDate);
+    const locFilter = addLocationsFilter(request, req.query.locations);
+    const cbFilter  = addCaseBlocksFilter(request, req.query.caseblocks);
+
+    const result = await request.query(`
+      SELECT
+        ISNULL(CaseBlock, 'Unknown')               AS CaseBlock,
+        COALESCE(Group_Service, Surgeonservice)    AS Service,        
+        dd_WeekofMonth                             AS WeekOfMonth,
+        DATEPART(WEEKDAY, BlockDate)               AS DayOfWeek,
+        MONTH(BlockDate)                           AS Month,
+        COUNT(DISTINCT CaseID)                     AS CaseCount,
+        SUM(ISNULL(Total_Prime_Time, 0))           AS SumPrimeTime,
+        SUM(ISNULL(blockTime, 0))                  AS SumBlockTime,
+        SUM(ISNULL(Total_Non_Prime_time, 0))       AS SumNonPrimeTime,
+        SUM(ISNULL(totalTime, 0))                  AS SumTotalTime,
+        SUM(ISNULL(ReleasedTime, 0))               AS SumReleasedTime
+      FROM V4_BlockResultsView
+      WHERE BlockDate >= @startDate
+        AND BlockDate <= @endDate
+        ${locFilter}
+        ${cbFilter}
+        AND DATEPART(WEEKDAY, BlockDate) IN (2, 3, 4, 5, 6)
+      GROUP BY CaseBlock,
+              COALESCE(Group_Service, Surgeonservice) ,
+               dd_WeekofMonth,
+               DATEPART(WEEKDAY, BlockDate),
+               MONTH(BlockDate)
+      ORDER BY CaseBlock, 2, 3, Month
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('/api/blockutil/monthly-detail error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
