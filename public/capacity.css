@@ -22,6 +22,25 @@
   padding-bottom: 2px;
 }
 
+.nav-user {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.78rem;
+  margin-left: 6px;
+}
+
+.nav-logout-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: #fff;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nav-logout-btn:hover { background: rgba(255,255,255,0.25); }
+
 /* ── Charts grid ───────────────────────────────────────────────── */
 .charts-grid {
   display: grid;
