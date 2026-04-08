@@ -1,5 +1,5 @@
 -- ================================================================
--- Nura Dashboard â€“ Users Table
+-- Nura Dashboard – Users Table
 -- Run this script once in your SQL Server database
 -- ================================================================
 
@@ -21,7 +21,7 @@ CREATE TABLE Users (
 
 -- ----------------------------------------------------------------
 -- Seed: first admin user
--- Password: Admin@1234  (bcrypt hash â€” change immediately after first login)
+-- Password: Admin@1234  (bcrypt hash — change immediately after first login)
 -- ----------------------------------------------------------------
 INSERT INTO Users (Username, Email, FullName, PasswordHash, IsAdmin, MustChangePwd)
 VALUES (
@@ -32,3 +32,25 @@ VALUES (
   1,
   1
 );
+
+
+UPDATE Users 
+SET PasswordHash = '$2b$10$BVc19T0PsQ2Kn2V37viTneeetxK.DzbjCRTVsG9ERL6qiaR3DivlK'
+WHERE Username = 'admin'
+
+
+--SELECT * FROM users
+
+
+--SELECT PasswordHash FROM Users WHERE Username = 'admin'
+
+
+--SELECT UserID, Username, IsActive, LEFT(PasswordHash,30) AS HashPreview FROM Users
+
+
+UPDATE Users 
+SET PasswordHash = '$2b$10$BVc19T0PsQ2Kn2V37viTneeetxK.DzbjCRTVsG9ERL6qiaR3DivlK'
+WHERE Username = 'admin'
+
+
+SELECT  *FROM ds_Cases
