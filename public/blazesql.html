@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics – Surgical Services</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="capacity.css" />
+  <style>
+    .blaze-wrap {
+      width: 100%;
+      height: calc(100vh - 52px);
+      border: none;
+      display: flex;
+      flex-direction: column;
+    }
+    #blaze-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      min-height: 0;
+    }
+    #blaze-status {
+      padding: 40px;
+      text-align: center;
+      color: #5a6a7e;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="header-vdivider"></div>
+      <h1>Advanced Analytics</h1>
+      <nav class="header-nav">
+        <a href="index.html">Operational Performance</a>
+        <a href="capacity.html">Capacity</a>
+        <a href="blockutil.html">Block Utilization</a>
+        <span class="nav-active">Analytics</span>
+        <a href="admin.html" id="nav-admin" class="hidden">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="blaze-wrap">
+    <div id="blaze-status">Loading analytics&hellip;</div>
+    <iframe id="blaze-frame" class="hidden"
+      allow="clipboard-read; clipboard-write"
+      sandbox="allow-scripts allow-downloads allow-same-origin allow-forms allow-popups">
+    </iframe>
+  </div>
+
+  <script>
+    (async () => {
+      try {
+        const res  = await fetch('/api/blazesql/url');
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById('blaze-status').textContent = data.error || 'Failed to load analytics.';
+          return;
+        }
+        const frame = document.getElementById('blaze-frame');
+        frame.src = data.url;
+        frame.classList.remove('hidden');
+        document.getElementById('blaze-status').style.display = 'none';
+      } catch (e) {
+        document.getElementById('blaze-status').textContent = 'Could not connect to analytics service.';
+      }
+    })();
+  </script>
+  <script src="nav-auth.js"></script>
+</body>
+</html>

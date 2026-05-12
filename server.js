@@ -77,7 +77,7 @@ app.post('/api/auth/login', async (req, res) => {
     const db = await getPool();
     const result = await db.request()
       .input('username', sql.NVarChar, username)
-      .query(`SELECT UserID, Username, FullName, PasswordHash, TOTPSecret, TOTPEnabled,
+      .query(`SELECT UserID, Username, Email, FullName, PasswordHash, TOTPSecret, TOTPEnabled,
                      IsAdmin, IsActive, MustChangePwd
               FROM Users WHERE Username = @username`);
 
@@ -91,6 +91,7 @@ app.post('/api/auth/login', async (req, res) => {
     req.session.pendingUserId  = user.UserID;
     req.session.pendingIsAdmin = user.IsAdmin === true || user.IsAdmin === 1;
     req.session.pendingName    = user.FullName || user.Username;
+    req.session.pendingEmail   = user.Email || null;
     req.session.mustChangePwd  = user.MustChangePwd === true || user.MustChangePwd === 1;
 
     if (user.TOTPEnabled && user.TOTPSecret) {
@@ -161,14 +162,16 @@ async function _finalizeLogin(req, db) {
   await db.request()
     .input('uid', sql.Int, uid)
     .query(`UPDATE Users SET LastLogin = GETDATE() WHERE UserID = @uid`);
-  req.session.userId       = uid;
-  req.session.isAdmin      = req.session.pendingIsAdmin;
-  req.session.fullName     = req.session.pendingName;
-  req.session.totpVerified = true;
+  req.session.userId        = uid;
+  req.session.isAdmin       = req.session.pendingIsAdmin;
+  req.session.fullName      = req.session.pendingName;
+  req.session.email         = req.session.pendingEmail;
+  req.session.totpVerified  = true;
   req.session.mustChangePwd = req.session.mustChangePwd;
   delete req.session.pendingUserId;
   delete req.session.pendingIsAdmin;
   delete req.session.pendingName;
+  delete req.session.pendingEmail;
   delete req.session.pendingTOTPSecret;
 }
 
@@ -654,6 +657,35 @@ app.get('/api/blockutil/monthly-detail', async (req, res) => {
   } catch (err) {
     console.error('/api/blockutil/monthly-detail error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// =================================================================
+// BLAZESQL EMBED
+// =================================================================
+
+// GET /api/blazesql/url  — returns a signed BlazeSql session URL for the current user
+app.get('/api/blazesql/url', requireAuth, async (req, res) => {
+  const apiKey = process.env.BLAZESQL_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'BLAZESQL_API_KEY not configured' });
+
+  const email = req.session.email;
+  if (!email) return res.status(400).json({ error: 'No email on your account — ask an admin to add one.' });
+
+  try {
+    const response = await fetch('https://api.blazesql.com/user_authentication_api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: apiKey, user_email: email, hide_sidebar: false })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.url) {
+      return res.status(502).json({ error: data.message || 'BlazeSql auth failed' });
+    }
+    res.json({ url: data.url });
+  } catch (err) {
+    console.error('/api/blazesql/url error:', err.message);
+    res.status(500).json({ error: 'Could not reach BlazeSql' });
   }
 });
 
