@@ -669,22 +669,26 @@ app.get('/api/blazesql/url', requireAuth, async (req, res) => {
   const apiKey = process.env.BLAZESQL_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'BLAZESQL_API_KEY not configured' });
 
-  const email = req.session.email;
-  if (!email) return res.status(400).json({ error: 'No email on your account — ask an admin to add one.' });
-
   try {
+    const db     = await getPool();
+    const result = await db.request()
+      .input('uid', sql.Int, req.session.userId)
+      .query(`SELECT Email FROM Users WHERE UserID = @uid`);
+    const email  = result.recordset[0]?.Email;
+    if (!email) return res.status(400).json({ error: 'No email on your account — ask an admin to add one.' });
+
     const response = await fetch('https://api.blazesql.com/user_authentication_api', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ api_key: apiKey, user_email: email, hide_sidebar: false })
     });
-    const data = await response.json();
-    if (!response.ok || !data.url) {
-      return res.status(502).json({ error: data.message || 'BlazeSql auth failed' });
+    const text = await response.text();
+    if (!response.ok || !text.startsWith('http')) {
+      return res.status(502).json({ error: text || 'BlazeSql auth failed' });
     }
-    res.json({ url: data.url });
+    res.json({ url: text });
   } catch (err) {
-    console.error('/api/blazesql/url error:', err.message);
+    console.error('/api/blazesql/url error:', err.message, err.cause?.message);
     res.status(500).json({ error: 'Could not reach BlazeSql' });
   }
 });
