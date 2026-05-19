@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, BrowserRouter } from 'react-router-dom'
 import {
   Activity,
@@ -12,31 +12,54 @@ import {
   Settings,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
+import navConfig from './navConfig'
+import NuraLogo from './assets/nura-logo.svg'
 import Login            from './pages/Login'
 import ORPerformance    from './pages/ORPerformance'
 import Capacity         from './pages/Capacity'
 import BlockUtilization from './pages/BlockUtilization'
 import AtlasFCOT        from './pages/AtlasFCOT'
+import AtlasTurnover    from './pages/AtlasTurnover'
+import AskNura          from './pages/AskNura'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
-// Leaf paths owned by each expandable section — used for auto-expand logic
-const CHILD_PATHS = {
-  analytics: ['/', '/capacity', '/block-utilization', '/ip-flow'],
-  or:        ['/', '/capacity', '/block-utilization'],
-  ip:        ['/ip-flow'],
-  atlas:     ['/atlas/fcot'],
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp }
+
+function collectLeafPaths(items) {
+  return items.flatMap(item =>
+    item.type === 'link' ? [item.path] : collectLeafPaths(item.children ?? [])
+  )
 }
 
-const PAGE_TITLES = {
-  '/':                  'OR Performance',
-  '/capacity':          'Capacity',
-  '/block-utilization': 'Block Utilization',
-  '/atlas/fcot':        'FCOT Drivers',
-  '/ask-nura':          'Ask Nura',
-  '/forecasts':         'Forecasts',
-  '/ip-flow':           'IP Flow',
+function buildChildPaths(items, acc = {}) {
+  for (const item of items) {
+    if (item.type === 'expander') {
+      acc[item.id] = collectLeafPaths(item.children ?? [])
+      buildChildPaths(item.children ?? [], acc)
+    }
+  }
+  return acc
 }
+
+function collectTitles(items, acc = {}) {
+  for (const item of items) {
+    if (item.type === 'link') acc[item.path] = item.pageTitle ?? item.label
+    if (item.children) collectTitles(item.children, acc)
+  }
+  return acc
+}
+
+function collectExpanderIds(items) {
+  return items.flatMap(item =>
+    item.type === 'expander'
+      ? [item.id, ...collectExpanderIds(item.children ?? [])]
+      : []
+  )
+}
+
+const CHILD_PATHS = buildChildPaths(navConfig)
+const PAGE_TITLES = collectTitles(navConfig)
 
 /* ─── Auth guard ─────────────────────────────────────────────────────────── */
 
@@ -127,6 +150,62 @@ function PlaceholderPage({ title }) {
   )
 }
 
+/* ─── Nav renderer ───────────────────────────────────────────────────────── */
+
+function renderNavItems(items, level, { isOpen, toggle }) {
+  return items.map(item => {
+    if (item.type === 'link') {
+      if (level === 0) {
+        const Icon = ICON_MAP[item.icon]
+        return (
+          <NavLink
+            key={item.id}
+            to={item.path}
+            end={item.end}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            <Icon size={18} className="nav-icon" />
+            {item.label}
+          </NavLink>
+        )
+      }
+      return (
+        <LeafLink key={item.id} to={item.path} end={item.end}>
+          {item.label}
+        </LeafLink>
+      )
+    }
+
+    if (item.type === 'expander') {
+      const Icon     = ICON_MAP[item.icon]
+      const iconSize = level === 0 ? 18 : 16
+      const chevSize = level === 0 ? 13 : 12
+      const opacity  = level === 0 ? 0.09 : 0.06
+      return (
+        <Fragment key={item.id}>
+          <button
+            type="button"
+            onClick={() => toggle(item.id)}
+            className="nav-item"
+            style={BTN_RESET}
+          >
+            <Icon size={iconSize} className="nav-icon" />
+            <span style={{ flex: 1 }}>{item.label}</span>
+            <Chevron open={isOpen(item.id)} size={chevSize} />
+          </button>
+          {isOpen(item.id) && (
+            <NavGroup opacity={opacity}>
+              {renderNavItems(item.children ?? [], level + 1, { isOpen, toggle })}
+            </NavGroup>
+          )}
+        </Fragment>
+      )
+    }
+
+    return null
+  })
+}
+
 /* ─── Sidebar helpers ────────────────────────────────────────────────────── */
 
 function initials(fullName) {
@@ -215,18 +294,7 @@ function Sidebar() {
 
       {/* ── Logo ── */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-mark">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path
-              d="M3 14.5V3.5L9 9L15 3.5V14.5"
-              stroke="white"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-        <span className="sidebar-logo-text">Nura</span>
+        <img src={NuraLogo} alt="Nura" style={{ height: 32, width: 'auto' }} />
       </div>
 
       {/* ── Nav ── */}
@@ -303,6 +371,7 @@ function Sidebar() {
         {isOpen('atlas') && (
           <NavGroup opacity={0.09}>
             <LeafLink to="/atlas/fcot">FCOT Drivers</LeafLink>
+            <LeafLink to="/atlas/turnover">Turnover Time</LeafLink>
           </NavGroup>
         )}
         <NavLink to="/ask-nura" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
@@ -373,7 +442,8 @@ function Shell() {
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
           <Route path="/atlas/fcot"        element={<AtlasFCOT />} />
-          <Route path="/ask-nura"          element={<PlaceholderPage title="Ask Nura" />} />
+          <Route path="/atlas/turnover"    element={<AtlasTurnover />} />
+          <Route path="/ask-nura"          element={<AskNura />} />
           <Route path="/forecasts"         element={<PlaceholderPage title="Forecasts" />} />
         </Routes>
       </div>
