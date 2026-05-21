@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Bed Placement EBM Pipeline
-Trains an ExplainableBoostingRegressor on the bed placement dataset and exports
+Trains an ExplainableBoostingClassifier on the bed placement dataset and exports
 feature importances + shape functions to public/data/bed_placement_ebm.json.
 
 Usage:
@@ -18,9 +18,9 @@ import pandas as pd
 import numpy as np
 import pyodbc
 from dotenv import load_dotenv
-from interpret.glassbox import ExplainableBoostingRegressor
+from interpret.glassbox import ExplainableBoostingClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 
 
 # ── Step 1: Load credentials & connect ───────────────────────────────────────
@@ -60,18 +60,9 @@ print("=" * 60)
 
 QUERY = """
 SELECT
-  b.DUR_Requested_Complete,
+  b.DUR_Requested_Assigned,
   b.SOURCE_DEPTNAME,
   b.DEST_DEPTNAME,
-  CASE
-    WHEN b.TIME_EVSREQUESTED < b.TIME_REQUESTTIME
-    THEN b.DUR_EVSRequested_Completed
-    ELSE NULL
-  END AS DUR_EVSRequested_Completed,
-  CASE
-    WHEN b.TIME_EVSREQUESTED < b.TIME_REQUESTTIME
-    THEN 1 ELSE 0
-  END AS EVS_REQUIRED,
   DATENAME(WEEKDAY, b.TIME_REQUESTTIME)   AS DAY_OF_WEEK,
   DATEPART(HOUR,    b.TIME_REQUESTTIME)   AS HOUR_OF_DAY,
   e.ACCOUNT_FINANCIALCLASS,
@@ -127,8 +118,8 @@ LEFT JOIN (
 WHERE
   b.TIME_REQUESTTIME >= '2025-01-01'
   AND b.EVENT_TYPE_MOD IN ('Transfer', 'OTHER TRANSFER IN')
-  AND b.DUR_Requested_Complete > 0
-  AND b.DUR_Requested_Complete <= 1440
+  AND b.DUR_Requested_Assigned >= 0
+  AND b.DUR_Requested_Assigned <= 480
   AND b.DEST_DEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
   AND e.EPICCSN IS NOT NULL
 """
@@ -136,10 +127,10 @@ WHERE
 df = pd.read_sql(QUERY, conn)
 conn.close()
 print(f"  Pulled {len(df):,} rows × {df.shape[1]} columns")
-print(f"  Target range: [{df['DUR_Requested_Complete'].min():.1f}, "
-      f"{df['DUR_Requested_Complete'].max():.1f}] minutes")
-print(f"  Target mean : {df['DUR_Requested_Complete'].mean():.1f} min  "
-      f"std: {df['DUR_Requested_Complete'].std():.1f} min")
+print(f"  Target range: [{df['DUR_Requested_Assigned'].min():.1f}, "
+      f"{df['DUR_Requested_Assigned'].max():.1f}] minutes")
+print(f"  Target mean : {df['DUR_Requested_Assigned'].mean():.1f} min  "
+      f"std: {df['DUR_Requested_Assigned'].std():.1f} min")
 
 
 # ── Step 3: Preprocess ────────────────────────────────────────────────────────
@@ -149,7 +140,7 @@ print("=" * 60)
 print("Step 3: Preprocessing...")
 print("=" * 60)
 
-TARGET = "DUR_Requested_Complete"
+TARGET = "DUR_Requested_Assigned"
 
 
 # ── 3a: Derive SOURCE_CATEGORY and DEST_CATEGORY ──────────────────────────────
@@ -211,15 +202,6 @@ print(f"  DEST_CATEGORY distribution:\n"
 df = df.drop(columns=['SOURCE_DEPTNAME', 'DEST_DEPTNAME'])
 
 
-# ── 3b: EVS duration — set null to 0 (EVS not involved) ──────────────────────
-
-n_evs_null = df['DUR_EVSRequested_Completed'].isna().sum()
-if n_evs_null:
-    print(f"  DUR_EVSRequested_Completed: filled {n_evs_null:,} nulls with 0 "
-          f"(no EVS involvement)")
-df['DUR_EVSRequested_Completed'] = df['DUR_EVSRequested_Completed'].fillna(0)
-
-
 # ── 3c: DRG imputation ────────────────────────────────────────────────────────
 
 # Fill DRG_FINALDRGMDC nulls with 'Unknown' before using it as a grouping key
@@ -252,8 +234,6 @@ if dropped:
 # ── 3e: Define feature sets ───────────────────────────────────────────────────
 
 KNOWN_NUMERIC = {
-    'DUR_EVSRequested_Completed',
-    'EVS_REQUIRED',
     'HOUR_OF_DAY',
     'DRG_FINALDRGWEIGHT',
     'OCC_PCT',
@@ -270,7 +250,13 @@ KNOWN_NUMERIC = {
 
 feature_cols = [c for c in df.columns if c != TARGET]
 X = df[feature_cols].copy()
-y = df[TARGET].astype(float).copy()
+
+PLACEMENT_THRESHOLD = 30
+y = (df[TARGET] > PLACEMENT_THRESHOLD).astype(int)
+n_above = int(y.sum())
+n_below = int(len(y) - n_above)
+pct_above = 100 * n_above / len(y)
+print(f"  Class balance: {n_above:,} above {PLACEMENT_THRESHOLD} min ({pct_above:.1f}%) | {n_below:,} at/under ({100-pct_above:.1f}%)")
 
 num_cols = [c for c in feature_cols if c in KNOWN_NUMERIC]
 cat_cols  = [c for c in feature_cols if c not in KNOWN_NUMERIC]
@@ -310,7 +296,6 @@ for col in cat_cols:
     X[col] = X[col].cat.codes.astype(float)  # float so EBM bins it continuously
 
 print(f"\n  Final shape: {X.shape}")
-print(f"  Target mean: {y.mean():.2f} min  std: {y.std():.2f} min")
 
 
 # ── Step 4: Train/test split ──────────────────────────────────────────────────
@@ -330,14 +315,14 @@ out_dir    = os.path.join(script_dir, 'public', 'data')
 os.makedirs(out_dir, exist_ok=True)
 
 
-# ── Step 5: Train ExplainableBoostingRegressor ────────────────────────────────
+# ── Step 5: Train ExplainableBoostingClassifier ───────────────────────────────
 
 print()
 print("=" * 60)
-print("Step 5: Training ExplainableBoostingRegressor...")
+print("Step 5: Training ExplainableBoostingClassifier...")
 print("=" * 60)
 
-ebm = ExplainableBoostingRegressor(interactions=8, random_state=42)
+ebm = ExplainableBoostingClassifier(interactions=8, random_state=42)
 print("  Pairwise interactions: auto-detecting top 8")
 print("  Fitting model (this may take a few minutes)...")
 ebm.fit(X_train, y_train)
@@ -539,11 +524,18 @@ print("=" * 60)
 print("Step 6b: Computing model statistics on held-out test set...")
 print("=" * 60)
 
-y_pred = ebm.predict(X_test)
-mae    = float(mean_absolute_error(y_test, y_pred))
-r2     = float(r2_score(y_test, y_pred))
-print(f"  MAE : {mae:.2f} minutes")
-print(f"  R²  : {r2:.4f}")
+y_pred      = ebm.predict(X_test)
+y_pred_prob = ebm.predict_proba(X_test)[:, 1]
+auc       = float(roc_auc_score(y_test, y_pred_prob))
+accuracy  = float(accuracy_score(y_test, y_pred))
+precision = float(precision_score(y_test, y_pred, zero_division=0))
+recall    = float(recall_score(y_test, y_pred, zero_division=0))
+f1        = float(f1_score(y_test, y_pred, zero_division=0))
+print(f"  AUC       : {auc:.4f}")
+print(f"  Accuracy  : {accuracy:.4f}")
+print(f"  Precision : {precision:.4f}")
+print(f"  Recall    : {recall:.4f}")
+print(f"  F1        : {f1:.4f}")
 
 
 # ── Step 7: Save JSON ─────────────────────────────────────────────────────────
@@ -554,20 +546,26 @@ print("Step 7: Saving output to public/data/bed_placement_ebm.json...")
 print("=" * 60)
 
 output = {
-    'model_name':         'ExplainableBoostingRegressor',
+    'model_name':         'ExplainableBoostingClassifier',
     'trained_at':         datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'target_description': (
-        'Minutes from bed request to patient placement completion at '
-        'Our Lady of Lourdes Hospital'
+        'Binary classification — predicts whether bed assignment will exceed '
+        'the 30-minute target at Our Lady of Lourdes Hospital'
     ),
     'hospital':           'Our Lady of Lourdes Hospital',
+    'threshold_minutes':  PLACEMENT_THRESHOLD,
+    'n_above_threshold':  n_above,
+    'n_below_threshold':  n_below,
     'n_training_samples': int(len(X_train)),
     'feature_importance': feature_importance,
     'shape_functions':    shape_functions,
     'interactions':       interactions,
     'model_stats': {
-        'mae': mae,
-        'r2':  r2,
+        'auc':       auc,
+        'accuracy':  accuracy,
+        'precision': precision,
+        'recall':    recall,
+        'f1':        f1,
     },
 }
 
@@ -586,6 +584,9 @@ print("Done.")
 print(f"  Features  : {len(shape_functions)} main effects + {len(interactions)} interactions")
 print(f"  Train rows: {len(X_train):,}")
 print(f"  Test rows : {len(X_test):,}")
-print(f"  MAE       : {mae:.2f} min")
-print(f"  R²        : {r2:.4f}")
+print(f"  AUC       : {auc:.4f}")
+print(f"  Accuracy  : {accuracy:.4f}")
+print(f"  Precision : {precision:.4f}")
+print(f"  Recall    : {recall:.4f}")
+print(f"  F1        : {f1:.4f}")
 print("=" * 60)
