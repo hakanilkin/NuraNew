@@ -35,6 +35,21 @@ function isBadLabel(l) {
 // Grouped-bar palette: [first binary value, second binary value]
 const IX_COLORS = ['#93A8F4', '#E55353']
 
+const FILTER_PILLS = [
+  { label: 'All combinations',         type: null },
+  { label: 'Service line × Surgeon',   type: 'service_surgeon' },
+  { label: 'Location × Surgeon',       type: 'location_surgeon' },
+  { label: 'Service line × Location',  type: 'service_location' },
+  { label: 'Day × Location',           type: 'day_location' },
+  { label: 'Duration × Location',      type: 'duration_location' },
+]
+
+const TABS = [
+  { id: 'drivers',      label: 'Drivers' },
+  { id: 'combinations', label: 'Combinations' },
+  { id: 'explorer',     label: 'Explorer' },
+]
+
 /* ─── Helpers ───────────────────────────────────────────────────────────────── */
 
 function featName(f) {
@@ -427,18 +442,313 @@ function ImportanceBar({ pct }) {
   )
 }
 
+/* ─── Combinations Tab ──────────────────────────────────────────────────────── */
+
+function ComboStatCard({ label, value, sub, accent }) {
+  return (
+    <div style={{
+      background: 'var(--surface-card)',
+      border: '1px solid var(--surface-border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: 'var(--space-4)',
+    }}>
+      <div style={{
+        fontSize: 'var(--font-size-xs)',
+        color: 'var(--color-gray-400)',
+        marginBottom: 'var(--space-2)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        fontWeight: 'var(--font-weight-medium)',
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 'var(--font-size-xl)',
+        fontWeight: 'var(--font-weight-semibold)',
+        color: accent || 'var(--color-gray-900)',
+        lineHeight: 1.2,
+      }}>
+        {value}
+      </div>
+      {sub && (
+        <div style={{
+          fontSize: 'var(--font-size-xs)',
+          color: 'var(--color-gray-400)',
+          marginTop: 4,
+          lineHeight: 1.4,
+        }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CombinationsTab({ combos, loading, error, filter, onFilterChange }) {
+  const maxAboveMean = combos.length > 0 ? combos[0].above_mean : 1
+  const worstCombo   = combos[0] ?? null
+  const displayed    = filter ? combos.filter(c => c.type === filter) : combos
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280 }}>
+        <div style={{ textAlign: 'center', color: 'var(--color-gray-400)' }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            border: '3px solid var(--color-blue)',
+            borderTopColor: 'transparent',
+            animation: 'spin 0.7s linear infinite',
+            margin: '0 auto var(--space-3)',
+          }} />
+          <p style={{ fontSize: 'var(--font-size-sm)' }}>Loading combinations…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
+        padding: 'var(--space-5)',
+        background: 'var(--color-danger-light)',
+        border: '1px solid #fecaca',
+        borderRadius: 'var(--radius-lg)',
+        color: '#b91c1c',
+        fontSize: 'var(--font-size-sm)',
+      }}>
+        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <div style={{ fontWeight: 'var(--font-weight-semibold)', marginBottom: 2 }}>Could not load combinations</div>
+          <div>{error}</div>
+          <div style={{ marginTop: 6, color: '#ef4444' }}>
+            Run <code>python turnover_ebm_pipeline.py</code> to generate the combinations file.
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {/* ── Stat cards ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 'var(--space-4)',
+        marginBottom: 'var(--space-5)',
+      }}>
+        <ComboStatCard
+          label="System Mean"
+          value="51.1 min"
+          sub="Average turnover across filtered ORs"
+        />
+        <ComboStatCard
+          label="Target"
+          value="30 min"
+          sub="Aspirational goal"
+          accent="var(--color-blue)"
+        />
+        <ComboStatCard
+          label="Cases Analyzed"
+          value="51,048"
+          sub="Across 5 hospital locations"
+        />
+        <ComboStatCard
+          label="Worst Combination"
+          value={worstCombo ? `+${worstCombo.above_mean} min` : '—'}
+          sub={worstCombo?.label ?? 'No data'}
+          accent="#ef4444"
+        />
+      </div>
+
+      {/* ── Filter pills ── */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 'var(--space-2)',
+        marginBottom: 'var(--space-4)',
+      }}>
+        {FILTER_PILLS.map(p => {
+          const active = filter === p.type
+          return (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => onFilterChange(p.type)}
+              style={{
+                padding: '5px var(--space-3)',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid',
+                cursor: 'pointer',
+                fontSize: 'var(--font-size-xs)',
+                fontWeight: 'var(--font-weight-medium)',
+                transition: 'all 150ms',
+                background: active ? 'var(--color-blue)' : 'transparent',
+                borderColor: active ? 'var(--color-blue)' : 'var(--surface-border)',
+                color: active ? 'white' : 'var(--color-gray-600)',
+              }}
+            >
+              {p.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Table card ── */}
+      <div className="card">
+        {/* Column headers */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-3)',
+          padding: 'var(--space-2) var(--space-4)',
+          borderBottom: '1px solid var(--surface-border)',
+        }}>
+          <div style={{ width: 28, flexShrink: 0 }} />
+          <div style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)' }}>
+            Combination
+          </div>
+          <div style={{ width: 220, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)' }}>
+            Above mean
+          </div>
+          <div style={{ width: 96, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)', textAlign: 'right' }}>
+            Avg turnover
+          </div>
+          <div style={{ width: 72, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)', textAlign: 'right' }}>
+            Cases/yr
+          </div>
+        </div>
+
+        {displayed.length === 0 ? (
+          <div style={{
+            padding: 'var(--space-10)',
+            textAlign: 'center',
+            color: 'var(--color-gray-400)',
+            fontSize: 'var(--font-size-sm)',
+          }}>
+            No combinations above the system mean for this filter.
+          </div>
+        ) : displayed.map((combo, i) => {
+          const barPct = maxAboveMean > 0 ? (combo.above_mean / maxAboveMean) * 100 : 0
+          return (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-3) var(--space-4)',
+                borderBottom: i < displayed.length - 1 ? '1px solid var(--surface-border)' : 'none',
+              }}
+            >
+              {/* Rank */}
+              <div style={{
+                width: 28, flexShrink: 0,
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-gray-400)',
+                fontVariantNumeric: 'tabular-nums',
+                textAlign: 'right',
+              }}>
+                {i + 1}
+              </div>
+
+              {/* Label + sub */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-gray-800)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {combo.label}
+                </div>
+                <div style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-gray-400)',
+                  marginTop: 2,
+                }}>
+                  {combo.sub}
+                </div>
+              </div>
+
+              {/* Bar + above_mean value */}
+              <div style={{
+                width: 220, flexShrink: 0,
+                display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+              }}>
+                <div style={{
+                  flex: 1, height: 8,
+                  background: 'var(--color-gray-100)',
+                  borderRadius: 4, overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${barPct}%`,
+                    background: '#ef4444',
+                    borderRadius: 4,
+                  }} />
+                </div>
+                <div style={{
+                  width: 56, flexShrink: 0,
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  color: '#ef4444',
+                  textAlign: 'right',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  +{combo.above_mean} min
+                </div>
+              </div>
+
+              {/* Avg turnover */}
+              <div style={{
+                width: 96, flexShrink: 0,
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-gray-700)',
+                textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {combo.avg_turnover} min
+              </div>
+
+              {/* Cases */}
+              <div style={{
+                width: 72, flexShrink: 0,
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-gray-700)',
+                textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {combo.cnt.toLocaleString()}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
 /* ─── Atlas Page ────────────────────────────────────────────────────────────── */
 
 export default function AtlasTurnover() {
-  const [model,        setModel]        = useState(null)
-  const [loading,      setLoading]      = useState(true)
-  const [error,        setError]        = useState('')
-  const [selectedFeat, setSelectedFeat] = useState(null)
-  const [expandedIx,   setExpandedIx]   = useState(null)
-  const [ixNarratives, setIxNarratives] = useState({})
-  const [ixLoadings,   setIxLoadings]   = useState({})
+  const [model,         setModel]         = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [error,         setError]         = useState('')
+  const [selectedFeat,  setSelectedFeat]  = useState(null)
+  const [expandedIx,    setExpandedIx]    = useState(null)
+  const [ixNarratives,  setIxNarratives]  = useState({})
+  const [ixLoadings,    setIxLoadings]    = useState({})
+  const [activeTab,     setActiveTab]     = useState('drivers')
+  const [combos,        setCombos]        = useState([])
+  const [combosLoading, setCombosLoading] = useState(true)
+  const [combosError,   setCombosError]   = useState('')
+  const [comboFilter,   setComboFilter]   = useState(null)
 
-  /* ── Fetch model ── */
+  /* ── Fetch model + combinations in parallel ── */
   useEffect(() => {
     setLoading(true)
     setError('')
@@ -454,6 +764,15 @@ export default function AtlasTurnover() {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
+
+    fetch('/api/atlas/turnover-combinations')
+      .then(r => {
+        if (!r.ok) return r.json().then(d => Promise.reject(new Error(d.error || `HTTP ${r.status}`)))
+        return r.json()
+      })
+      .then(data => setCombos(data.combinations ?? []))
+      .catch(err => setCombosError(err.message))
+      .finally(() => setCombosLoading(false))
   }, [])
 
   /* ── Derived ── */
@@ -482,12 +801,10 @@ export default function AtlasTurnover() {
     const scores = selectedSF.y_scores ?? []
     const n      = scores.length
 
-    // For continuous features, downsample to at most 20 evenly-spaced points
     let indices
     if (isCat || n <= 20) {
       indices = Array.from({ length: n }, (_, i) => i)
     } else {
-      // First, last, and 18 evenly spaced in between (step across full range)
       const step = (n - 1) / 19
       indices = Array.from({ length: 20 }, (_, k) => Math.round(k * step))
     }
@@ -535,7 +852,7 @@ export default function AtlasTurnover() {
     console.log('Regenerate narrative — endpoint not yet wired')
   }
 
-  /* ── Loading / Error states ── */
+  /* ── Loading / Error states (model only — gates the Drivers tab) ── */
   if (loading) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
@@ -585,260 +902,327 @@ export default function AtlasTurnover() {
     <div className="page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* ─── Section 1: Model Header ───────────────────────────────────────── */}
-      <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
-        <div className="card-header" style={{ alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 'var(--radius-md)',
-                background: 'var(--color-blue)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, boxShadow: 'var(--shadow-blue)',
-              }}>
-                <Brain size={18} style={{ color: 'white' }} />
-              </div>
-              <div>
-                <div className="card-title" style={{ marginBottom: 0 }}>OR Turnover Time</div>
-                <div className="card-subtitle" style={{ marginTop: 2 }}>
-                  Explainable Boosting Regressor · Predicts room turnover time between consecutive cases
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-              <MetaPill icon={Database} label="Training samples" value={model.n_training_samples?.toLocaleString() ?? '—'} />
-              <MetaPill icon={BarChart3} label="MAE"             value={fmtMAE(model.model_stats?.mae)} />
-              <MetaPill icon={Zap}       label="Features"        value={mainEffects.length} />
-              <MetaPill icon={GitMerge}  label="Interactions"    value={interactions.length} />
-              <MetaPill icon={Calendar}  label="Trained"         value={fmtDate(model.trained_at)} />
-            </div>
-
-            <p style={{
-              marginTop: 'var(--space-5)',
+      {/* ─── Tab bar ──────────────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex',
+        borderBottom: '1px solid var(--surface-border)',
+        marginBottom: 'var(--space-6)',
+      }}>
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === tab.id
+                ? '2px solid var(--color-blue)'
+                : '2px solid transparent',
+              cursor: 'pointer',
+              padding: 'var(--space-3) var(--space-4)',
               fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-gray-600)',
-              lineHeight: 'var(--line-height-relaxed)',
-              maxWidth: 720,
-            }}>
-              This analysis identifies factors associated with OR turnover time variance — it shows
-              statistical relationships in your data, not causal explanations. Red indicates association with
-              longer turnovers; blue with shorter turnovers.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
-            <button
-              className="btn btn-ghost"
-              onClick={sendPrompt}
-              style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}
-            >
-              <RefreshCw size={14} />
-              Regenerate
-            </button>
-            <button
-              className="btn btn-ghost"
-              onClick={() => {}}
-              style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}
-            >
-              <Mail size={14} />
-              Email briefing
-            </button>
-          </div>
-        </div>
+              fontWeight: activeTab === tab.id
+                ? 'var(--font-weight-semibold)'
+                : 'var(--font-weight-medium)',
+              color: activeTab === tab.id ? 'var(--color-blue)' : 'var(--color-gray-500)',
+              marginBottom: -1,
+              transition: 'color 150ms',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* ─── Key Findings ──────────────────────────────────────────────────── */}
-      <div style={{
-        background: 'var(--color-background-secondary, var(--color-gray-50))',
-        border: '1px solid var(--surface-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-5)',
-        marginBottom: 'var(--space-6)',
-      }}>
-        <div style={{
-          fontSize: 'var(--font-size-sm)',
-          fontWeight: 'var(--font-weight-semibold)',
-          color: 'var(--color-gray-800)',
-          marginBottom: 'var(--space-4)',
-          letterSpacing: 'var(--letter-spacing-tight)',
-        }}>
-          Key Findings
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {[
-            { color: '#3b82f6', text: 'Rooms where the same surgeon performs back-to-back cases turn over 5–8 minutes faster than rooms with a surgeon change.' },
-            { color: '#ef4444', text: 'Neurosurgery and Orthopedics cases are associated with the longest turnovers, averaging 10–15 minutes above baseline.' },
-            { color: '#ef4444', text: 'Later case positions in a room (4th case and beyond) show progressively longer turnovers, suggesting cumulative delays build through the day.' },
-            { color: '#ef4444', text: 'Rooms scheduled for more total cases per day trend toward longer individual turnovers as the day progresses.' },
-          ].map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-              <div style={{
-                width: 7, height: 7,
-                borderRadius: '50%',
-                background: f.color,
-                flexShrink: 0,
-                marginTop: 5,
-              }} />
-              <span style={{
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-gray-700)',
-                lineHeight: 'var(--line-height-relaxed)',
-              }}>
-                {f.text}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── Section 2: Feature Drivers + Shape Functions ──────────────────── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '340px 1fr',
-        gap: 'var(--space-5)',
-        marginBottom: 'var(--space-6)',
-        alignItems: 'start',
-      }}>
-
-        {/* Left: feature driver list */}
-        <div className="card" style={{
-          position: 'sticky',
-          top: 'calc(var(--topbar-h, 56px) + var(--space-4))',
-          maxHeight: 'calc(100vh - 120px)',
-          display: 'flex', flexDirection: 'column',
-        }}>
-          <div className="card-header" style={{ flexShrink: 0 }}>
-            <div>
-              <div className="card-title">What drives turnover time</div>
-              <div className="card-subtitle">Click a feature to see its shape function</div>
-            </div>
-          </div>
-          <div style={{ overflowY: 'auto', flex: 1, padding: 'var(--space-1) 0' }}>
-            {mainEffects.map(f => {
-              const b          = badge(f.rank)
-              const pct        = maxImp > 0 ? (f.importance_score / maxImp) * 100 : 0
-              const share      = totalImp > 0 ? ((f.importance_score / totalImp) * 100).toFixed(1) : '0'
-              const isSelected = selectedFeat === f.feature
-
-              return (
-                <button
-                  key={f.feature}
-                  type="button"
-                  onClick={() => setSelectedFeat(f.feature)}
-                  style={{
-                    width: '100%',
-                    background: isSelected ? 'rgba(59,130,246,0.06)' : 'none',
-                    border: 'none',
-                    borderLeft: isSelected ? '3px solid var(--color-blue)' : '3px solid transparent',
-                    cursor: 'pointer', textAlign: 'left',
-                    padding: 'var(--space-3) var(--space-4)',
-                    transition: 'background 150ms',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
-                    <span style={{
-                      flex: 1,
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: isSelected ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
-                      color: isSelected ? 'var(--color-blue)' : 'var(--color-gray-700)',
-                      overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-                    }}>
-                      {featName(f.feature)}
-                    </span>
-                    <span style={{
-                      fontSize: 'var(--font-size-xs)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: b.color, background: b.bg,
-                      padding: '1px 6px', borderRadius: 'var(--radius-full)', flexShrink: 0,
-                    }}>
-                      {b.label}
-                    </span>
-                    <span style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-gray-400)',
-                      flexShrink: 0, fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {share}%
-                    </span>
+      {/* ─── Drivers tab ──────────────────────────────────────────────────────── */}
+      {activeTab === 'drivers' && (
+        <>
+          {/* Section 1: Model Header */}
+          <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
+            <div className="card-header" style={{ alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 'var(--radius-md)',
+                    background: 'var(--color-blue)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, boxShadow: 'var(--shadow-blue)',
+                  }}>
+                    <Brain size={18} style={{ color: 'white' }} />
                   </div>
-                  <ImportanceBar pct={pct} />
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Right: shape function panel */}
-        <div className="card">
-          {!selectedSF ? (
-            <div className="card-body" style={{ minHeight: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ textAlign: 'center', color: 'var(--color-gray-400)' }}>
-                <BarChart3 size={36} strokeWidth={1.25} style={{ margin: '0 auto var(--space-3)' }} />
-                <p style={{ fontSize: 'var(--font-size-sm)' }}>Select a feature to see its shape function</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="card-header">
-                <div>
-                  <div className="card-title">
-                    How <em>{featName(selectedSF.feature)}</em> affects turnover time
-                  </div>
-                  <div className="card-subtitle">
-                    Positive values (red) = longer turnover · Negative values (blue) = shorter turnover · Units: minutes
+                  <div>
+                    <div className="card-title" style={{ marginBottom: 0 }}>OR Turnover Time</div>
+                    <div className="card-subtitle" style={{ marginTop: 2 }}>
+                      Explainable Boosting Regressor · Predicts room turnover time between consecutive cases
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="card-body">
-                {sfEntries.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8) 0' }}>
-                    No shape data available
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {sfEntries.map((e, i) => (
-                      <ShapeBar key={i} label={e.label} score={e.score} maxAbs={sfMaxAbs} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
 
-      {/* ─── Section 3: Interaction Effects ────────────────────────────────── */}
-      {interactions.length > 0 && (
-        <div>
-          <div style={{ marginBottom: 'var(--space-4)' }}>
-            <h2 style={{
-              fontSize: 'var(--font-size-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--color-gray-900)',
-              marginBottom: 'var(--space-1)',
-            }}>
-              Interaction Effects
-            </h2>
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>
-              How pairs of features combine to jointly influence turnover time. Click a tile to expand.
-            </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
+                  <MetaPill icon={Database} label="Training samples" value={model.n_training_samples?.toLocaleString() ?? '—'} />
+                  <MetaPill icon={BarChart3} label="MAE"             value={fmtMAE(model.model_stats?.mae)} />
+                  <MetaPill icon={Zap}       label="Features"        value={mainEffects.length} />
+                  <MetaPill icon={GitMerge}  label="Interactions"    value={interactions.length} />
+                  <MetaPill icon={Calendar}  label="Trained"         value={fmtDate(model.trained_at)} />
+                </div>
+
+                <p style={{
+                  marginTop: 'var(--space-5)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-gray-600)',
+                  lineHeight: 'var(--line-height-relaxed)',
+                  maxWidth: 720,
+                }}>
+                  This analysis identifies factors associated with OR turnover time variance — it shows
+                  statistical relationships in your data, not causal explanations. Red indicates association with
+                  longer turnovers; blue with shorter turnovers.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
+                <button
+                  className="btn btn-ghost"
+                  onClick={sendPrompt}
+                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}
+                >
+                  <RefreshCw size={14} />
+                  Regenerate
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => {}}
+                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}
+                >
+                  <Mail size={14} />
+                  Email briefing
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
-            {interactions.map(ix => {
-              const key = `${ix.feature_1}__${ix.feature_2}`
-              return (
-                <InteractionTile
-                  key={key}
-                  ix={ix}
-                  expanded={expandedIx === key}
-                  onToggle={() => toggleInteraction(key, ix)}
-                  narrative={ixNarratives[key]}
-                  narrativeLoading={!!ixLoadings[key]}
-                />
-              )
-            })}
+          {/* Key Findings */}
+          <div style={{
+            background: 'var(--color-background-secondary, var(--color-gray-50))',
+            border: '1px solid var(--surface-border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-5)',
+            marginBottom: 'var(--space-6)',
+          }}>
+            <div style={{
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--color-gray-800)',
+              marginBottom: 'var(--space-4)',
+              letterSpacing: 'var(--letter-spacing-tight)',
+            }}>
+              Key Findings
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {[
+                { color: '#3b82f6', text: 'Rooms where the same surgeon performs back-to-back cases turn over 5–8 minutes faster than rooms with a surgeon change.' },
+                { color: '#ef4444', text: 'Neurosurgery and Orthopedics cases are associated with the longest turnovers, averaging 10–15 minutes above baseline.' },
+                { color: '#ef4444', text: 'Later case positions in a room (4th case and beyond) show progressively longer turnovers, suggesting cumulative delays build through the day.' },
+                { color: '#ef4444', text: 'Rooms scheduled for more total cases per day trend toward longer individual turnovers as the day progresses.' },
+              ].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+                  <div style={{
+                    width: 7, height: 7,
+                    borderRadius: '50%',
+                    background: f.color,
+                    flexShrink: 0,
+                    marginTop: 5,
+                  }} />
+                  <span style={{
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-gray-700)',
+                    lineHeight: 'var(--line-height-relaxed)',
+                  }}>
+                    {f.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 2: Feature Drivers + Shape Functions */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '340px 1fr',
+            gap: 'var(--space-5)',
+            marginBottom: 'var(--space-6)',
+            alignItems: 'start',
+          }}>
+            {/* Left: feature driver list */}
+            <div className="card" style={{
+              position: 'sticky',
+              top: 'calc(var(--topbar-h, 56px) + var(--space-4))',
+              maxHeight: 'calc(100vh - 120px)',
+              display: 'flex', flexDirection: 'column',
+            }}>
+              <div className="card-header" style={{ flexShrink: 0 }}>
+                <div>
+                  <div className="card-title">What drives turnover time</div>
+                  <div className="card-subtitle">Click a feature to see its shape function</div>
+                </div>
+              </div>
+              <div style={{ overflowY: 'auto', flex: 1, padding: 'var(--space-1) 0' }}>
+                {mainEffects.map(f => {
+                  const b          = badge(f.rank)
+                  const pct        = maxImp > 0 ? (f.importance_score / maxImp) * 100 : 0
+                  const share      = totalImp > 0 ? ((f.importance_score / totalImp) * 100).toFixed(1) : '0'
+                  const isSelected = selectedFeat === f.feature
+
+                  return (
+                    <button
+                      key={f.feature}
+                      type="button"
+                      onClick={() => setSelectedFeat(f.feature)}
+                      style={{
+                        width: '100%',
+                        background: isSelected ? 'rgba(59,130,246,0.06)' : 'none',
+                        border: 'none',
+                        borderLeft: isSelected ? '3px solid var(--color-blue)' : '3px solid transparent',
+                        cursor: 'pointer', textAlign: 'left',
+                        padding: 'var(--space-3) var(--space-4)',
+                        transition: 'background 150ms',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                        <span style={{
+                          flex: 1,
+                          fontSize: 'var(--font-size-sm)',
+                          fontWeight: isSelected ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
+                          color: isSelected ? 'var(--color-blue)' : 'var(--color-gray-700)',
+                          overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                        }}>
+                          {featName(f.feature)}
+                        </span>
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 'var(--font-weight-semibold)',
+                          color: b.color, background: b.bg,
+                          padding: '1px 6px', borderRadius: 'var(--radius-full)', flexShrink: 0,
+                        }}>
+                          {b.label}
+                        </span>
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)',
+                          color: 'var(--color-gray-400)',
+                          flexShrink: 0, fontVariantNumeric: 'tabular-nums',
+                        }}>
+                          {share}%
+                        </span>
+                      </div>
+                      <ImportanceBar pct={pct} />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Right: shape function panel */}
+            <div className="card">
+              {!selectedSF ? (
+                <div className="card-body" style={{ minHeight: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--color-gray-400)' }}>
+                    <BarChart3 size={36} strokeWidth={1.25} style={{ margin: '0 auto var(--space-3)' }} />
+                    <p style={{ fontSize: 'var(--font-size-sm)' }}>Select a feature to see its shape function</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="card-header">
+                    <div>
+                      <div className="card-title">
+                        How <em>{featName(selectedSF.feature)}</em> affects turnover time
+                      </div>
+                      <div className="card-subtitle">
+                        Positive values (red) = longer turnover · Negative values (blue) = shorter turnover · Units: minutes
+                      </div>
+                    </div>
+                  </div>
+                  <div className="card-body">
+                    {sfEntries.length === 0 ? (
+                      <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8) 0' }}>
+                        No shape data available
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {sfEntries.map((e, i) => (
+                          <ShapeBar key={i} label={e.label} score={e.score} maxAbs={sfMaxAbs} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Section 3: Interaction Effects */}
+          {interactions.length > 0 && (
+            <div>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <h2 style={{
+                  fontSize: 'var(--font-size-lg)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  color: 'var(--color-gray-900)',
+                  marginBottom: 'var(--space-1)',
+                }}>
+                  Interaction Effects
+                </h2>
+                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>
+                  How pairs of features combine to jointly influence turnover time. Click a tile to expand.
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
+                {interactions.map(ix => {
+                  const key = `${ix.feature_1}__${ix.feature_2}`
+                  return (
+                    <InteractionTile
+                      key={key}
+                      ix={ix}
+                      expanded={expandedIx === key}
+                      onToggle={() => toggleInteraction(key, ix)}
+                      narrative={ixNarratives[key]}
+                      narrativeLoading={!!ixLoadings[key]}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ─── Combinations tab ─────────────────────────────────────────────────── */}
+      {activeTab === 'combinations' && (
+        <CombinationsTab
+          combos={combos}
+          loading={combosLoading}
+          error={combosError}
+          filter={comboFilter}
+          onFilterChange={setComboFilter}
+        />
+      )}
+
+      {/* ─── Explorer tab (placeholder) ───────────────────────────────────────── */}
+      {activeTab === 'explorer' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320,
+        }}>
+          <div style={{ textAlign: 'center', color: 'var(--color-gray-400)' }}>
+            <BarChart3 size={40} strokeWidth={1.25} style={{ margin: '0 auto var(--space-3)' }} />
+            <p style={{
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-gray-500)',
+            }}>
+              Explorer
+            </p>
+            <p style={{ fontSize: 'var(--font-size-xs)', marginTop: 4 }}>Coming soon</p>
           </div>
         </div>
       )}

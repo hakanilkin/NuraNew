@@ -576,11 +576,11 @@ def to_plain_english(rule_str, label_mappings):
     return result
 
 
-# ── Step 8: RuleFit Classifier (turnover > 30 min) ───────────────────────────
+# ── Step 8: RuleFit Classifier (turnover > 45 min) ───────────────────────────
 
 print()
 print("=" * 60)
-print("Step 8: Training RuleFit Classifier (target: turnover > 30 min)...")
+print("Step 8: Training RuleFit Classifier (target: turnover > 45 min)...")
 print("=" * 60)
 
 rulefit_skipped = False
@@ -598,8 +598,8 @@ except Exception as e:
     rulefit_skipped = True
 
 if not rulefit_skipped:
-    # Binary target: 1 = turnover exceeds 30-minute target, 0 = at or under
-    TURNOVER_THRESHOLD = 30
+    # Binary target: 1 = turnover exceeds 45 minutes, 0 = at or under
+    TURNOVER_THRESHOLD = 45
     y_binary_rf = (y_train_rf > TURNOVER_THRESHOLD).astype(int)
 
     n_above = int(y_binary_rf.sum())
@@ -616,7 +616,26 @@ if not rulefit_skipped:
     print("  RuleFitClassifier training complete.")
 
     print("  Extracting and filtering rules...")
-    rules_df = rf_clf.get_rules()
+    rules_df = None
+    for method_name, extractor in [
+        ('get_rules()',           lambda: rf_clf.get_rules()),
+        ('_get_rules()',          lambda: rf_clf._get_rules()),
+        ('rule_ensemble.rules',   lambda: rf_clf.rule_ensemble.rules),
+        ('rules_',                lambda: rf_clf.rules_),
+    ]:
+        try:
+            raw = extractor()
+            import pandas as _pd
+            if not isinstance(raw, _pd.DataFrame):
+                # coerce list/other to DataFrame
+                raw = _pd.DataFrame(raw)
+            rules_df = raw
+            print(f"  Rule extraction succeeded via {method_name}")
+            break
+        except Exception as _e:
+            print(f"  {method_name} failed: {_e}")
+    if rules_df is None:
+        raise RuntimeError("Could not extract rules from RuleFitClassifier — all methods failed")
 
     # Keep only tree-derived rules with a non-zero coefficient and ≥2% coverage
     if 'type' in rules_df.columns:
@@ -664,8 +683,8 @@ if not rulefit_skipped:
         'model_name':         'RuleFitClassifier',
         'trained_at':         datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'target_description': (
-            'Identifies conditions associated with OR room turnovers exceeding the '
-            f'{TURNOVER_THRESHOLD}-minute target. '
+            'Identifies conditions associated with turnovers exceeding 45 minutes at hospital OR locations. '
+            'System average is 51 minutes; aspirational goal is 30 minutes. '
             'coef > 0 (direction=risk) means the rule is associated with longer turnovers; '
             'coef < 0 (direction=protective) means associated with staying under target. '
             'Trained on filtered dataset excluding endoscopy suites, low-volume ORs, '
@@ -771,6 +790,180 @@ if not skrules_skipped:
 
     size_kb = os.path.getsize(skrules_path) / 1024
     print(f"  Saved: {skrules_path}  ({size_kb:.1f} KB)")
+
+
+# ── Step 10: Combinations tab pre-computation ────────────────────────────────
+
+print()
+print("=" * 60)
+print("Step 10: Pre-computing Atlas Combinations data...")
+print("=" * 60)
+
+SYSTEM_MEAN   = 51.05
+TARGET_MIN    = 30
+TOTAL_CASES   = 51048
+COMBO_LOCS    = ('MARH OR', 'MEMH OR', 'OLLH OR', 'VORH JRI OR', 'VORH OR')
+
+BASE_WHERE = (
+    "CaseLogStatus = 'Posted' "
+    "AND Turnover_Turnover > 0 "
+    "AND Turnover_Turnover <= 120 "
+    "AND Loc_ORGrp2 IN ({locs})"
+).format(locs=', '.join(f"'{l}'" for l in COMBO_LOCS))
+
+COMBO_QUERIES = [
+    {
+        'type': 'service_surgeon',
+        'sub':  'Service line × Surgeon',
+        'sql': f"""
+            SELECT
+                Case_SurgeonService                              AS dim1,
+                Turnover_NextCaseSameSurgeon                     AS dim2,
+                COUNT(*)                                         AS cnt,
+                ROUND(AVG(CAST(Turnover_Turnover AS FLOAT)), 1)  AS avg_turnover
+            FROM DS_CASES
+            WHERE {BASE_WHERE}
+            GROUP BY Case_SurgeonService, Turnover_NextCaseSameSurgeon
+            HAVING COUNT(*) >= 1000
+        """,
+    },
+    {
+        'type': 'location_surgeon',
+        'sub':  'Location × Surgeon',
+        'sql': f"""
+            SELECT
+                Loc_ORGrp2                                       AS dim1,
+                Turnover_NextCaseSameSurgeon                     AS dim2,
+                COUNT(*)                                         AS cnt,
+                ROUND(AVG(CAST(Turnover_Turnover AS FLOAT)), 1)  AS avg_turnover
+            FROM DS_CASES
+            WHERE {BASE_WHERE}
+            GROUP BY Loc_ORGrp2, Turnover_NextCaseSameSurgeon
+            HAVING COUNT(*) >= 1000
+        """,
+    },
+    {
+        'type': 'service_location',
+        'sub':  'Service line × Location',
+        'sql': f"""
+            SELECT
+                Case_SurgeonService                              AS dim1,
+                Loc_ORGrp2                                       AS dim2,
+                COUNT(*)                                         AS cnt,
+                ROUND(AVG(CAST(Turnover_Turnover AS FLOAT)), 1)  AS avg_turnover
+            FROM DS_CASES
+            WHERE {BASE_WHERE}
+            GROUP BY Case_SurgeonService, Loc_ORGrp2
+            HAVING COUNT(*) >= 1000
+        """,
+    },
+    {
+        'type': 'day_location',
+        'sub':  'Day × Location',
+        'sql': f"""
+            SELECT
+                DD_DOW_Long                                      AS dim1,
+                Loc_ORGrp2                                       AS dim2,
+                COUNT(*)                                         AS cnt,
+                ROUND(AVG(CAST(Turnover_Turnover AS FLOAT)), 1)  AS avg_turnover
+            FROM DS_CASES
+            WHERE {BASE_WHERE}
+            GROUP BY DD_DOW_Long, Loc_ORGrp2
+            HAVING COUNT(*) >= 1000
+        """,
+    },
+    {
+        'type': 'duration_location',
+        'sub':  'Duration × Location',
+        'sql': f"""
+            SELECT
+                CASE
+                    WHEN CAST(Sched_SchedDur AS FLOAT) <= 60  THEN 'Short (≤60 min)'
+                    WHEN CAST(Sched_SchedDur AS FLOAT) <= 120 THEN 'Medium (61-120 min)'
+                    WHEN CAST(Sched_SchedDur AS FLOAT) <= 180 THEN 'Long (121-180 min)'
+                    ELSE 'Very Long (>180 min)'
+                END                                              AS dim1,
+                Loc_ORGrp2                                       AS dim2,
+                COUNT(*)                                         AS cnt,
+                ROUND(AVG(CAST(Turnover_Turnover AS FLOAT)), 1)  AS avg_turnover
+            FROM DS_CASES
+            WHERE {BASE_WHERE}
+              AND Sched_SchedDur IS NOT NULL
+            GROUP BY
+                CASE
+                    WHEN CAST(Sched_SchedDur AS FLOAT) <= 60  THEN 'Short (≤60 min)'
+                    WHEN CAST(Sched_SchedDur AS FLOAT) <= 120 THEN 'Medium (61-120 min)'
+                    WHEN CAST(Sched_SchedDur AS FLOAT) <= 180 THEN 'Long (121-180 min)'
+                    ELSE 'Very Long (>180 min)'
+                END,
+                Loc_ORGrp2
+            HAVING COUNT(*) >= 1000
+        """,
+    },
+]
+
+SURGEON_LABEL = {'YES': 'same surgeon', 'NO': 'surgeon change'}
+SURGEON_TYPES = {'service_surgeon', 'location_surgeon'}
+
+def _combo_label(row_type, dim1, dim2):
+    if row_type in SURGEON_TYPES:
+        surgeon_str = SURGEON_LABEL.get(str(dim2).strip().upper(), str(dim2))
+        return f"{dim1} — {surgeon_str}"
+    return f"{dim1} — {dim2}"
+
+try:
+    conn10 = pyodbc.connect(conn_str, timeout=60)
+    cursor10 = conn10.cursor()
+    print(f"  DB connection established for combinations queries")
+
+    all_combos = []
+    for q in COMBO_QUERIES:
+        cursor10.execute(q['sql'])
+        rows = cursor10.fetchall()
+        kept = 0
+        for row in rows:
+            dim1, dim2, cnt, avg_t = row.dim1, row.dim2, row.cnt, row.avg_turnover
+            if avg_t is None:
+                continue
+            above_mean = round(float(avg_t) - SYSTEM_MEAN, 1)
+            if above_mean <= 0:
+                continue
+            all_combos.append({
+                'type':         q['type'],
+                'sub':          q['sub'],
+                'label':        _combo_label(q['type'], dim1, dim2),
+                'dim1':         str(dim1),
+                'dim2':         str(dim2),
+                'cnt':          int(cnt),
+                'avg_turnover': float(avg_t),
+                'above_mean':   above_mean,
+            })
+            kept += 1
+        print(f"  {q['type']:20s}: {len(rows)} groups queried, {kept} above system mean")
+
+    cursor10.close()
+    conn10.close()
+
+    all_combos.sort(key=lambda r: r['above_mean'], reverse=True)
+
+    combos_output = {
+        'generated_at':  datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        'system_mean':   SYSTEM_MEAN,
+        'target_minutes': TARGET_MIN,
+        'total_cases':   TOTAL_CASES,
+        'combinations':  all_combos,
+    }
+
+    combos_path = os.path.join(out_dir, 'turnover_combinations.json')
+    with open(combos_path, 'w', encoding='utf-8') as f:
+        json.dump(combos_output, f, indent=2, allow_nan=False)
+
+    size_kb = os.path.getsize(combos_path) / 1024
+    print(f"  {len(all_combos)} combinations saved: {combos_path}  ({size_kb:.1f} KB)")
+
+except Exception as e:
+    print(f"  Step 10 failed: {e}")
+    print("  turnover_combinations.json was NOT written — continuing to final summary")
 
 
 # ── Final summary ─────────────────────────────────────────────────────────────

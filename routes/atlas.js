@@ -118,4 +118,21 @@ ${topRows}`;
   }
 });
 
+// GET /api/atlas/turnover-combinations
+router.get('/turnover-combinations', (_req, res) => {
+  try {
+    res.json(readJsonFile('turnover_combinations.json'));
+  } catch (err) {
+    if (err.message === 'not_found') {
+      return res.status(404).json({ error: 'Combinations file not found — run turnover_ebm_pipeline.py first' });
+    }
+    if (err instanceof SyntaxError) {
+      console.error('/api/atlas/turnover-combinations parse error:', err.message);
+      return res.status(500).json({ error: 'Combinations file is corrupted or not valid JSON' });
+    }
+    console.error('/api/atlas/turnover-combinations read error:', err.message);
+    res.status(500).json({ error: 'Could not read combinations file' });
+  }
+});
+
 module.exports = router;

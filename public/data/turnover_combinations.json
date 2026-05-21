@@ -1,0 +1,418 @@
+{
+  "generated_at": "2026-05-19T20:26:09.098519+00:00",
+  "system_mean": 51.05,
+  "target_minutes": 30,
+  "total_cases": 51048,
+  "combinations": [
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Orthopaedic Surgery \u2014 surgeon change",
+      "dim1": "Orthopaedic Surgery",
+      "dim2": "NO",
+      "cnt": 1026,
+      "avg_turnover": 74.2,
+      "above_mean": 23.2
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "VORH JRI OR \u2014 surgeon change",
+      "dim1": "VORH JRI OR",
+      "dim2": "NO",
+      "cnt": 1555,
+      "avg_turnover": 70.1,
+      "above_mean": 19.0
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "OLLH OR \u2014 surgeon change",
+      "dim1": "OLLH OR",
+      "dim2": "NO",
+      "cnt": 2497,
+      "avg_turnover": 68.4,
+      "above_mean": 17.4
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "MEMH OR \u2014 surgeon change",
+      "dim1": "MEMH OR",
+      "dim2": "NO",
+      "cnt": 2279,
+      "avg_turnover": 66.3,
+      "above_mean": 15.2
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "General Surgery \u2014 surgeon change",
+      "dim1": "General Surgery",
+      "dim2": "NO",
+      "cnt": 2580,
+      "avg_turnover": 66.0,
+      "above_mean": 15.0
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Transplant Surgery \u2014 OLLH OR",
+      "dim1": "Transplant Surgery",
+      "dim2": "OLLH OR",
+      "cnt": 2042,
+      "avg_turnover": 65.2,
+      "above_mean": 14.2
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Transplant Surgery \u2014 same surgeon",
+      "dim1": "Transplant Surgery",
+      "dim2": "YES",
+      "cnt": 1718,
+      "avg_turnover": 63.9,
+      "above_mean": 12.9
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Urology \u2014 surgeon change",
+      "dim1": "Urology",
+      "dim2": "NO",
+      "cnt": 1477,
+      "avg_turnover": 62.4,
+      "above_mean": 11.4
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Vascular Surgery \u2014 surgeon change",
+      "dim1": "Vascular Surgery",
+      "dim2": "NO",
+      "cnt": 1292,
+      "avg_turnover": 62.2,
+      "above_mean": 11.2
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "VORH OR \u2014 surgeon change",
+      "dim1": "VORH OR",
+      "dim2": "NO",
+      "cnt": 5312,
+      "avg_turnover": 62.2,
+      "above_mean": 11.2
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Friday \u2014 OLLH OR",
+      "dim1": "Friday",
+      "dim2": "OLLH OR",
+      "cnt": 1445,
+      "avg_turnover": 62.1,
+      "above_mean": 11.1
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Obstetrics and Gynecology \u2014 surgeon change",
+      "dim1": "Obstetrics and Gynecology",
+      "dim2": "NO",
+      "cnt": 3160,
+      "avg_turnover": 61.3,
+      "above_mean": 10.2
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "MARH OR \u2014 surgeon change",
+      "dim1": "MARH OR",
+      "dim2": "NO",
+      "cnt": 2875,
+      "avg_turnover": 61.3,
+      "above_mean": 10.2
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Monday \u2014 OLLH OR",
+      "dim1": "Monday",
+      "dim2": "OLLH OR",
+      "cnt": 1395,
+      "avg_turnover": 61.1,
+      "above_mean": 10.1
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "General Surgery \u2014 OLLH OR",
+      "dim1": "General Surgery",
+      "dim2": "OLLH OR",
+      "cnt": 1493,
+      "avg_turnover": 60.9,
+      "above_mean": 9.9
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Very Long (>180 min) \u2014 VORH OR",
+      "dim1": "Very Long (>180 min)",
+      "dim2": "VORH OR",
+      "cnt": 1218,
+      "avg_turnover": 60.9,
+      "above_mean": 9.9
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Thursday \u2014 OLLH OR",
+      "dim1": "Thursday",
+      "dim2": "OLLH OR",
+      "cnt": 1477,
+      "avg_turnover": 60.3,
+      "above_mean": 9.2
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Orthopaedic Surgery \u2014 VORH JRI OR",
+      "dim1": "Orthopaedic Surgery",
+      "dim2": "VORH JRI OR",
+      "cnt": 4455,
+      "avg_turnover": 58.1,
+      "above_mean": 7.1
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Medium (61-120 min) \u2014 OLLH OR",
+      "dim1": "Medium (61-120 min)",
+      "dim2": "OLLH OR",
+      "cnt": 3943,
+      "avg_turnover": 57.4,
+      "above_mean": 6.4
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Long (121-180 min) \u2014 VORH JRI OR",
+      "dim1": "Long (121-180 min)",
+      "dim2": "VORH JRI OR",
+      "cnt": 3006,
+      "avg_turnover": 57.1,
+      "above_mean": 6.1
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Wednesday \u2014 VORH JRI OR",
+      "dim1": "Wednesday",
+      "dim2": "VORH JRI OR",
+      "cnt": 1199,
+      "avg_turnover": 57.0,
+      "above_mean": 6.0
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Obstetrics and Gynecology \u2014 MEMH OR",
+      "dim1": "Obstetrics and Gynecology",
+      "dim2": "MEMH OR",
+      "cnt": 1098,
+      "avg_turnover": 56.3,
+      "above_mean": 5.2
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Wednesday \u2014 OLLH OR",
+      "dim1": "Wednesday",
+      "dim2": "OLLH OR",
+      "cnt": 1691,
+      "avg_turnover": 56.2,
+      "above_mean": 5.2
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Orthopaedic Surgery \u2014 MEMH OR",
+      "dim1": "Orthopaedic Surgery",
+      "dim2": "MEMH OR",
+      "cnt": 2837,
+      "avg_turnover": 56.1,
+      "above_mean": 5.1
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Monday \u2014 VORH JRI OR",
+      "dim1": "Monday",
+      "dim2": "VORH JRI OR",
+      "cnt": 1380,
+      "avg_turnover": 55.1,
+      "above_mean": 4.1
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Very Long (>180 min) \u2014 MEMH OR",
+      "dim1": "Very Long (>180 min)",
+      "dim2": "MEMH OR",
+      "cnt": 1298,
+      "avg_turnover": 55.0,
+      "above_mean": 4.0
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Medium (61-120 min) \u2014 VORH JRI OR",
+      "dim1": "Medium (61-120 min)",
+      "dim2": "VORH JRI OR",
+      "cnt": 2368,
+      "avg_turnover": 54.7,
+      "above_mean": 3.7
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Orthopaedic Surgery \u2014 same surgeon",
+      "dim1": "Orthopaedic Surgery",
+      "dim2": "YES",
+      "cnt": 6268,
+      "avg_turnover": 54.6,
+      "above_mean": 3.6
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Tuesday \u2014 OLLH OR",
+      "dim1": "Tuesday",
+      "dim2": "OLLH OR",
+      "cnt": 1914,
+      "avg_turnover": 54.4,
+      "above_mean": 3.4
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Short (=60 min) \u2014 OLLH OR",
+      "dim1": "Short (=60 min)",
+      "dim2": "OLLH OR",
+      "cnt": 2168,
+      "avg_turnover": 54.1,
+      "above_mean": 3.1
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "OLLH OR \u2014 same surgeon",
+      "dim1": "OLLH OR",
+      "dim2": "YES",
+      "cnt": 5450,
+      "avg_turnover": 53.9,
+      "above_mean": 2.9
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Long (121-180 min) \u2014 VORH OR",
+      "dim1": "Long (121-180 min)",
+      "dim2": "VORH OR",
+      "cnt": 2645,
+      "avg_turnover": 53.5,
+      "above_mean": 2.5
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Obstetrics and Gynecology \u2014 VORH OR",
+      "dim1": "Obstetrics and Gynecology",
+      "dim2": "VORH OR",
+      "cnt": 4909,
+      "avg_turnover": 52.8,
+      "above_mean": 1.8
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "General Surgery \u2014 VORH OR",
+      "dim1": "General Surgery",
+      "dim2": "VORH OR",
+      "cnt": 2736,
+      "avg_turnover": 52.6,
+      "above_mean": 1.6
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Thursday \u2014 VORH OR",
+      "dim1": "Thursday",
+      "dim2": "VORH OR",
+      "cnt": 2485,
+      "avg_turnover": 52.2,
+      "above_mean": 1.2
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Thursday \u2014 VORH JRI OR",
+      "dim1": "Thursday",
+      "dim2": "VORH JRI OR",
+      "cnt": 1397,
+      "avg_turnover": 52.1,
+      "above_mean": 1.1
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Friday \u2014 VORH JRI OR",
+      "dim1": "Friday",
+      "dim2": "VORH JRI OR",
+      "cnt": 1435,
+      "avg_turnover": 52.0,
+      "above_mean": 1.0
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Tuesday \u2014 VORH OR",
+      "dim1": "Tuesday",
+      "dim2": "VORH OR",
+      "cnt": 2522,
+      "avg_turnover": 52.0,
+      "above_mean": 1.0
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Wednesday \u2014 MEMH OR",
+      "dim1": "Wednesday",
+      "dim2": "MEMH OR",
+      "cnt": 2621,
+      "avg_turnover": 51.3,
+      "above_mean": 0.2
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Long (121-180 min) \u2014 MEMH OR",
+      "dim1": "Long (121-180 min)",
+      "dim2": "MEMH OR",
+      "cnt": 2718,
+      "avg_turnover": 51.2,
+      "above_mean": 0.2
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Medium (61-120 min) \u2014 VORH OR",
+      "dim1": "Medium (61-120 min)",
+      "dim2": "VORH OR",
+      "cnt": 4654,
+      "avg_turnover": 51.1,
+      "above_mean": 0.1
+    }
+  ]
+}

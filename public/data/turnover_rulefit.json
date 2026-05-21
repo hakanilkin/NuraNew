@@ -1,80 +1,191 @@
 {
-  "model_name": "RuleFit",
-  "trained_at": "2026-05-18T20:23:24.177830+00:00",
-  "target_description": "OR room turnover time in minutes between consecutive cases. The prediction field is the rule's coefficient: positive values indicate association with longer turnovers, negative with shorter. Trained on filtered dataset excluding endoscopy suites, low-volume ORs, and WILH OR Gastroenterology cases.",
+  "model_name": "RuleFitClassifier",
+  "trained_at": "2026-05-19T20:26:07.665686+00:00",
+  "target_description": "Identifies conditions associated with turnovers exceeding 45 minutes at hospital OR locations. System average is 51 minutes; aspirational goal is 30 minutes. coef > 0 (direction=risk) means the rule is associated with longer turnovers; coef < 0 (direction=protective) means associated with staying under target. Trained on filtered dataset excluding endoscopy suites, low-volume ORs, and WILH OR Gastroenterology cases.",
+  "threshold_minutes": 45,
   "n_training_samples": 37491,
+  "n_above_threshold": 22752,
+  "n_below_threshold": 24112,
   "rules": [
     {
-      "rule": "Turnover_Maxnumofcasesinroom > 2.5 & Turnover_NextCaseSameSurgeon > 0.5 & Case_SurgeonService > 29.5",
-      "importance": 2.0249,
-      "support": 0.142,
-      "support_count": 5322,
-      "prediction": -5.802,
-      "total_impact": 38597,
-      "plain_english": "Cases in Room That Day > 2 & back-to-back cases by the same surgeon & for Urology or Vascular Surgery cases"
+      "rule": "Sched_SchedDur <= 117.5 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom > 3.5",
+      "importance": 0.4582,
+      "support": 0.3376,
+      "support_count": 12658,
+      "coef": -0.9688,
+      "direction": "protective",
+      "plain_english": "Scheduled Duration \u2264 117 & back-to-back cases by the same surgeon & Cases in Room That Day > 3"
     },
     {
-      "rule": "Case_SurgeonService > 15.5 & Turnover_Maxnumofcasesinroom > 2.5 & Case_SurgeonService <= 29.5 & Loc_ORGrp2 <= 3.5 & Turnover_NextCaseSameSurgeon > 0.5 & Case_ASACode <= 2.5 & Turnover_Maxnumofcasesinroom <= 6.5",
-      "importance": 1.0729,
-      "support": 0.1776,
-      "support_count": 6660,
-      "prediction": 2.807,
-      "total_impact": 23368,
-      "plain_english": "for mid-range service lines & Cases in Room That Day between 3 and 6 & at locations other than VORH OR or WILH OR & back-to-back cases by the same surgeon & for lower acuity patients (ASA 1-3)"
+      "rule": "Sched_SchedDur <= 90.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.4051,
+      "support": 0.3687,
+      "support_count": 13824,
+      "coef": -0.8397,
+      "direction": "protective",
+      "plain_english": "Scheduled Duration \u2264 90 & back-to-back cases by the same surgeon"
     },
     {
-      "rule": "Turnover_NextCaseSameSurgeon > 0.5 & Turnover_Maxnumofcasesinroom > 3.5 & Sched_SchedDur > 27.0",
-      "importance": 0.9739,
-      "support": 0.3933,
-      "support_count": 14747,
-      "prediction": 1.9936,
-      "total_impact": 36750,
-      "plain_english": "back-to-back cases by the same surgeon & Cases in Room That Day > 3 & Scheduled Duration > 27"
+      "rule": "Case_SurgeonService > 3.0 and Sched_SchedDur > 127.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.3571,
+      "support": 0.177,
+      "support_count": 6635,
+      "coef": 0.9358,
+      "direction": "risk",
+      "plain_english": "for all other service lines & Scheduled Duration > 127 & back-to-back cases by the same surgeon"
     },
     {
-      "rule": "Turnover_Maxnumofcasesinroom > 2.5 & Case_SurgeonService <= 29.5 & Case_SurgeonService <= 15.5 & Turnover_NextCaseSameSurgeon > 0.5 & Case_ASACode <= 2.5 & Turnover_Maxnumofcasesinroom <= 6.5",
-      "importance": 0.9101,
-      "support": 0.2506,
-      "support_count": 9395,
-      "prediction": -2.1002,
-      "total_impact": 24665,
-      "plain_english": "Cases in Room That Day between 3 and 6 & for all other service lines & for all other service lines & back-to-back cases by the same surgeon & for lower acuity patients (ASA 1-3)"
+      "rule": "Sched_SchedDur > 117.5 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom > 3.5",
+      "importance": 0.2903,
+      "support": 0.0665,
+      "support_count": 2492,
+      "coef": -1.1656,
+      "direction": "protective",
+      "plain_english": "Scheduled Duration > 117 & back-to-back cases by the same surgeon & Cases in Room That Day > 3"
     },
     {
-      "rule": "Turnover_Maxnumofcasesinroom <= 4.5 & Turnover_Maxnumofcasesinroom > 3.5 & Sched_SchedDur <= 237.5 & Turnover_NextCaseSameSurgeon > 0.5 & Case_ASACode <= 2.5",
-      "importance": 0.828,
-      "support": 0.1998,
-      "support_count": 7492,
-      "prediction": -2.0707,
-      "total_impact": 19392,
-      "plain_english": "exactly 4 cases in room & Scheduled Duration \u2264 237 & back-to-back cases by the same surgeon & for lower acuity patients (ASA 1-3)"
+      "rule": "Case_SurgeonService <= 3.0 and Sched_SchedDur > 78.0 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.238,
+      "support": 0.0356,
+      "support_count": 1336,
+      "coef": -1.2836,
+      "direction": "protective",
+      "plain_english": "for Bariatrics, Breast Surgery, Cardiac Surgery Intensivist, and 1 others & Scheduled Duration > 78 & back-to-back cases by the same surgeon"
     },
     {
-      "rule": "Sched_SchedDur <= 187.5 & Turnover_NextCaseSameSurgeon <= 0.5",
-      "importance": 0.6707,
-      "support": 0.2506,
-      "support_count": 9395,
-      "prediction": 1.5477,
-      "total_impact": 18176,
-      "plain_english": "Scheduled Duration \u2264 187 & surgeon change between cases"
+      "rule": "Sched_SchedDur <= 105.5 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom > 5.5",
+      "importance": 0.2371,
+      "support": 0.0811,
+      "support_count": 3040,
+      "coef": 0.8684,
+      "direction": "risk",
+      "plain_english": "Scheduled Duration \u2264 105 & back-to-back cases by the same surgeon & Cases in Room That Day > 5"
     },
     {
-      "rule": "Turnover_NextCaseSameSurgeon > 0.5 & Sched_SchedDur > 87.5 & Case_SurgeonService > 3.0",
-      "importance": 0.5284,
-      "support": 0.36,
-      "support_count": 13498,
-      "prediction": 1.1008,
-      "total_impact": 18574,
-      "plain_english": "back-to-back cases by the same surgeon & Scheduled Duration > 87 & for all other service lines"
+      "rule": "Loc_ORGrp2 > 1.5 and Sched_SchedDur <= 174.5 and Sched_SchedDur > 90.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.216,
+      "support": 0.159,
+      "support_count": 5960,
+      "coef": 0.5907,
+      "direction": "risk",
+      "plain_english": "at OLLH OR, VORH JRI OR, VORH OR, or WILH OR & Scheduled Duration between 91 and 174 & back-to-back cases by the same surgeon"
     },
     {
-      "rule": "Turnover_NextCaseSameSurgeon > 0.5 & Turnover_Maxnumofcasesinroom <= 5.5 & Turnover_Maxnumofcasesinroom > 3.5",
-      "importance": 0.5024,
-      "support": 0.3077,
-      "support_count": 11536,
-      "prediction": -1.0885,
-      "total_impact": 15695,
-      "plain_english": "back-to-back cases by the same surgeon & Cases in Room That Day between 4 and 5"
+      "rule": "Sched_SchedDur <= 91.5 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom > 5.5",
+      "importance": 0.2078,
+      "support": 0.0779,
+      "support_count": 2921,
+      "coef": -0.7751,
+      "direction": "protective",
+      "plain_english": "Scheduled Duration \u2264 91 & back-to-back cases by the same surgeon & Cases in Room That Day > 5"
+    },
+    {
+      "rule": "Case_SurgeonService > 28.5 and Sched_SchedDur <= 94.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.2061,
+      "support": 0.1306,
+      "support_count": 4898,
+      "coef": -0.6116,
+      "direction": "protective",
+      "plain_english": "for Urogynecology, Urology, or Vascular Surgery cases & Scheduled Duration \u2264 94 & back-to-back cases by the same surgeon"
+    },
+    {
+      "rule": "Sched_SchedDur <= 91.0 and Turnover_NextCaseSameSurgeon <= 0.5",
+      "importance": 0.205,
+      "support": 0.1485,
+      "support_count": 5567,
+      "coef": -0.5764,
+      "direction": "protective",
+      "plain_english": "Scheduled Duration \u2264 91 & surgeon change between cases"
+    },
+    {
+      "rule": "Sched_SchedDur <= 91.5 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom <= 5.5",
+      "importance": 0.1934,
+      "support": 0.2911,
+      "support_count": 10913,
+      "coef": 0.4258,
+      "direction": "risk",
+      "plain_english": "Scheduled Duration \u2264 91 & back-to-back cases by the same surgeon & Cases in Room That Day \u2264 5"
+    },
+    {
+      "rule": "Case_SurgeonService <= 18.5 and Case_SurgeonService > 17.0 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom > 3.5",
+      "importance": 0.1882,
+      "support": 0.0406,
+      "support_count": 1522,
+      "coef": 0.9534,
+      "direction": "risk",
+      "plain_english": "for mid-range service lines & back-to-back cases by the same surgeon & Cases in Room That Day > 3"
+    },
+    {
+      "rule": "Case_SurgeonService <= 2.5 and Sched_SchedDur > 94.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.1855,
+      "support": 0.0257,
+      "support_count": 965,
+      "coef": 1.1717,
+      "direction": "risk",
+      "plain_english": "for Bariatrics, Breast Surgery, or Cardiac Surgery Intensivist cases & Scheduled Duration > 94 & back-to-back cases by the same surgeon"
+    },
+    {
+      "rule": "Loc_ORGrp2 <= 1.5 and Sched_SchedDur > 90.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.1808,
+      "support": 0.1543,
+      "support_count": 5785,
+      "coef": 0.5005,
+      "direction": "risk",
+      "plain_english": "at locations other than OLLH OR, VORH JRI OR, VORH OR, or WILH OR & Scheduled Duration > 90 & back-to-back cases by the same surgeon"
+    },
+    {
+      "rule": "Sched_SchedDur > 91.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.165,
+      "support": 0.3506,
+      "support_count": 13145,
+      "coef": -0.3459,
+      "direction": "protective",
+      "plain_english": "Scheduled Duration > 91 & back-to-back cases by the same surgeon"
+    },
+    {
+      "rule": "Sched_SchedDur <= 92.5 and Turnover_NextCaseSameSurgeon <= 0.5",
+      "importance": 0.1387,
+      "support": 0.1487,
+      "support_count": 5575,
+      "coef": 0.3898,
+      "direction": "risk",
+      "plain_english": "Scheduled Duration \u2264 92 & surgeon change between cases"
+    },
+    {
+      "rule": "Loc_ORGrp2 > 1.5 and Sched_SchedDur > 174.5 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.1384,
+      "support": 0.0376,
+      "support_count": 1410,
+      "coef": 0.7277,
+      "direction": "risk",
+      "plain_english": "at OLLH OR, VORH JRI OR, VORH OR, or WILH OR & Scheduled Duration > 174 & back-to-back cases by the same surgeon"
+    },
+    {
+      "rule": "Case_SurgeonService <= 26.5 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom > 3.5",
+      "importance": 0.1352,
+      "support": 0.2536,
+      "support_count": 9506,
+      "coef": -0.3108,
+      "direction": "protective",
+      "plain_english": "for all other service lines & back-to-back cases by the same surgeon & Cases in Room That Day > 3"
+    },
+    {
+      "rule": "Sched_SchedDur <= 91.0 and Turnover_NextCaseSameSurgeon > 0.5",
+      "importance": 0.1343,
+      "support": 0.369,
+      "support_count": 13834,
+      "coef": 0.2782,
+      "direction": "risk",
+      "plain_english": "Scheduled Duration \u2264 91 & back-to-back cases by the same surgeon"
+    },
+    {
+      "rule": "Case_SurgeonService > 28.5 and Turnover_NextCaseSameSurgeon > 0.5 and Turnover_Maxnumofcasesinroom > 3.5",
+      "importance": 0.1301,
+      "support": 0.128,
+      "support_count": 4799,
+      "coef": 0.3894,
+      "direction": "risk",
+      "plain_english": "for Urogynecology, Urology, or Vascular Surgery cases & back-to-back cases by the same surgeon & Cases in Room That Day > 3"
     }
   ]
 }
