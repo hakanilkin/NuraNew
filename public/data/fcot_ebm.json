@@ -1,8 +1,10 @@
 {
   "model_name": "ExplainableBoostingRegressor",
-  "trained_at": "2026-05-17T18:22:39.265145+00:00",
+  "trained_at": "2026-05-22T14:08:29.923144+00:00",
   "target_description": "Actual OR start time minus scheduled start time (minutes). Negative = started early; positive = started late.",
   "n_training_samples": 36098,
+  "system_mean": 7.9,
+  "system_median": 0.0,
   "feature_importance": [
     {
       "feature": "Case_AddOnCode",

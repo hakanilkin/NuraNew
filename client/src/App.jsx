@@ -20,6 +20,7 @@ import Capacity         from './pages/Capacity'
 import BlockUtilization from './pages/BlockUtilization'
 import AtlasFCOT        from './pages/AtlasFCOT'
 import AtlasTurnover    from './pages/AtlasTurnover'
+import AtlasDODC        from './pages/AtlasDODC'
 import AskNura          from './pages/AskNura'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
@@ -372,6 +373,7 @@ function Sidebar() {
           <NavGroup opacity={0.09}>
             <LeafLink to="/atlas/fcot">FCOT Drivers</LeafLink>
             <LeafLink to="/atlas/turnover">Turnover Time</LeafLink>
+            <LeafLink to="/atlas/do-dc">DO→DC Time</LeafLink>
           </NavGroup>
         )}
         <NavLink to="/ask-nura" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
@@ -443,6 +445,7 @@ function Shell() {
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
           <Route path="/atlas/fcot"        element={<AtlasFCOT />} />
           <Route path="/atlas/turnover"    element={<AtlasTurnover />} />
+          <Route path="/atlas/do-dc"       element={<AtlasDODC />} />
           <Route path="/ask-nura"          element={<AskNura />} />
           <Route path="/forecasts"         element={<PlaceholderPage title="Forecasts" />} />
         </Routes>

@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
-  Brain, Zap, BarChart3, GitMerge, Calendar, Database,
-  AlertCircle, ChevronDown, RefreshCw, Mail,
+  BarChart3, AlertCircle, ChevronDown,
 } from 'lucide-react'
 
 /* ─── Constants ─────────────────────────────────────────────────────────────── */
@@ -61,20 +60,6 @@ function badge(rank) {
   if (rank <= BADGE_THRESHOLD.MED)  return { label: 'Medium', bg: 'rgba(234,179,8,0.12)',   color: '#b45309' }
   return                                   { label: 'Low',    bg: 'rgba(148,163,184,0.12)', color: '#64748b' }
 }
-
-function fmtDate(iso) {
-  if (!iso) return '—'
-  try {
-    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  } catch { return iso }
-}
-
-function fmtMAE(v) {
-  if (v == null) return '—'
-  return `${Number(v).toFixed(1)} min`
-}
-
-function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)) }
 
 // Resolve axis labels from labels array (preferred) or values array (fallback)
 function axisLabels(labels, values) {
@@ -365,64 +350,47 @@ function InteractionTile({ ix, expanded, onToggle, narrative, narrativeLoading }
 /* ─── Shape Bar ─────────────────────────────────────────────────────────────── */
 
 function ShapeBar({ label, score, maxAbs }) {
-  const pct   = maxAbs > 0 ? clamp(Math.abs(score) / maxAbs, 0, 1) * 100 : 0
-  const isPos = score >= 0
-  const color = isPos ? '#ef4444' : '#3b82f6'
+  const isPos    = score >= 0
+  const color    = isPos ? '#ef4444' : '#3b82f6'
+  const frac     = maxAbs > 0 ? Math.min(Math.abs(score) / maxAbs, 1) : 0
+  const barW     = Math.max(frac * 200, 2)
+  const valLabel = `${isPos ? '+' : '−'}${Math.abs(score).toFixed(1)} min`
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: '3px 0' }}>
+    <div style={{ display: 'flex', alignItems: 'center', padding: '2px 0' }}>
+      {/* Zone 1 — category label: 180px content + 12px right-padding = 192px total */}
       <div style={{
-        minWidth: 140, width: 140, fontSize: 'var(--font-size-xs)',
-        color: 'var(--color-gray-600)',
-        flexShrink: 0, textAlign: 'right',
-        lineHeight: 1.35, wordBreak: 'break-word',
+        width: 180, flexShrink: 0, paddingRight: 12, boxSizing: 'content-box',
+        fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)',
+        textAlign: 'right', lineHeight: 1.35,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
         {label}
       </div>
-      <div style={{
-        flex: 1, height: 16,
-        background: 'var(--color-gray-100)',
-        borderRadius: 3, overflow: 'hidden', position: 'relative',
-      }}>
+      {/* Zone 2 — track: 400px, zero at left 200px */}
+      <div style={{ width: 400, flexShrink: 0, height: 20, position: 'relative' }}>
         <div style={{
-          position: 'absolute', left: 0, top: 0,
-          height: '100%', width: `${pct}%`,
-          background: color, borderRadius: 3,
-          transition: 'width 200ms ease',
+          position: 'absolute', top: 3, height: 14,
+          left: isPos ? 200 : 200 - barW,
+          width: barW,
+          background: color,
+          borderRadius: isPos ? '0 3px 3px 0' : '3px 0 0 3px',
+          zIndex: 1,
         }} />
       </div>
+      {/* Zone 3 — value label: always outside track to the right */}
       <div style={{
-        width: 52, fontSize: 'var(--font-size-xs)',
-        fontWeight: 'var(--font-weight-semibold)',
-        color, textAlign: 'right', flexShrink: 0,
-        fontVariantNumeric: 'tabular-nums',
+        minWidth: 70, flexShrink: 0, paddingLeft: 8,
+        fontSize: 11, fontWeight: 500, color,
+        fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
       }}>
-        {isPos ? '+' : ''}{score.toFixed(1)}m
+        {valLabel}
       </div>
     </div>
   )
 }
 
 /* ─── Meta Pill ─────────────────────────────────────────────────────────────── */
-
-function MetaPill({ icon: Icon, label, value }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-      padding: 'var(--space-2) var(--space-3)',
-      background: 'var(--color-gray-50)',
-      border: '1px solid var(--surface-border)',
-      borderRadius: 'var(--radius-full)',
-      fontSize: 'var(--font-size-xs)',
-      color: 'var(--color-gray-600)',
-      whiteSpace: 'nowrap',
-    }}>
-      {Icon && <Icon size={13} style={{ color: 'var(--color-blue)', flexShrink: 0 }} />}
-      <span style={{ color: 'var(--color-gray-400)' }}>{label}</span>
-      <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-gray-700)' }}>{value}</span>
-    </div>
-  )
-}
 
 /* ─── Importance Bar ────────────────────────────────────────────────────────── */
 
@@ -848,10 +816,6 @@ export default function AtlasTurnover() {
       .finally(() => setIxLoadings(prev => ({ ...prev, [key]: false })))
   }
 
-  function sendPrompt() {
-    console.log('Regenerate narrative — endpoint not yet wired')
-  }
-
   /* ── Loading / Error states (model only — gates the Drivers tab) ── */
   if (loading) {
     return (
@@ -938,67 +902,33 @@ export default function AtlasTurnover() {
       {/* ─── Drivers tab ──────────────────────────────────────────────────────── */}
       {activeTab === 'drivers' && (
         <>
-          {/* Section 1: Model Header */}
-          <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
-            <div className="card-header" style={{ alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-blue)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, boxShadow: 'var(--shadow-blue)',
-                  }}>
-                    <Brain size={18} style={{ color: 'white' }} />
-                  </div>
-                  <div>
-                    <div className="card-title" style={{ marginBottom: 0 }}>OR Turnover Time</div>
-                    <div className="card-subtitle" style={{ marginTop: 2 }}>
-                      Explainable Boosting Regressor · Predicts room turnover time between consecutive cases
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-                  <MetaPill icon={Database} label="Training samples" value={model.n_training_samples?.toLocaleString() ?? '—'} />
-                  <MetaPill icon={BarChart3} label="MAE"             value={fmtMAE(model.model_stats?.mae)} />
-                  <MetaPill icon={Zap}       label="Features"        value={mainEffects.length} />
-                  <MetaPill icon={GitMerge}  label="Interactions"    value={interactions.length} />
-                  <MetaPill icon={Calendar}  label="Trained"         value={fmtDate(model.trained_at)} />
-                </div>
-
-                <p style={{
-                  marginTop: 'var(--space-5)',
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-gray-600)',
-                  lineHeight: 'var(--line-height-relaxed)',
-                  maxWidth: 720,
-                }}>
-                  This analysis identifies factors associated with OR turnover time variance — it shows
-                  statistical relationships in your data, not causal explanations. Red indicates association with
-                  longer turnovers; blue with shorter turnovers.
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
-                <button
-                  className="btn btn-ghost"
-                  onClick={sendPrompt}
-                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}
-                >
-                  <RefreshCw size={14} />
-                  Regenerate
-                </button>
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => {}}
-                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}
-                >
-                  <Mail size={14} />
-                  Email briefing
-                </button>
-              </div>
-            </div>
+          {/* Section 1: Stat cards */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 'var(--space-4)',
+            marginBottom: 'var(--space-6)',
+          }}>
+            <ComboStatCard
+              label="Cases Analyzed"
+              value={model.n_training_samples?.toLocaleString() ?? '—'}
+              sub="Hospital OR cases"
+            />
+            <ComboStatCard
+              label="Median Turnover"
+              value={model.system_median != null ? `${model.system_median} min` : '—'}
+              sub="Midpoint across all cases"
+            />
+            <ComboStatCard
+              label="Mean Turnover"
+              value={model.system_mean != null ? `${model.system_mean} min` : '—'}
+              sub="Average across all cases"
+            />
+            <ComboStatCard
+              label="Top Driver"
+              value={model.feature_importance?.[0]?.feature ? featName(model.feature_importance[0].feature) : '—'}
+              sub="Highest importance factor"
+            />
           </div>
 
           {/* Key Findings */}
@@ -1138,7 +1068,7 @@ export default function AtlasTurnover() {
                         How <em>{featName(selectedSF.feature)}</em> affects turnover time
                       </div>
                       <div className="card-subtitle">
-                        Positive values (red) = longer turnover · Negative values (blue) = shorter turnover · Units: minutes
+                        Values show minutes above (red) or below (blue) the system average{model.system_mean != null ? ` of ${model.system_mean} min` : ''}
                       </div>
                     </div>
                   </div>
@@ -1148,10 +1078,27 @@ export default function AtlasTurnover() {
                         No shape data available
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {sfEntries.map((e, i) => (
-                          <ShapeBar key={i} label={e.label} score={e.score} maxAbs={sfMaxAbs} />
-                        ))}
+                      <div style={{ position: 'relative', padding: '16px 0' }}>
+                        {/* Full-height zero line spanning all rows */}
+                        <div style={{
+                          position: 'absolute', left: 392, top: 0, bottom: 0,
+                          width: 1, background: 'var(--color-gray-200)',
+                          zIndex: 0, pointerEvents: 'none',
+                        }} />
+                        {/* Avg label at top of zero line */}
+                        <div style={{
+                          position: 'absolute', left: 392, top: 0,
+                          transform: 'translateX(-50%)',
+                          fontSize: 9, color: 'var(--color-gray-400)',
+                          whiteSpace: 'nowrap', fontWeight: 600, lineHeight: 1,
+                        }}>
+                          {model.system_mean != null ? `avg ${model.system_mean} min` : 'avg'}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {sfEntries.map((e, i) => (
+                            <ShapeBar key={i} label={e.label} score={e.score} maxAbs={sfMaxAbs} />
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

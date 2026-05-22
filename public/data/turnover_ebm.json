@@ -3,6 +3,8 @@
   "trained_at": "2026-05-18T13:27:25.748960+00:00",
   "target_description": "Average room turnover time in minutes between consecutive cases \u2014 wheels out to wheels in for the same OR room.",
   "n_training_samples": 74184,
+  "system_mean": 51.1,
+  "system_median": 45,
   "feature_importance": [
     {
       "feature": "Turnover_NextCaseSameSurgeon",

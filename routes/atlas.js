@@ -118,6 +118,26 @@ ${topRows}`;
   }
 });
 
+// GET /api/atlas/do-dc-overall
+router.get('/do-dc-overall', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/data/do_dc_overall_ebm.json'));
+});
+
+// GET /api/atlas/do-dc-home
+router.get('/do-dc-home', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/data/do_dc_home_ebm.json'));
+});
+
+// GET /api/atlas/do-dc-snf
+router.get('/do-dc-snf', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/data/do_dc_snf_ebm.json'));
+});
+
+// GET /api/atlas/do-dc-hh
+router.get('/do-dc-hh', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/data/do_dc_hh_ebm.json'));
+});
+
 // GET /api/atlas/turnover-combinations
 router.get('/turnover-combinations', (_req, res) => {
   try {

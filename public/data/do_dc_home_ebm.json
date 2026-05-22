@@ -1,10 +1,11 @@
 {
   "model_name": "ExplainableBoostingRegressor",
-  "trained_at": "2026-05-22T13:03:04.864082+00:00",
+  "trained_at": "2026-05-22T13:29:09.780621+00:00",
   "target_description": "Regression \u2014 predicts minutes from discharge order to departure for home-bound patients at OLLH",
   "hospital": "Our Lady of Lourdes Hospital",
   "disposition": "Home",
   "system_mean": 189.3,
+  "system_median": 163.0,
   "n_training_samples": 9535,
   "feature_importance": [
     {

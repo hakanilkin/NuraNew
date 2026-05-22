@@ -412,6 +412,9 @@ print("=" * 60)
 print("Step 7: Saving output to public/data/fcot_ebm.json...")
 print("=" * 60)
 
+system_mean   = round(float(y.mean()), 1)
+system_median = round(float(y.median()), 1)
+
 output = {
     "model_name":         "ExplainableBoostingRegressor",
     "trained_at":         datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -420,6 +423,8 @@ output = {
         "Negative = started early; positive = started late."
     ),
     "n_training_samples": int(len(X_train)),
+    "system_mean":        system_mean,
+    "system_median":      system_median,
     "feature_importance": feature_importance,
     "shape_functions":    shape_functions,
     "interactions":       interactions,

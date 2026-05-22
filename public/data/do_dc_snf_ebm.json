@@ -1,10 +1,11 @@
 {
   "model_name": "ExplainableBoostingRegressor",
-  "trained_at": "2026-05-22T13:03:05.327065+00:00",
+  "trained_at": "2026-05-22T13:29:10.351529+00:00",
   "target_description": "Regression \u2014 predicts minutes from discharge order to departure for SNF-bound patients at OLLH",
   "hospital": "Our Lady of Lourdes Hospital",
   "disposition": "SNF",
   "system_mean": 1018.6,
+  "system_median": 516.0,
   "n_training_samples": 1970,
   "feature_importance": [
     {

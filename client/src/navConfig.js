@@ -35,6 +35,7 @@ const navConfig = [
     children: [
       { id: 'atlas-fcot',     label: 'FCOT Drivers',  type: 'link', path: '/atlas/fcot' },
       { id: 'atlas-turnover', label: 'Turnover Time',  type: 'link', path: '/atlas/turnover' },
+      { id: 'atlas-dodc',     label: 'DO→DC Time',    type: 'link', path: '/atlas/do-dc' },
     ],
   },
   {

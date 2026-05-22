@@ -558,7 +558,8 @@ for model_cfg in MODELS:
     print()
     print(f"Step 7 [{dispo}]: Saving to public/data/{model_cfg['out_file']}...")
 
-    system_mean = round(float(df_filtered[TARGET].mean()), 1)
+    system_mean   = round(float(df_filtered[TARGET].mean()), 1)
+    system_median = round(float(df_filtered[TARGET].median()), 1)
 
     output = {
         'model_name':         'ExplainableBoostingRegressor',
@@ -567,6 +568,7 @@ for model_cfg in MODELS:
         'hospital':           'Our Lady of Lourdes Hospital',
         'disposition':        model_cfg['disposition'],
         'system_mean':        system_mean,
+        'system_median':      system_median,
         'n_training_samples': int(len(X_train)),
         'feature_importance': feature_importance,
         'shape_functions':    shape_functions,

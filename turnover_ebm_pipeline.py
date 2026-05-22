@@ -178,6 +178,30 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 out_dir    = os.path.join(script_dir, "public", "data")
 os.makedirs(out_dir, exist_ok=True)
 
+# ── Step 4a: Patch system_mean / system_median into turnover_ebm.json ─────────
+
+print()
+print("=" * 60)
+print("Step 4a: Patching system stats into turnover_ebm.json...")
+print("=" * 60)
+
+system_mean   = round(float(y.mean()), 1)
+system_median = round(float(y.median()), 1)
+print(f"  system_mean  : {system_mean} min")
+print(f"  system_median: {system_median} min")
+
+_ebm_path = os.path.join(out_dir, "turnover_ebm.json")
+if os.path.exists(_ebm_path):
+    with open(_ebm_path, "r", encoding="utf-8") as f:
+        _ebm = json.load(f)
+    _ebm["system_mean"]   = system_mean
+    _ebm["system_median"] = system_median
+    with open(_ebm_path, "w", encoding="utf-8") as f:
+        json.dump(_ebm, f, indent=2, allow_nan=False)
+    print(f"  Patched: {_ebm_path}")
+else:
+    print(f"  WARNING: {_ebm_path} not found — skipping patch")
+
 
 # ── Step 4b: RuleFit-specific filtered dataset ────────────────────────────────
 
