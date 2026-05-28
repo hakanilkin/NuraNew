@@ -13,14 +13,14 @@ import {
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
 import navConfig from './navConfig'
-import NuraLogo from './assets/nura-logo.svg'
 import Login            from './pages/Login'
 import ORPerformance    from './pages/ORPerformance'
 import Capacity         from './pages/Capacity'
 import BlockUtilization from './pages/BlockUtilization'
 import AtlasFCOT        from './pages/AtlasFCOT'
 import AtlasTurnover    from './pages/AtlasTurnover'
-import AtlasDODC        from './pages/AtlasDODC'
+import AtlasDODC          from './pages/AtlasDODC'
+import AtlasBedPlacement  from './pages/AtlasBedPlacement'
 import AskNura          from './pages/AskNura'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
@@ -295,7 +295,7 @@ function Sidebar() {
 
       {/* ── Logo ── */}
       <div className="sidebar-logo">
-        <img src={NuraLogo} alt="Nura" style={{ height: 32, width: 'auto' }} />
+        <img src="/nura-logo.svg" alt="Nura" style={{ height: 28, width: 'auto' }} />
       </div>
 
       {/* ── Nav ── */}
@@ -374,6 +374,7 @@ function Sidebar() {
             <LeafLink to="/atlas/fcot">FCOT Drivers</LeafLink>
             <LeafLink to="/atlas/turnover">Turnover Time</LeafLink>
             <LeafLink to="/atlas/do-dc">DO→DC Time</LeafLink>
+            <LeafLink to="/atlas/bed-placement">Bed Placement</LeafLink>
           </NavGroup>
         )}
         <NavLink to="/ask-nura" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
@@ -445,7 +446,8 @@ function Shell() {
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
           <Route path="/atlas/fcot"        element={<AtlasFCOT />} />
           <Route path="/atlas/turnover"    element={<AtlasTurnover />} />
-          <Route path="/atlas/do-dc"       element={<AtlasDODC />} />
+          <Route path="/atlas/do-dc"            element={<AtlasDODC />} />
+          <Route path="/atlas/bed-placement"    element={<AtlasBedPlacement />} />
           <Route path="/ask-nura"          element={<AskNura />} />
           <Route path="/forecasts"         element={<PlaceholderPage title="Forecasts" />} />
         </Routes>

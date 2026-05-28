@@ -59,6 +59,25 @@ function isBadLabel(l) {
   return SF_LABEL_FILTER.has(s) || /^-\d+(\.\d+)?$/.test(s)
 }
 
+function formatShapeLabel(feature, rawValue) {
+  const v = parseFloat(rawValue)
+  if (isNaN(v)) return String(rawValue)
+  if (feature === 'HOUR_OF_DAY') {
+    const h = Math.round(v) % 24
+    if (h === 0)  return '12am'
+    if (h < 12)   return `${h}am`
+    if (h === 12) return '12pm'
+    return `${h - 12}pm`
+  }
+  const PCT_FEATS = new Set([
+    'OCC_PCT', 'CONSTRAINED_PCT', 'HOSPITAL_OCC_7AM',
+    'PCT_DC_ORDERS_BY_11', 'PCT_DC_BY_2PM',
+  ])
+  if (PCT_FEATS.has(feature)) return `${Math.round(v * 100)}%`
+  if (feature === 'HOSPITAL_CENSUS_7AM' || feature === 'AVAILABLE_BEDS') return String(Math.round(v))
+  if (feature === 'DRG_FINALDRGWEIGHT') return v.toFixed(1)
+  return v.toFixed(1)
+}
 
 /* ─── Shared sub-components ──────────────────────────────────────────────────── */
 
@@ -402,7 +421,7 @@ function ModelTabContent({ tabKey, model, loading, error, selectedFeat, onSelect
       .map(i => ({
         label: isCat
           ? (selectedSF.x_labels?.[i] ?? String(selectedSF.x_values?.[i] ?? i))
-          : (selectedSF.x_values?.[i] != null ? Number(selectedSF.x_values[i]).toFixed(1) : String(i)),
+          : (selectedSF.x_values?.[i] != null ? formatShapeLabel(selectedSF.feature, selectedSF.x_values[i]) : String(i)),
         score: scores[i],
       }))
       .filter(e => !isBadLabel(e.label))

@@ -119,23 +119,57 @@ ${topRows}`;
 });
 
 // GET /api/atlas/do-dc-overall
-router.get('/do-dc-overall', (req, res) => {
+router.get('/do-dc-overall', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/data/do_dc_overall_ebm.json'));
 });
 
 // GET /api/atlas/do-dc-home
-router.get('/do-dc-home', (req, res) => {
+router.get('/do-dc-home', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/data/do_dc_home_ebm.json'));
 });
 
 // GET /api/atlas/do-dc-snf
-router.get('/do-dc-snf', (req, res) => {
+router.get('/do-dc-snf', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/data/do_dc_snf_ebm.json'));
 });
 
 // GET /api/atlas/do-dc-hh
-router.get('/do-dc-hh', (req, res) => {
+router.get('/do-dc-hh', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/data/do_dc_hh_ebm.json'));
+});
+
+// GET /api/atlas/bed-placement-model
+router.get('/bed-placement-model', (_req, res) => {
+  try {
+    res.json(readJsonFile('bed_placement_ebm.json'));
+  } catch (err) {
+    if (err.message === 'not_found') {
+      return res.status(404).json({ error: 'Model file not found — run bed_placement_pipeline.py first' });
+    }
+    if (err instanceof SyntaxError) {
+      console.error('/api/atlas/bed-placement-model parse error:', err.message);
+      return res.status(500).json({ error: 'Model file is corrupted or not valid JSON' });
+    }
+    console.error('/api/atlas/bed-placement-model read error:', err.message);
+    res.status(500).json({ error: 'Could not read model file' });
+  }
+});
+
+// GET /api/atlas/bed-placement-combinations
+router.get('/bed-placement-combinations', (_req, res) => {
+  try {
+    res.json(readJsonFile('bed_placement_combinations.json'));
+  } catch (err) {
+    if (err.message === 'not_found') {
+      return res.json({ combinations: [], system_mean: 0 });
+    }
+    if (err instanceof SyntaxError) {
+      console.error('/api/atlas/bed-placement-combinations parse error:', err.message);
+      return res.status(500).json({ error: 'Combinations file is corrupted or not valid JSON' });
+    }
+    console.error('/api/atlas/bed-placement-combinations read error:', err.message);
+    res.status(500).json({ error: 'Could not read combinations file' });
+  }
 });
 
 // GET /api/atlas/turnover-combinations

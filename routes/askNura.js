@@ -260,6 +260,124 @@ module.exports = function askNuraRoutes(getPool, sql) {
     }
   }
 
+  function tool_getBedPlacementSummary() {
+    try {
+      const raw   = fs.readFileSync(path.join(DATA_DIR, 'bed_placement_ebm.json'), 'utf8');
+      const model = JSON.parse(raw);
+      const nAbove = model.n_above_threshold ?? 0;
+      const nBelow = model.n_below_threshold ?? 0;
+      const total  = nAbove + nBelow;
+      return {
+        total_cases:        total,
+        pct_above_target:   total > 0 ? Math.round((nAbove / total) * 1000) / 10 : 0,
+        avg_assignment_min: Math.round((model.system_mean ?? 0) * 10) / 10,
+        threshold_minutes:  30,
+        model_auc:          Math.round((model.model_stats?.auc ?? 0) * 1000) / 1000,
+      };
+    } catch (e) {
+      return { error: 'Bed placement model file not found. Run bed_placement_pipeline.py first.' };
+    }
+  }
+
+  function tool_getAssignmentDrivers() {
+    try {
+      const raw    = fs.readFileSync(path.join(DATA_DIR, 'bed_placement_ebm.json'), 'utf8');
+      const model  = JSON.parse(raw);
+      const drivers = (model.feature_importance ?? [])
+        .filter(f => !f.feature.includes(' & '))
+        .slice(0, 8)
+        .map(f => ({
+          feature:          f.feature.replace(/_/g, ' '),
+          importance_score: Math.round(f.importance_score * 10000) / 10000,
+          rank:             f.rank,
+        }));
+      return { drivers };
+    } catch (e) {
+      return { error: 'Bed placement model file not found. Run bed_placement_pipeline.py first.' };
+    }
+  }
+
+  function tool_getAssignmentCombinations() {
+    try {
+      const raw  = fs.readFileSync(path.join(DATA_DIR, 'bed_placement_combinations.json'), 'utf8');
+      const data = JSON.parse(raw);
+      const top5 = (data.combinations ?? []).slice(0, 5).map(c => ({
+        label:              c.label,
+        sub:                c.sub,
+        avg_assignment_min: Math.round((c.avg_assignment_min ?? 0) * 10) / 10,
+        pct_above_target:   Math.round((c.pct_above_target ?? 0) * 10) / 10,
+        cnt:                c.cnt,
+      }));
+      return { combinations: top5 };
+    } catch (e) {
+      return { error: 'Bed placement combinations file not found. Run bed_placement_pipeline.py first.' };
+    }
+  }
+
+  const DODC_FILES = {
+    home:    'do_dc_home_ebm.json',
+    snf:     'do_dc_snf_ebm.json',
+    hh:      'do_dc_hh_ebm.json',
+    overall: 'do_dc_overall_ebm.json',
+  };
+  const DODC_BENCHMARKS = { home: 180, snf: 400, hh: 240 };
+
+  function tool_getDODCSummary() {
+    try {
+      return ['home', 'snf', 'hh'].map(disp => {
+        const raw   = fs.readFileSync(path.join(DATA_DIR, DODC_FILES[disp]), 'utf8');
+        const model = JSON.parse(raw);
+        return {
+          name:              disp,
+          system_mean:       Math.round((model.system_mean   ?? 0) * 10) / 10,
+          system_median:     Math.round((model.system_median ?? 0) * 10) / 10,
+          benchmark_minutes: DODC_BENCHMARKS[disp],
+          total_cases:       model.n_training_samples ?? 0,
+        };
+      });
+    } catch (e) {
+      return { error: 'DO→DC model files not found. Run do_dc_pipeline.py first.' };
+    }
+  }
+
+  function tool_getDODCDrivers(disposition) {
+    const file = DODC_FILES[disposition];
+    if (!file) return { error: `Invalid disposition '${disposition}'. Use home, snf, or hh.` };
+    try {
+      const raw    = fs.readFileSync(path.join(DATA_DIR, file), 'utf8');
+      const model  = JSON.parse(raw);
+      const drivers = (model.feature_importance ?? [])
+        .filter(f => !f.feature.includes(' & '))
+        .slice(0, 6)
+        .map(f => ({
+          feature:          f.feature.replace(/_/g, ' '),
+          importance_score: Math.round(f.importance_score * 10000) / 10000,
+        }));
+      return { disposition, drivers };
+    } catch (e) {
+      return { error: `DO→DC ${disposition} model file not found.` };
+    }
+  }
+
+  function tool_getDODCCombinations(disposition) {
+    const file = DODC_FILES[disposition];
+    if (!file) return { error: `Invalid disposition '${disposition}'. Use home, snf, hh, or overall.` };
+    try {
+      const raw    = fs.readFileSync(path.join(DATA_DIR, file), 'utf8');
+      const model  = JSON.parse(raw);
+      const combos = (model.combinations ?? []).slice(0, 5).map(c => ({
+        label:               c.label,
+        sub:                 c.sub ?? '',
+        avg_do_to_dc:        Math.round((c.avg_do_to_dc ?? c.avg_minutes ?? 0) * 10) / 10,
+        pct_above_benchmark: Math.round((c.pct_above_benchmark ?? c.pct_above_target ?? 0) * 10) / 10,
+        cnt:                 c.cnt,
+      }));
+      return { disposition, combinations: combos };
+    } catch (e) {
+      return { error: `DO→DC ${disposition} model file not found.` };
+    }
+  }
+
   async function tool_getSurgeonPerformance(surgeonName, metric, startDate, endDate) {
     const db        = await getPool();
     const isFcot    = metric === 'fcot';
@@ -412,6 +530,48 @@ module.exports = function askNuraRoutes(getPool, sql) {
       },
     },
     {
+      name: 'tool_getBedPlacementSummary',
+      description: 'Get overall bed assignment performance at OLLH: total cases, percentage exceeding 30-minute target, average assignment time, and model AUC. Use for questions about bed assignment delay rates or overall placement performance.',
+      input_schema: { type: 'object', properties: {}, required: [] },
+    },
+    {
+      name: 'tool_getAssignmentDrivers',
+      description: 'Get the top 8 factors that drive bed assignment delays at OLLH, ranked by model importance. Use for questions about what causes assignment delays or what the biggest drivers are.',
+      input_schema: { type: 'object', properties: {}, required: [] },
+    },
+    {
+      name: 'tool_getAssignmentCombinations',
+      description: 'Get the top 5 worst-performing combinations of factors for bed assignment time (e.g. source type × destination unit). Use for questions about which specific combinations of conditions lead to the longest assignment delays.',
+      input_schema: { type: 'object', properties: {}, required: [] },
+    },
+    {
+      name: 'tool_getDODCSummary',
+      description: 'Get discharge order to departure (DO→DC) time summary for all three disposition types: home, SNF, and home health. Returns mean, median, benchmark, and case count for each. Use for questions about how long it takes patients to leave after a discharge order.',
+      input_schema: { type: 'object', properties: {}, required: [] },
+    },
+    {
+      name: 'tool_getDODCDrivers',
+      description: 'Get the top 6 factors that drive DO→DC time for a specific patient disposition. Use when asked what causes long discharge times for a specific disposition type.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          disposition: { type: 'string', enum: ['home', 'snf', 'hh'], description: 'home = discharge to home, snf = skilled nursing facility, hh = home health' },
+        },
+        required: ['disposition'],
+      },
+    },
+    {
+      name: 'tool_getDODCCombinations',
+      description: 'Get the top 5 worst-performing combinations of factors for DO→DC time for a given disposition. Use for questions about which specific combinations lead to the longest discharge times.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          disposition: { type: 'string', enum: ['home', 'snf', 'hh', 'overall'], description: 'home, snf, hh, or overall' },
+        },
+        required: ['disposition'],
+      },
+    },
+    {
       name: 'tool_getSurgeonPerformance',
       description: 'Get FCOT or turnover time performance for a specific surgeon service or all service lines. Compares to overall average. Use for questions about individual service line or surgeon performance and peer comparison.',
       input_schema: {
@@ -428,21 +588,23 @@ module.exports = function askNuraRoutes(getPool, sql) {
   ];
 
   const TOOL_SOURCE_TYPE = {
-    tool_getORSummary:          'live_data',
-    tool_getCapacity:           'live_data',
-    tool_getBlockUtilization:   'live_data',
-    tool_getFCOTDrivers:        'model_insight',
-    tool_getTurnoverDrivers:    'model_insight',
-    tool_getShapeFunction:      'model_insight',
-    tool_getInteractionFinding: 'model_insight',
-    tool_getSurgeonPerformance: 'live_data',
+    tool_getORSummary:             'live_data',
+    tool_getCapacity:              'live_data',
+    tool_getBlockUtilization:      'live_data',
+    tool_getFCOTDrivers:           'model_insight',
+    tool_getTurnoverDrivers:       'model_insight',
+    tool_getShapeFunction:         'model_insight',
+    tool_getInteractionFinding:    'model_insight',
+    tool_getSurgeonPerformance:    'live_data',
+    tool_getBedPlacementSummary:   'model_insight',
+    tool_getAssignmentDrivers:     'model_insight',
+    tool_getAssignmentCombinations:'model_insight',
+    tool_getDODCSummary:           'model_insight',
+    tool_getDODCDrivers:           'model_insight',
+    tool_getDODCCombinations:      'model_insight',
   };
 
-  const NURA_SYSTEM = `You are Ask Nura, an operational analytics assistant for hospital surgical services and OR operations. You ONLY answer questions by calling the tools provided — never use general knowledge or make up numbers. Every answer must be grounded in tool results. If no tool can answer the question, say so clearly and suggest what you can help with. Never make clinical recommendations, staffing decisions, or financial projections. Never cite external benchmarks unless they come from a tool result. Scope is strictly OR operations, surgical services performance, and patient flow analytics.
-
-Format your responses in clean markdown. Use **bold** for key numbers and findings. Use tables (| syntax) when comparing multiple items side by side. Use bullet points for lists of 3 or more items. Use paragraph breaks between distinct points. Maximum 200 words.
-
-When citing importance scores from the model, translate them to plain English magnitude — never say "importance score of 3.2". Instead say things like "accounts for roughly 19% of explained variance" or "about 3× more influential than day of week". Always include units (minutes, %, cases) when presenting operational numbers.`;
+  const NURA_SYSTEM = `You are Ask Nura, an analytical assistant for OLLH operational data. Answer questions using only the tools available to you. Never make recommendations or suggest interventions. Describe and explain what the data shows. Respond in plain English with no markdown formatting. Keep responses under 150 words. If a question cannot be answered with available tools say so directly.`;
 
   async function dispatchTool(name, input) {
     switch (name) {
@@ -453,8 +615,14 @@ When citing importance scores from the model, translate them to plain English ma
       case 'tool_getTurnoverDrivers':    return tool_getTurnoverDrivers();
       case 'tool_getShapeFunction':      return tool_getShapeFunction(input.modelName, input.featureName);
       case 'tool_getInteractionFinding': return tool_getInteractionFinding(input.modelName, input.feature1, input.feature2);
-      case 'tool_getSurgeonPerformance': return tool_getSurgeonPerformance(input.surgeonName, input.metric, input.startDate, input.endDate);
-      default:                           return { error: `Unknown tool: ${name}` };
+      case 'tool_getSurgeonPerformance':    return tool_getSurgeonPerformance(input.surgeonName, input.metric, input.startDate, input.endDate);
+      case 'tool_getBedPlacementSummary':   return tool_getBedPlacementSummary();
+      case 'tool_getAssignmentDrivers':     return tool_getAssignmentDrivers();
+      case 'tool_getAssignmentCombinations':return tool_getAssignmentCombinations();
+      case 'tool_getDODCSummary':           return tool_getDODCSummary();
+      case 'tool_getDODCDrivers':           return tool_getDODCDrivers(input.disposition);
+      case 'tool_getDODCCombinations':      return tool_getDODCCombinations(input.disposition);
+      default:                              return { error: `Unknown tool: ${name}` };
     }
   }
 

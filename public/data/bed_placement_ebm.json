@@ -1,12 +1,13 @@
 {
   "model_name": "ExplainableBoostingClassifier",
-  "trained_at": "2026-05-21T15:23:30.277212+00:00",
+  "trained_at": "2026-05-26T15:03:23.627551+00:00",
   "target_description": "Binary classification \u2014 predicts whether bed assignment will exceed the 30-minute target at Our Lady of Lourdes Hospital",
   "hospital": "Our Lady of Lourdes Hospital",
   "threshold_minutes": 30,
   "n_above_threshold": 9761,
   "n_below_threshold": 10479,
   "n_training_samples": 16192,
+  "system_mean": 76.7,
   "feature_importance": [
     {
       "feature": "HOUR_OF_DAY",

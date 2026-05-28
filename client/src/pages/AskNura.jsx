@@ -1,86 +1,53 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, CheckCircle, Brain } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { marked } from 'marked'
 
 marked.setOptions({ breaks: true, gfm: true })
 
 const SUGGESTED_QUESTIONS = [
-  'What are the top drivers of late first case starts?',
-  'Which service lines have the longest turnover times?',
-  'How is VORH OR performing on prime time utilization?',
-  'What happens to turnover time when the same surgeon does back-to-back cases?',
-  'Which locations are most affected by add-on cases?',
-  'How does scheduling cases further ahead affect first case start times?',
+  'What is the current bed assignment delay rate at OLLH?',
+  'What are the top drivers of bed assignment delays?',
+  'How long does it take for SNF patients to leave after a discharge order?',
+  'What combinations of factors have the longest DO→DC times?',
+  'What is OLLH turnover time performance?',
+  'What drives first case on-time starts?',
 ]
 
 /* ─── Shared sub-components ──────────────────────────────────────────────── */
 
-function NuraMark({ size = 14, color = 'white' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
-      <path
-        d="M3 14.5V3.5L9 9L15 3.5V14.5"
-        stroke={color}
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
 
 function AssistantAvatar() {
   return (
-    <div style={{
-      width: 28, height: 28,
-      background: 'var(--color-navy-800)',
-      borderRadius: 'var(--radius-md)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      marginBottom: 6, flexShrink: 0,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-    }}>
-      <NuraMark />
-    </div>
+    <img
+      src="/nura-logo.svg"
+      alt="Nura"
+      style={{
+        width: 32, height: 32,
+        borderRadius: 'var(--radius-md)',
+        marginBottom: 6, flexShrink: 0,
+        display: 'block',
+      }}
+    />
   )
 }
 
-function SourceBadges({ sources }) {
-  const hasLive  = sources?.includes('live_data')
-  const hasModel = sources?.includes('model_insight')
-  if (!hasLive && !hasModel) return null
-
+function VerifiedBadge({ verified }) {
+  if (!verified) return null
   return (
-    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-      {hasLive && (
-        <span
-          title="Verified against live data queried directly from your OR database."
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: 'var(--color-blue-muted)', color: 'var(--color-blue)',
-            fontSize: 'var(--font-size-xs)', fontWeight: 600,
-            padding: '3px 9px', borderRadius: 'var(--radius-full)',
-            cursor: 'default', userSelect: 'none',
-          }}
-        >
-          <CheckCircle size={10} />
-          Live Data
-        </span>
-      )}
-      {hasModel && (
-        <span
-          title="Draws on the EBM predictive model trained on your historical OR data."
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: 'var(--color-success-light)', color: '#15803d',
-            fontSize: 'var(--font-size-xs)', fontWeight: 600,
-            padding: '3px 9px', borderRadius: 'var(--radius-full)',
-            cursor: 'default', userSelect: 'none',
-          }}
-        >
-          <Brain size={10} />
-          Model Insight
-        </span>
-      )}
+    <div style={{ marginTop: 8 }}>
+      <span style={{
+        display: 'inline-block',
+        background: '#EEF0FD',
+        color: '#3E53E3',
+        fontSize: 11,
+        fontWeight: 600,
+        padding: '3px 9px',
+        borderRadius: 'var(--radius-full)',
+        cursor: 'default',
+        userSelect: 'none',
+      }}>
+        Verified
+      </span>
     </div>
   )
 }
@@ -107,7 +74,7 @@ function UserBubble({ content }) {
   )
 }
 
-function AssistantBubble({ content, sources }) {
+function AssistantBubble({ content, verified }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 'var(--space-4)' }}>
       <div style={{ maxWidth: '72%' }}>
@@ -127,7 +94,7 @@ function AssistantBubble({ content, sources }) {
           }}
           dangerouslySetInnerHTML={{ __html: marked.parse(content) }}
         />
-        <SourceBadges sources={sources} />
+        <VerifiedBadge verified={verified} />
       </div>
     </div>
   )
@@ -209,15 +176,11 @@ function EmptyState({ onSelect }) {
       justifyContent: 'center',
       padding: 'var(--space-8)',
     }}>
-      <div style={{
-        width: 52, height: 52,
-        background: 'var(--color-blue-muted)',
-        borderRadius: 'var(--radius-xl)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 'var(--space-4)',
-      }}>
-        <NuraMark size={22} color="var(--color-blue)" />
-      </div>
+      <img
+        src="/With out Text (4).svg"
+        alt="Nura"
+        style={{ width: 64, height: 64, marginBottom: 'var(--space-4)' }}
+      />
 
       <h2 style={{
         fontSize: 'var(--font-size-lg)',
@@ -298,9 +261,9 @@ export default function AskNura() {
       const data = await res.json()
 
       const reply = {
-        role: 'assistant',
-        content: data.response ?? 'No response received.',
-        sources: data.sources ?? [],
+        role:     'assistant',
+        content:  data.response ?? 'No response received.',
+        verified: (data.toolsUsed?.length ?? 0) > 0,
       }
       setMessages(prev => [...prev, reply])
       setHistory(prev => [
@@ -312,7 +275,7 @@ export default function AskNura() {
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: `Something went wrong: ${err.message}. Please check the server and try again.`,
-        sources: [],
+        verified: false,
       }])
     } finally {
       setLoading(false)
@@ -430,7 +393,7 @@ export default function AskNura() {
             {messages.map((m, i) =>
               m.role === 'user'
                 ? <UserBubble      key={i} content={m.content} />
-                : <AssistantBubble key={i} content={m.content} sources={m.sources} />
+                : <AssistantBubble key={i} content={m.content} verified={m.verified} />
             )}
             {loading && <LoadingBubble />}
           </div>

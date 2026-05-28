@@ -1,0 +1,448 @@
+{
+  "system_mean": 76.7,
+  "target_minutes": 30,
+  "total_cases": 20240,
+  "combinations": [
+    {
+      "label": "PCU Downgrade",
+      "sub": "2nd Floor \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 179.6,
+      "above_mean": 102.9,
+      "pct_above_target": 82.9,
+      "cnt": 152
+    },
+    {
+      "label": "OR",
+      "sub": "Overnight \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 168.7,
+      "above_mean": 92.0,
+      "pct_above_target": 79.1,
+      "cnt": 139
+    },
+    {
+      "label": "PCU Downgrade",
+      "sub": "3rd Floor \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 165.9,
+      "above_mean": 89.2,
+      "pct_above_target": 76.5,
+      "cnt": 247
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "2nd Floor \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 156.9,
+      "above_mean": 80.2,
+      "pct_above_target": 72.1,
+      "cnt": 312
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Wednesday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 154.0,
+      "above_mean": 77.3,
+      "pct_above_target": 70.3,
+      "cnt": 344
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Morning \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 153.7,
+      "above_mean": 77.0,
+      "pct_above_target": 70.7,
+      "cnt": 890
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "3rd Floor \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 149.1,
+      "above_mean": 72.4,
+      "pct_above_target": 71.2,
+      "cnt": 378
+    },
+    {
+      "label": "2nd Floor",
+      "sub": "Morning \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 146.4,
+      "above_mean": 69.7,
+      "pct_above_target": 69.3,
+      "cnt": 639
+    },
+    {
+      "label": "High",
+      "sub": "ICU Downgrade \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 145.5,
+      "above_mean": 68.8,
+      "pct_above_target": 70.4,
+      "cnt": 834
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "6N/5W \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 145.3,
+      "above_mean": 68.6,
+      "pct_above_target": 73.6,
+      "cnt": 121
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Friday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 141.2,
+      "above_mean": 64.5,
+      "pct_above_target": 70.6,
+      "cnt": 367
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Thursday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 138.5,
+      "above_mean": 61.8,
+      "pct_above_target": 69.7,
+      "cnt": 347
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Tuesday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 137.5,
+      "above_mean": 60.8,
+      "pct_above_target": 72.5,
+      "cnt": 320
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Afternoon \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 137.5,
+      "above_mean": 60.8,
+      "pct_above_target": 72.2,
+      "cnt": 752
+    },
+    {
+      "label": "3rd Floor",
+      "sub": "Morning \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 137.3,
+      "above_mean": 60.6,
+      "pct_above_target": 63.3,
+      "cnt": 1000
+    },
+    {
+      "label": "Low",
+      "sub": "ICU Downgrade \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 133.5,
+      "above_mean": 56.8,
+      "pct_above_target": 62.8,
+      "cnt": 511
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "PCU \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 132.4,
+      "above_mean": 55.7,
+      "pct_above_target": 67.9,
+      "cnt": 1280
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Saturday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 131.0,
+      "above_mean": 54.3,
+      "pct_above_target": 64.6,
+      "cnt": 308
+    },
+    {
+      "label": "6N/5W",
+      "sub": "Morning \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 129.4,
+      "above_mean": 52.7,
+      "pct_above_target": 68.5,
+      "cnt": 378
+    },
+    {
+      "label": "ED",
+      "sub": "Morning \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 129.2,
+      "above_mean": 52.5,
+      "pct_above_target": 63.7,
+      "cnt": 1165
+    },
+    {
+      "label": "Medium",
+      "sub": "ICU Downgrade \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 126.3,
+      "above_mean": 49.6,
+      "pct_above_target": 67.3,
+      "cnt": 862
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Monday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 120.5,
+      "above_mean": 43.8,
+      "pct_above_target": 62.5,
+      "cnt": 261
+    },
+    {
+      "label": "PCU Downgrade",
+      "sub": "Morning \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 114.1,
+      "above_mean": 37.4,
+      "pct_above_target": 51.2,
+      "cnt": 385
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Sunday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 114.0,
+      "above_mean": 37.3,
+      "pct_above_target": 58.3,
+      "cnt": 266
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Overnight \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 112.8,
+      "above_mean": 36.1,
+      "pct_above_target": 58.9,
+      "cnt": 158
+    },
+    {
+      "label": "ICU Downgrade",
+      "sub": "Evening \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 110.7,
+      "above_mean": 34.0,
+      "pct_above_target": 59.8,
+      "cnt": 306
+    },
+    {
+      "label": "PCU",
+      "sub": "Morning \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 108.6,
+      "above_mean": 31.9,
+      "pct_above_target": 56.2,
+      "cnt": 1129
+    },
+    {
+      "label": "3rd Floor",
+      "sub": "Tuesday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 106.2,
+      "above_mean": 29.5,
+      "pct_above_target": 60.5,
+      "cnt": 817
+    },
+    {
+      "label": "High",
+      "sub": "2nd Floor \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 105.1,
+      "above_mean": 28.4,
+      "pct_above_target": 64.7,
+      "cnt": 1356
+    },
+    {
+      "label": "High",
+      "sub": "3rd Floor \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 104.3,
+      "above_mean": 27.6,
+      "pct_above_target": 61.3,
+      "cnt": 1760
+    },
+    {
+      "label": "2nd Floor",
+      "sub": "Wednesday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 103.4,
+      "above_mean": 26.7,
+      "pct_above_target": 57.0,
+      "cnt": 596
+    },
+    {
+      "label": "2nd Floor",
+      "sub": "Monday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 100.2,
+      "above_mean": 23.5,
+      "pct_above_target": 58.9,
+      "cnt": 623
+    },
+    {
+      "label": "2nd Floor",
+      "sub": "Tuesday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 99.7,
+      "above_mean": 23.0,
+      "pct_above_target": 59.7,
+      "cnt": 628
+    },
+    {
+      "label": "High",
+      "sub": "ED \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 97.3,
+      "above_mean": 20.6,
+      "pct_above_target": 63.0,
+      "cnt": 3907
+    },
+    {
+      "label": "2nd Floor",
+      "sub": "Afternoon \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 96.7,
+      "above_mean": 20.0,
+      "pct_above_target": 63.7,
+      "cnt": 1131
+    },
+    {
+      "label": "High",
+      "sub": "PCU \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 94.6,
+      "above_mean": 17.9,
+      "pct_above_target": 54.6,
+      "cnt": 1742
+    },
+    {
+      "label": "3rd Floor",
+      "sub": "Wednesday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 93.2,
+      "above_mean": 16.5,
+      "pct_above_target": 52.9,
+      "cnt": 875
+    },
+    {
+      "label": "High",
+      "sub": "6N/5W \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 92.7,
+      "above_mean": 16.0,
+      "pct_above_target": 61.5,
+      "cnt": 1136
+    },
+    {
+      "label": "3rd Floor",
+      "sub": "Afternoon \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 92.4,
+      "above_mean": 15.7,
+      "pct_above_target": 60.5,
+      "cnt": 1629
+    },
+    {
+      "label": "3rd Floor",
+      "sub": "Monday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 90.2,
+      "above_mean": 13.5,
+      "pct_above_target": 55.0,
+      "cnt": 882
+    },
+    {
+      "label": "PCU",
+      "sub": "Afternoon \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 90.1,
+      "above_mean": 13.4,
+      "pct_above_target": 55.1,
+      "cnt": 1406
+    },
+    {
+      "label": "High",
+      "sub": "OR \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 89.3,
+      "above_mean": 12.6,
+      "pct_above_target": 57.0,
+      "cnt": 803
+    },
+    {
+      "label": "High",
+      "sub": "PCU Downgrade \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 89.1,
+      "above_mean": 12.4,
+      "pct_above_target": 41.8,
+      "cnt": 478
+    },
+    {
+      "label": "2nd Floor",
+      "sub": "Thursday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 88.6,
+      "above_mean": 11.9,
+      "pct_above_target": 57.6,
+      "cnt": 564
+    },
+    {
+      "label": "ED",
+      "sub": "2nd Floor \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 85.9,
+      "above_mean": 9.2,
+      "pct_above_target": 56.1,
+      "cnt": 2587
+    },
+    {
+      "label": "High",
+      "sub": "Maternal Child Health \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 83.1,
+      "above_mean": 6.4,
+      "pct_above_target": 58.2,
+      "cnt": 110
+    },
+    {
+      "label": "Medium",
+      "sub": "2nd Floor \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 80.5,
+      "above_mean": 3.8,
+      "pct_above_target": 49.9,
+      "cnt": 1555
+    },
+    {
+      "label": "Low",
+      "sub": "2nd Floor \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 79.1,
+      "above_mean": 2.4,
+      "pct_above_target": 46.2,
+      "cnt": 928
+    },
+    {
+      "label": "High",
+      "sub": "Cath/EP Lab \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 75.3,
+      "above_mean": -1.4,
+      "pct_above_target": 50.1,
+      "cnt": 431
+    }
+  ]
+}

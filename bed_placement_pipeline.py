@@ -557,6 +557,7 @@ output = {
     'n_above_threshold':  n_above,
     'n_below_threshold':  n_below,
     'n_training_samples': int(len(X_train)),
+    'system_mean':        round(float(df[TARGET].mean()), 1),
     'feature_importance': feature_importance,
     'shape_functions':    shape_functions,
     'interactions':       interactions,
@@ -577,6 +578,96 @@ with open(out_path, 'w', encoding='utf-8') as f:
 size_kb = os.path.getsize(out_path) / 1024
 print(f"  Saved: {out_path}")
 print(f"  File size: {size_kb:.1f} KB")
+
+
+# ── Step 8b: Worst-performing two-way combinations ────────────────────────────
+
+print()
+print("=" * 60)
+print("Step 8b: Computing worst-performing two-way combinations...")
+print("=" * 60)
+
+# Derived bucket columns (operate on the full df, not X)
+_hour_bins   = [0, 8, 12, 16, 20, 24]
+_hour_labels = ['Overnight', 'Morning', 'Afternoon', 'Evening', 'Night']
+df['HOUR_OF_DAY_BUCKET'] = pd.cut(
+    df['HOUR_OF_DAY'].astype(float),
+    bins=_hour_bins, labels=_hour_labels, right=False,
+).astype(str)
+
+def _census_bucket(v):
+    if pd.isna(v): return 'Unknown'
+    if v < 180:    return 'Low'
+    if v <= 210:   return 'Medium'
+    return 'High'
+
+df['HOSPITAL_CENSUS_BUCKET'] = df['HOSPITAL_CENSUS_7AM'].apply(_census_bucket)
+
+system_mean_comb = float(df[TARGET].mean())
+total_cases_comb = int(len(df))
+
+COMBO_PAIRS = [
+    ('SOURCE_CATEGORY',        'DEST_CATEGORY',         'Source × Destination'),
+    ('SOURCE_CATEGORY',        'DAY_OF_WEEK',            'Source × Day of Week'),
+    ('SOURCE_CATEGORY',        'HOUR_OF_DAY_BUCKET',     'Source × Time of Day'),
+    ('DEST_CATEGORY',          'DAY_OF_WEEK',            'Destination × Day of Week'),
+    ('DEST_CATEGORY',          'HOUR_OF_DAY_BUCKET',     'Destination × Time of Day'),
+    ('HOSPITAL_CENSUS_BUCKET', 'SOURCE_CATEGORY',        'Census × Source'),
+    ('HOSPITAL_CENSUS_BUCKET', 'DEST_CATEGORY',          'Census × Destination'),
+]
+
+all_combos = []
+for feat1, feat2, pair_label in COMBO_PAIRS:
+    tmp = df[[feat1, feat2, TARGET]].copy()
+    tmp['_above'] = (tmp[TARGET] > PLACEMENT_THRESHOLD).astype(int)
+
+    grp = tmp.groupby([feat1, feat2]).agg(
+        cnt           = (TARGET,   'count'),
+        avg_min       = (TARGET,   'mean'),
+        pct_above_raw = ('_above', 'mean'),
+    ).reset_index()
+
+    grp = grp[grp['cnt'] >= 100]
+    grp = grp.sort_values('avg_min', ascending=False).head(7)
+
+    type_combos = []
+    for _, row in grp.iterrows():
+        avg = round(float(row['avg_min']), 1)
+        type_combos.append({
+            'label':              str(row[feat1]),
+            'sub':                f"{row[feat2]} · {pair_label}",
+            'type':               pair_label,
+            'avg_assignment_min': avg,
+            'above_mean':         round(avg - system_mean_comb, 1),
+            'pct_above_target':   round(float(row['pct_above_raw']) * 100, 1),
+            'cnt':                int(row['cnt']),
+        })
+    print(f"  {pair_label}: {len(type_combos)} groups (cnt ≥ 100)")
+    all_combos.extend(type_combos)
+
+all_combos.sort(key=lambda r: r['avg_assignment_min'], reverse=True)
+
+print(f"  Total combinations (7 types × up to 7 each): {len(all_combos)}")
+print("  Top 3 overall:")
+for c in all_combos[:3]:
+    print(f"    {c['label']} / {c['sub']}")
+    print(f"      avg={c['avg_assignment_min']} min  above_mean={c['above_mean']:+.1f}  "
+          f"pct_above={c['pct_above_target']}%  n={c['cnt']:,}")
+
+combos_output = {
+    'system_mean':    round(system_mean_comb, 1),
+    'target_minutes': PLACEMENT_THRESHOLD,
+    'total_cases':    total_cases_comb,
+    'combinations':   all_combos,
+}
+
+combos_path = os.path.join(out_dir, 'bed_placement_combinations.json')
+with open(combos_path, 'w', encoding='utf-8') as f:
+    json.dump(combos_output, f, indent=2, allow_nan=False)
+
+combos_kb = os.path.getsize(combos_path) / 1024
+print(f"  Saved: {combos_path}  ({combos_kb:.1f} KB)")
+
 
 print()
 print("=" * 60)
