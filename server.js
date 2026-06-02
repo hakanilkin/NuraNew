@@ -3,7 +3,7 @@ const express    = require('express');
 const sql        = require('mssql');
 const path       = require('path');
 const session    = require('express-session');
-const MSSQLStore = require('connect-mssql-v2');
+const MSSQLStore = require('connect-mssql-v2')(session);
 
 const app = express();
 app.use(express.json());
