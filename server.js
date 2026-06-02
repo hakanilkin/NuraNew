@@ -1,8 +1,9 @@
 require('dotenv').config();
-const express = require('express');
-const sql     = require('mssql');
-const path    = require('path');
-const session = require('express-session');
+const express    = require('express');
+const sql        = require('mssql');
+const path       = require('path');
+const session    = require('express-session');
+const MSSQLStore = require('connect-mssql-v2');
 
 const app = express();
 app.use(express.json());
@@ -49,6 +50,7 @@ async function getTenantPool(tenantId) {
 
 // ── Session ────────────────────────────────────────────────────────
 app.use(session({
+  store:             new MSSQLStore(authConfig),
   secret:            process.env.SESSION_SECRET || 'nura-change-me-in-production',
   resave:            false,
   saveUninitialized: false,
