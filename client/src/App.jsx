@@ -294,7 +294,8 @@ function UserMenu({ user }) {
 
   async function handleSignOut() {
     await fetch('/api/auth/logout', { method: 'POST' })
-    navigate('/login')
+    setUser(null)
+    navigate('/login', { replace: true })
   }
 
   async function handleSwitchTenant(tenant) {
