@@ -55,19 +55,20 @@ app.use(session({
   cookie: { httpOnly: true, maxAge: 8 * 60 * 60 * 1000 },
 }));
 
+const isProd = process.env.NODE_ENV === 'production';
+
 // ── Auth middleware ────────────────────────────────────────────────
-const PUBLIC_PATHS = [
-  '/login.html', '/auth.css',
+const PUBLIC_API_PATHS = [
   '/api/auth/login', '/api/auth/verify-totp',
   '/api/auth/confirm-totp', '/api/auth/select-tenant',
-  '/favicon.ico',
 ];
 
 function requireAuth(req, res, next) {
-  if (PUBLIC_PATHS.includes(req.path)) return next();
+  if (PUBLIC_API_PATHS.includes(req.path)) return next();
   if (req.session && req.session.userId && req.session.totpVerified) return next();
+  // Only block API calls — React Router handles page-level redirects
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
-  return res.redirect('/login.html');
+  return next();
 }
 
 function requireAdmin(req, res, next) {
@@ -81,7 +82,12 @@ function requireTenant(req, res, next) {
 }
 
 app.use(requireAuth);
-app.use(express.static(path.join(__dirname, 'public')));
+
+// ── Static files ───────────────────────────────────────────────────
+app.use(express.static(path.join(__dirname, 'public')));              // data files (EBM JSON etc.)
+if (isProd) {
+  app.use(express.static(path.join(__dirname, 'client', 'dist')));    // React build
+}
 
 // ── Route modules ──────────────────────────────────────────────────
 const authRouter      = require('./routes/auth')(getAuthPool, sql);
@@ -95,6 +101,13 @@ app.use('/api/admin', adminRouter);
 app.use('/api/atlas', atlasRouter);
 app.use('/api',       analyticsRouter);
 app.use('/api',       askNuraRouter);
+
+// ── React Router catch-all (production only) ──────────────────────
+if (isProd) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+  });
+}
 
 // ── Start ──────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
