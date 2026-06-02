@@ -241,18 +241,44 @@ export default function ORPerformance() {
   const [trend,          setTrend]          = useState([])
   const [loading,        setLoading]        = useState(true)
   const [error,          setError]          = useState(null)
+  const [chartSite,      setChartSite]      = useState(null)   // site clicked in table
+  const [chartTrend,     setChartTrend]     = useState([])     // trend for clicked site
+  const [chartLoading,   setChartLoading]   = useState(false)
+  const [activeDates,    setActiveDates]    = useState({ startDate: DEFAULT_START, endDate: DEFAULT_END })
 
   /* ── Derived KPIs ── */
   const totalCases   = summary.reduce((s, r) => s + (r.TotalCases       ?? 0), 0)
   const totalMinutes = summary.reduce((s, r) => s + (r.TotalORDuration   ?? 0), 0)
   const avgMinutes   = totalCases > 0 ? totalMinutes / totalCases : 0
 
-  /* ── Chart data ── */
-  const multiYear = new Set(trend.map(r => r.Year)).size > 1
-  const chartData = trend.map(r => ({
+  /* ── Chart data — use site-specific trend when a row is clicked ── */
+  const activeTrend = chartSite ? chartTrend : trend
+  const multiYear   = new Set(activeTrend.map(r => r.Year)).size > 1
+  const chartData   = activeTrend.map(r => ({
     label: MONTHS[r.Month - 1] + (multiYear ? ` '${String(r.Year).slice(2)}` : ''),
     cases: r.TotalCases,
   }))
+
+  /* ── Click a site row → fetch its trend ── */
+  async function handleSiteClick(site) {
+    if (chartSite === site) {
+      setChartSite(null)
+      setChartTrend([])
+      return
+    }
+    setChartSite(site)
+    setChartLoading(true)
+    try {
+      const qs = buildQS({ startDate: activeDates.startDate, endDate: activeDates.endDate, sites: [site] })
+      const res = await fetch(`/api/monthly-trend?${qs}`)
+      const data = await res.json()
+      setChartTrend(Array.isArray(data) ? data : [])
+    } catch (_) {
+      setChartTrend([])
+    } finally {
+      setChartLoading(false)
+    }
+  }
 
   /* ── Fetch sites (once on mount) ── */
   useEffect(() => {
@@ -267,6 +293,9 @@ export default function ORPerformance() {
   const fetchData = useCallback(async (filters) => {
     setLoading(true)
     setError(null)
+    setChartSite(null)
+    setChartTrend([])
+    setActiveDates({ startDate: filters.startDate, endDate: filters.endDate })
     const qs = buildQS(filters)
     try {
       const [sumRes, trendRes] = await Promise.all([
@@ -475,10 +504,22 @@ export default function ORPerformance() {
               </thead>
               <tbody>
                 {summary.map(row => {
-                  const avg = row.TotalCases > 0 ? row.TotalORDuration / row.TotalCases : 0
+                  const avg       = row.TotalCases > 0 ? row.TotalORDuration / row.TotalCases : 0
+                  const isActive  = chartSite === row.Site
                   return (
-                    <tr key={row.Site}>
-                      <td className="table-cell-primary">{row.Site}</td>
+                    <tr
+                      key={row.Site}
+                      onClick={() => handleSiteClick(row.Site)}
+                      style={{
+                        cursor: 'pointer',
+                        background: isActive ? 'var(--color-blue-light, #eff6ff)' : undefined,
+                        outline: isActive ? '2px solid var(--color-blue)' : undefined,
+                        outlineOffset: -2,
+                      }}
+                    >
+                      <td className="table-cell-primary" style={{ color: isActive ? 'var(--color-blue)' : undefined, fontWeight: isActive ? 700 : undefined }}>
+                        {row.Site}
+                      </td>
                       <td style={{ textAlign: 'right' }}>{(row.TotalCases ?? 0).toLocaleString()}</td>
                       <td style={{ textAlign: 'right' }}>{fmtHours(row.TotalORDuration ?? 0)}</td>
                       <td style={{ textAlign: 'right' }}>{fmtMins(avg)}</td>
@@ -537,8 +578,12 @@ export default function ORPerformance() {
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="card-title">Monthly Case Volume</div>
-            <div className="card-subtitle">Total OR cases per month over the selected period</div>
+            <div className="card-title">
+              Monthly Case Volume{chartSite ? ` — ${chartSite}` : ''}
+            </div>
+            <div className="card-subtitle">
+              {chartSite ? `Click the row again to deselect` : 'Click a site row to filter the chart'}
+            </div>
           </div>
           {!loading && chartData.length > 0 && (
             <div className="badge badge-blue">
@@ -549,7 +594,7 @@ export default function ORPerformance() {
         </div>
 
         <div className="card-body">
-          {loading ? (
+          {loading || chartLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <Skeleton height={200} />
             </div>

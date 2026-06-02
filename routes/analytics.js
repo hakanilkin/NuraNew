@@ -1,7 +1,10 @@
 const express = require('express');
 
-module.exports = function analyticsRoutes(getPool, sql) {
+module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
   const router = express.Router();
+
+  // All data routes require a tenant to be selected
+  router.use(requireTenant);
 
   // ── Filter helpers ──────────────────────────────────────────────────────────
 
@@ -49,7 +52,7 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/sites', async (req, res) => {
     try {
-      const db = await getPool();
+      const db = await getTenantPool(req.session.tenantId);
       const result = await db.request().query(`
         SELECT DISTINCT ISNULL(Loc_ORGrp2, 'Unknown') AS Site
         FROM DS_CASES
@@ -66,8 +69,8 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/summary', async (req, res) => {
     try {
-      const db      = await getPool();
-      const request = db.request();
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
       const startDate = req.query.startDate || '2025-01-01';
       const endDate   = req.query.endDate   || '2025-12-31';
       request.input('startDate', sql.Date, startDate);
@@ -97,8 +100,8 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/monthly-trend', async (req, res) => {
     try {
-      const db      = await getPool();
-      const request = db.request();
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
       const startDate = req.query.startDate || '2025-01-01';
       const endDate   = req.query.endDate   || '2025-12-31';
       request.input('startDate', sql.Date, startDate);
@@ -128,7 +131,7 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/capacity/location-groups', async (req, res) => {
     try {
-      const db = await getPool();
+      const db = await getTenantPool(req.session.tenantId);
       const result = await db.request().query(`
         SELECT DISTINCT ISNULL(LocationGroup, 'Unknown') AS LocationGroup
         FROM V4_BlockResultsView
@@ -145,8 +148,8 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/capacity/prime-time', async (req, res) => {
     try {
-      const db      = await getPool();
-      const request = db.request();
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
       const startDate = req.query.startDate || '2025-01-01';
       const endDate   = req.query.endDate   || '2025-12-31';
       request.input('startDate', sql.Date, startDate);
@@ -183,8 +186,8 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/capacity/non-prime-time', async (req, res) => {
     try {
-      const db      = await getPool();
-      const request = db.request();
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
       const startDate = req.query.startDate || '2025-01-01';
       const endDate   = req.query.endDate   || '2025-12-31';
       request.input('startDate', sql.Date, startDate);
@@ -196,7 +199,7 @@ module.exports = function analyticsRoutes(getPool, sql) {
         SELECT
           ISNULL(LocationGroup, 'Unknown')         AS LocationGroup,
           SUM(ISNULL(Total_Non_Prime_time, 0))     AS SumNonPrimeTime,
-          SUM(ISNULL(totalTime, 0))               AS SumTotalTime,
+          SUM(ISNULL(totalTime, 0))                AS SumTotalTime,
           CASE WHEN SUM(ISNULL(totalTime, 0)) = 0 THEN 0
                ELSE ROUND(
                  100.0 * SUM(ISNULL(Total_Non_Prime_time, 0))
@@ -221,8 +224,8 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/blockutil/caseblocks', async (req, res) => {
     try {
-      const db      = await getPool();
-      const request = db.request();
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
       const startDate = req.query.startDate || '2025-01-01';
       const endDate   = req.query.endDate   || '2025-12-31';
       request.input('startDate', sql.Date, startDate);
@@ -249,8 +252,8 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/blockutil/data', async (req, res) => {
     try {
-      const db      = await getPool();
-      const request = db.request();
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
       const startDate = req.query.startDate || '2025-01-01';
       const endDate   = req.query.endDate   || '2025-12-31';
       request.input('startDate', sql.Date, startDate);
@@ -260,23 +263,23 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
       const result = await request.query(`
         SELECT
-          ISNULL(CaseBlock, 'Unknown')              AS CaseBlock,
-          COALESCE(Group_Service, Surgeonservice)    AS Service,
-          dd_WeekofMonth                             AS WeekOfMonth,
-          DATEPART(WEEKDAY, BlockDate)               AS DayOfWeek,
-          COUNT(DISTINCT CaseID)                     AS CaseCount,
-          SUM(ISNULL(Total_Prime_Time, 0))           AS SumPrimeTime,
-          SUM(ISNULL(blockTime, 0))                  AS SumBlockTime,
-          SUM(ISNULL(Total_Non_Prime_time, 0))       AS SumNonPrimeTime,
-          SUM(ISNULL(totalTime, 0))                  AS SumTotalTime,
-          SUM(ISNULL(ReleasedTime, 0))               AS SumReleasedTime
+          ISNULL(CaseBlock, 'Unknown')            AS CaseBlock,
+          COALESCE(Group_Service, Surgeonservice)  AS Service,
+          dd_WeekofMonth                           AS WeekOfMonth,
+          DATEPART(WEEKDAY, BlockDate)             AS DayOfWeek,
+          COUNT(DISTINCT CaseID)                   AS CaseCount,
+          SUM(ISNULL(Total_Prime_Time, 0))         AS SumPrimeTime,
+          SUM(ISNULL(blockTime, 0))                AS SumBlockTime,
+          SUM(ISNULL(Total_Non_Prime_time, 0))     AS SumNonPrimeTime,
+          SUM(ISNULL(totalTime, 0))                AS SumTotalTime,
+          SUM(ISNULL(ReleasedTime, 0))             AS SumReleasedTime
         FROM V4_BlockResultsView
         WHERE BlockDate >= @startDate
           AND BlockDate <= @endDate
           ${locFilter}
           ${cbFilter}
           AND DATEPART(WEEKDAY, BlockDate) IN (2, 3, 4, 5, 6)
-        GROUP BY CaseBlock,COALESCE(Group_Service, Surgeonservice), DD_WeekOfMonth, DATEPART(WEEKDAY, BlockDate)
+        GROUP BY CaseBlock, COALESCE(Group_Service, Surgeonservice), DD_WeekOfMonth, DATEPART(WEEKDAY, BlockDate)
         ORDER BY CaseBlock, 2, 3
       `);
       res.json(result.recordset);
@@ -290,8 +293,8 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
   router.get('/blockutil/monthly-detail', async (req, res) => {
     try {
-      const db      = await getPool();
-      const request = db.request();
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
       const startDate = req.query.startDate || '2025-01-01';
       const endDate   = req.query.endDate   || '2025-12-31';
       request.input('startDate', sql.Date, startDate);
@@ -301,28 +304,25 @@ module.exports = function analyticsRoutes(getPool, sql) {
 
       const result = await request.query(`
         SELECT
-          ISNULL(CaseBlock, 'Unknown')               AS CaseBlock,
-          COALESCE(Group_Service, Surgeonservice)    AS Service,
-          dd_WeekofMonth                             AS WeekOfMonth,
-          DATEPART(WEEKDAY, BlockDate)               AS DayOfWeek,
-          MONTH(BlockDate)                           AS Month,
-          COUNT(DISTINCT CaseID)                     AS CaseCount,
-          SUM(ISNULL(Total_Prime_Time, 0))           AS SumPrimeTime,
-          SUM(ISNULL(blockTime, 0))                  AS SumBlockTime,
-          SUM(ISNULL(Total_Non_Prime_time, 0))       AS SumNonPrimeTime,
-          SUM(ISNULL(totalTime, 0))                  AS SumTotalTime,
-          SUM(ISNULL(ReleasedTime, 0))               AS SumReleasedTime
+          ISNULL(CaseBlock, 'Unknown')            AS CaseBlock,
+          COALESCE(Group_Service, Surgeonservice)  AS Service,
+          dd_WeekofMonth                           AS WeekOfMonth,
+          DATEPART(WEEKDAY, BlockDate)             AS DayOfWeek,
+          MONTH(BlockDate)                         AS Month,
+          COUNT(DISTINCT CaseID)                   AS CaseCount,
+          SUM(ISNULL(Total_Prime_Time, 0))         AS SumPrimeTime,
+          SUM(ISNULL(blockTime, 0))                AS SumBlockTime,
+          SUM(ISNULL(Total_Non_Prime_time, 0))     AS SumNonPrimeTime,
+          SUM(ISNULL(totalTime, 0))                AS SumTotalTime,
+          SUM(ISNULL(ReleasedTime, 0))             AS SumReleasedTime
         FROM V4_BlockResultsView
         WHERE BlockDate >= @startDate
           AND BlockDate <= @endDate
           ${locFilter}
           ${cbFilter}
           AND DATEPART(WEEKDAY, BlockDate) IN (2, 3, 4, 5, 6)
-        GROUP BY CaseBlock,
-                COALESCE(Group_Service, Surgeonservice),
-                 dd_WeekofMonth,
-                 DATEPART(WEEKDAY, BlockDate),
-                 MONTH(BlockDate)
+        GROUP BY CaseBlock, COALESCE(Group_Service, Surgeonservice),
+                 dd_WeekofMonth, DATEPART(WEEKDAY, BlockDate), MONTH(BlockDate)
         ORDER BY CaseBlock, 2, 3, Month
       `);
       res.json(result.recordset);
@@ -337,15 +337,9 @@ module.exports = function analyticsRoutes(getPool, sql) {
   router.get('/blazesql/url', async (req, res) => {
     const apiKey = process.env.BLAZESQL_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'BLAZESQL_API_KEY not configured' });
-
+    const email = req.session.email;
+    if (!email) return res.status(400).json({ error: 'No email on your account — ask an admin to add one.' });
     try {
-      const db     = await getPool();
-      const result = await db.request()
-        .input('uid', sql.Int, req.session.userId)
-        .query(`SELECT Email FROM Users WHERE UserID = @uid`);
-      const email  = result.recordset[0]?.Email;
-      if (!email) return res.status(400).json({ error: 'No email on your account — ask an admin to add one.' });
-
       const response = await fetch('https://api.blazesql.com/user_authentication_api', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -357,7 +351,7 @@ module.exports = function analyticsRoutes(getPool, sql) {
       }
       res.json({ url: text });
     } catch (err) {
-      console.error('/api/blazesql/url error:', err.message, err.cause?.message);
+      console.error('/api/blazesql/url error:', err.message);
       res.status(500).json({ error: 'Could not reach BlazeSql' });
     }
   });

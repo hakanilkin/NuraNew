@@ -5,7 +5,7 @@ const fs      = require('fs');
 // Resolve public/data from the project root (one level above routes/)
 const DATA_DIR = path.join(__dirname, '..', 'public', 'data');
 
-module.exports = function askNuraRoutes(getPool, sql) {
+module.exports = function askNuraRoutes(getTenantPool, sql) {
   const router = express.Router();
 
   // ── EBM helpers ─────────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ module.exports = function askNuraRoutes(getPool, sql) {
   // ── Tool functions ───────────────────────────────────────────────────────────
 
   async function tool_getORSummary(startDate, endDate, sites) {
-    const db  = await getPool();
+    const db  = await getTenantPool(req.session.tenantId);
     const req = db.request();
     req.input('startDate', sql.Date, startDate);
     req.input('endDate',   sql.Date, endDate);
@@ -81,7 +81,7 @@ module.exports = function askNuraRoutes(getPool, sql) {
   }
 
   async function tool_getCapacity(startDate, endDate, locations, dow) {
-    const db  = await getPool();
+    const db  = await getTenantPool(req.session.tenantId);
     const req = db.request();
     req.input('startDate', sql.Date, startDate);
     req.input('endDate',   sql.Date, endDate);
@@ -118,7 +118,7 @@ module.exports = function askNuraRoutes(getPool, sql) {
   }
 
   async function tool_getBlockUtilization(startDate, endDate, location) {
-    const db  = await getPool();
+    const db  = await getTenantPool(req.session.tenantId);
     const req = db.request();
     req.input('startDate', sql.Date, startDate);
     req.input('endDate',   sql.Date, endDate);

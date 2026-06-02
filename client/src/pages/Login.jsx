@@ -324,15 +324,90 @@ function TotpStep({ mode, qrData, onSuccess, onBack }) {
   )
 }
 
+/* ─── Step: select tenant ────────────────────────────────────────────────── */
+
+function TenantPickerStep({ tenants, onSelect }) {
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
+
+  async function pick(tenant) {
+    setLoading(true)
+    setError('')
+    try {
+      const res  = await fetch('/api/auth/select-tenant', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ tenantId: tenant.TenantID }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Could not select client')
+      onSelect({ tenantId: data.tenantId, tenantName: data.tenantName })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <h2 style={{
+          fontSize: 'var(--font-size-xl)',
+          fontWeight: 'var(--font-weight-bold)',
+          color: 'var(--color-gray-900)',
+          letterSpacing: 'var(--letter-spacing-tight)',
+          marginBottom: 'var(--space-1)',
+        }}>
+          Select client
+        </h2>
+        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>
+          Choose which organisation to open
+        </p>
+      </div>
+
+      <ErrorBanner message={error} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        {tenants.map(t => (
+          <button
+            key={t.TenantID}
+            onClick={() => pick(t)}
+            disabled={loading}
+            style={{
+              padding: 'var(--space-4) var(--space-5)',
+              background: 'var(--color-white)',
+              border: '1px solid var(--surface-border)',
+              borderRadius: 'var(--radius-lg)',
+              textAlign: 'left',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: 'var(--font-size-base)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--color-gray-900)',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+              fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-blue)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-blue-muted)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--surface-border)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
+            {t.TenantName}
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 
 export default function Login() {
   const { user, setUser } = useAuth()
   const navigate = useNavigate()
 
-  // step: 'login' | 'verify-totp' | 'setup-totp'
-  const [step,   setStep]   = useState('login')
-  const [qrData, setQrData] = useState(null)
+  // step: 'login' | 'verify-totp' | 'setup-totp' | 'select-tenant'
+  const [step,    setStep]    = useState('login')
+  const [qrData,  setQrData]  = useState(null)
+  const [tenants, setTenants] = useState([])
 
   // Already authenticated — send to dashboard
   if (user) return <Navigate to="/" replace />
@@ -347,7 +422,23 @@ export default function Login() {
   }
 
   function handleTotpSuccess(data) {
-    setUser({ isAdmin: data.isAdmin, mustChangePwd: data.mustChangePwd })
+    if (!data.tenantSelected) {
+      setTenants(data.tenants || [])
+      setStep('select-tenant')
+    } else {
+      setUser({
+        isAdmin:    data.isAdmin,
+        mustChangePwd: data.mustChangePwd,
+        tenantId:   data.tenantId,
+        tenantName: data.tenantName,
+        tenants:    data.tenants || [],
+      })
+      navigate('/', { replace: true })
+    }
+  }
+
+  function handleTenantSelect(tenantInfo) {
+    setUser(prev => ({ ...prev, ...tenantInfo }))
     navigate('/', { replace: true })
   }
 
@@ -451,6 +542,12 @@ export default function Login() {
               qrData={qrData}
               onSuccess={handleTotpSuccess}
               onBack={handleBack}
+            />
+          )}
+          {step === 'select-tenant' && (
+            <TenantPickerStep
+              tenants={tenants}
+              onSelect={handleTenantSelect}
             />
           )}
         </div>

@@ -3,20 +3,39 @@ const bcrypt    = require('bcryptjs');
 const speakeasy = require('speakeasy');
 const QRCode    = require('qrcode');
 
-module.exports = function authRoutes(getPool, sql) {
+module.exports = function authRoutes(getAuthPool, sql) {
   const router = express.Router();
 
+  // ── Finalize login: set session, fetch tenant list ─────────────────
   async function _finalizeLogin(req, db) {
     const uid = req.session.pendingUserId;
     await db.request()
       .input('uid', sql.Int, uid)
       .query(`UPDATE Users SET LastLogin = GETDATE() WHERE UserID = @uid`);
+
+    const tResult = await db.request()
+      .input('uid', sql.Int, uid)
+      .query(`SELECT t.TenantID, t.TenantName
+              FROM Tenants t
+              JOIN UserTenants ut ON t.TenantID = ut.TenantID
+              WHERE ut.UserID = @uid AND t.IsActive = 1
+              ORDER BY t.TenantName`);
+    const tenants = tResult.recordset;
+
     req.session.userId        = uid;
     req.session.isAdmin       = req.session.pendingIsAdmin;
     req.session.fullName      = req.session.pendingName;
     req.session.email         = req.session.pendingEmail;
     req.session.totpVerified  = true;
     req.session.mustChangePwd = req.session.mustChangePwd;
+    req.session.tenants       = tenants;
+
+    // Auto-select if only one tenant
+    if (tenants.length === 1) {
+      req.session.tenantId   = tenants[0].TenantID;
+      req.session.tenantName = tenants[0].TenantName;
+    }
+
     delete req.session.pendingUserId;
     delete req.session.pendingIsAdmin;
     delete req.session.pendingName;
@@ -29,7 +48,7 @@ module.exports = function authRoutes(getPool, sql) {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
     try {
-      const db = await getPool();
+      const db     = await getAuthPool();
       const result = await db.request()
         .input('username', sql.NVarChar, username)
         .query(`SELECT UserID, Username, Email, FullName, PasswordHash, TOTPSecret, TOTPEnabled,
@@ -62,12 +81,12 @@ module.exports = function authRoutes(getPool, sql) {
     }
   });
 
-  // POST /api/auth/verify-totp  (existing TOTP users)
+  // POST /api/auth/verify-totp
   router.post('/verify-totp', async (req, res) => {
     const { code } = req.body;
     if (!req.session.pendingUserId) return res.status(401).json({ error: 'No pending authentication' });
     try {
-      const db = await getPool();
+      const db     = await getAuthPool();
       const result = await db.request()
         .input('uid', sql.Int, req.session.pendingUserId)
         .query(`SELECT TOTPSecret FROM Users WHERE UserID = @uid`);
@@ -78,7 +97,15 @@ module.exports = function authRoutes(getPool, sql) {
       if (!valid) return res.status(401).json({ error: 'Invalid code' });
 
       await _finalizeLogin(req, db);
-      res.json({ ok: true, isAdmin: req.session.isAdmin, mustChangePwd: req.session.mustChangePwd });
+      res.json({
+        ok:             true,
+        isAdmin:        req.session.isAdmin,
+        mustChangePwd:  req.session.mustChangePwd,
+        tenants:        req.session.tenants,
+        tenantSelected: !!req.session.tenantId,
+        tenantId:       req.session.tenantId   || null,
+        tenantName:     req.session.tenantName || null,
+      });
     } catch (err) {
       console.error('/api/auth/verify-totp error:', err.message);
       res.status(500).json({ error: 'Server error' });
@@ -96,18 +123,48 @@ module.exports = function authRoutes(getPool, sql) {
     if (!valid) return res.status(401).json({ error: 'Invalid code — try again' });
 
     try {
-      const db = await getPool();
+      const db = await getAuthPool();
       await db.request()
         .input('secret', sql.NVarChar, secret)
         .input('uid',    sql.Int,      req.session.pendingUserId)
         .query(`UPDATE Users SET TOTPSecret = @secret, TOTPEnabled = 1 WHERE UserID = @uid`);
 
       await _finalizeLogin(req, db);
-      res.json({ ok: true, isAdmin: req.session.isAdmin, mustChangePwd: req.session.mustChangePwd });
+      res.json({
+        ok:             true,
+        isAdmin:        req.session.isAdmin,
+        mustChangePwd:  req.session.mustChangePwd,
+        tenants:        req.session.tenants,
+        tenantSelected: !!req.session.tenantId,
+        tenantId:       req.session.tenantId   || null,
+        tenantName:     req.session.tenantName || null,
+      });
     } catch (err) {
       console.error('/api/auth/confirm-totp error:', err.message);
       res.status(500).json({ error: 'Server error' });
     }
+  });
+
+  // POST /api/auth/select-tenant  (called from tenant picker after login)
+  router.post('/select-tenant', async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
+    const { tenantId } = req.body;
+    const allowed = (req.session.tenants || []).find(t => t.TenantID === tenantId);
+    if (!allowed) return res.status(403).json({ error: 'Access denied to this client' });
+    req.session.tenantId   = allowed.TenantID;
+    req.session.tenantName = allowed.TenantName;
+    res.json({ ok: true, tenantId: allowed.TenantID, tenantName: allowed.TenantName });
+  });
+
+  // POST /api/auth/switch-tenant  (called from sidebar while already in app)
+  router.post('/switch-tenant', async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
+    const { tenantId } = req.body;
+    const allowed = (req.session.tenants || []).find(t => t.TenantID === tenantId);
+    if (!allowed) return res.status(403).json({ error: 'Access denied to this client' });
+    req.session.tenantId   = allowed.TenantID;
+    req.session.tenantName = allowed.TenantName;
+    res.json({ ok: true, tenantId: allowed.TenantID, tenantName: allowed.TenantName });
   });
 
   // POST /api/auth/change-password
@@ -118,11 +175,11 @@ module.exports = function authRoutes(getPool, sql) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
     try {
-      const db = await getPool();
+      const db     = await getAuthPool();
       const result = await db.request()
         .input('uid', sql.Int, req.session.userId)
         .query(`SELECT PasswordHash FROM Users WHERE UserID = @uid`);
-      const hash = result.recordset[0]?.PasswordHash;
+      const hash  = result.recordset[0]?.PasswordHash;
       const match = await bcrypt.compare(currentPassword, hash);
       if (!match) return res.status(401).json({ error: 'Current password incorrect' });
       const newHash = await bcrypt.hash(newPassword, 10);
@@ -146,6 +203,9 @@ module.exports = function authRoutes(getPool, sql) {
       fullName:      req.session.fullName,
       isAdmin:       req.session.isAdmin,
       mustChangePwd: req.session.mustChangePwd,
+      tenants:       req.session.tenants    || [],
+      tenantId:      req.session.tenantId   || null,
+      tenantName:    req.session.tenantName || null,
     });
   });
 

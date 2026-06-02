@@ -1,5 +1,5 @@
-import { useState, Fragment } from 'react'
-import { NavLink, Navigate, Route, Routes, useLocation, BrowserRouter } from 'react-router-dom'
+import { useState, Fragment, useRef, useEffect } from 'react'
+import { NavLink, Navigate, Route, Routes, useLocation, BrowserRouter, useNavigate } from 'react-router-dom'
 import {
   Activity,
   LayoutGrid,
@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Bell,
   Settings,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
 import navConfig from './navConfig'
@@ -22,6 +24,7 @@ import AtlasTurnover    from './pages/AtlasTurnover'
 import AtlasDODC          from './pages/AtlasDODC'
 import AtlasBedPlacement  from './pages/AtlasBedPlacement'
 import AskNura          from './pages/AskNura'
+import Admin            from './pages/Admin'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
@@ -274,6 +277,128 @@ function NavGroup({ children, opacity = 0.08 }) {
   )
 }
 
+function UserMenu({ user }) {
+  const [menuOpen, setMenuOpen]   = useState(false)
+  const menuRef                   = useRef(null)
+  const navigate                  = useNavigate()
+  const { setUser }               = useAuth()
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function handle(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [menuOpen])
+
+  async function handleSignOut() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    navigate('/login')
+  }
+
+  async function handleSwitchTenant(tenant) {
+    setMenuOpen(false)
+    const res  = await fetch('/api/auth/switch-tenant', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ tenantId: tenant.TenantID }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setUser(prev => ({ ...prev, tenantId: data.tenantId, tenantName: data.tenantName }))
+      navigate('/', { replace: true })
+    }
+  }
+
+  const multiTenant = (user?.tenants?.length ?? 0) > 1
+
+  const menuBtnStyle = {
+    width: '100%', background: 'none', border: 'none',
+    color: 'var(--sidebar-text)', padding: '10px 14px',
+    display: 'flex', alignItems: 'center', gap: 10,
+    fontSize: 'var(--font-size-sm)', cursor: 'pointer',
+    textAlign: 'left',
+  }
+
+  return (
+    <div ref={menuRef} style={{ position: 'relative' }}>
+      {menuOpen && (
+        <div style={{
+          position: 'absolute',
+          bottom: 'calc(100% + 8px)',
+          left: 0, right: 0,
+          background: '#1e2d42',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.3)',
+          zIndex: 100,
+        }}>
+          {/* Tenant switcher */}
+          {multiTenant && (
+            <>
+              <div style={{ padding: '7px 14px 4px', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Switch client
+              </div>
+              {user.tenants.map(t => (
+                <button
+                  key={t.TenantID}
+                  onClick={() => handleSwitchTenant(t)}
+                  style={{
+                    ...menuBtnStyle,
+                    fontWeight: t.TenantID === user.tenantId ? 700 : 400,
+                    color: t.TenantID === user.tenantId ? '#fff' : 'var(--sidebar-text)',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.TenantID === user.tenantId ? 'var(--color-blue)' : 'transparent', border: '1px solid rgba(255,255,255,0.3)', flexShrink: 0 }} />
+                  {t.TenantName}
+                </button>
+              ))}
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+            </>
+          )}
+
+          {user?.isAdmin && (
+            <button
+              onClick={() => { setMenuOpen(false); navigate('/admin') }}
+              style={menuBtnStyle}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <ShieldCheck size={15} style={{ opacity: 0.7 }} />
+              Admin
+            </button>
+          )}
+          <button
+            onClick={handleSignOut}
+            style={menuBtnStyle}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <LogOut size={15} style={{ opacity: 0.7 }} />
+            Sign out
+          </button>
+        </div>
+      )}
+
+      {/* User row */}
+      <div className="sidebar-user" onClick={() => setMenuOpen(o => !o)} style={{ cursor: 'pointer' }}>
+        <div className="avatar">{initials(user?.fullName)}</div>
+        <div className="sidebar-user-info">
+          <div className="sidebar-user-name">{user?.fullName ?? 'User'}</div>
+          <div className="sidebar-user-role" style={{ fontSize: 11 }}>
+            {user?.tenantName ?? (user?.isAdmin ? 'Administrator' : 'Analyst')}
+          </div>
+        </div>
+        <ChevronRight size={14} style={{ color: 'var(--sidebar-icon-muted)', flexShrink: 0, transform: menuOpen ? 'rotate(90deg)' : 'none', transition: 'transform 200ms ease' }} />
+      </div>
+    </div>
+  )
+}
+
 function Sidebar() {
   const { user }     = useAuth()
   const { pathname } = useLocation()
@@ -295,7 +420,9 @@ function Sidebar() {
 
       {/* ── Logo ── */}
       <div className="sidebar-logo">
-        <img src="/nura-logo.svg" alt="Nura" style={{ height: 28, width: 'auto' }} />
+        <NavLink to="/ask-nura" style={{ display: 'inline-flex' }}>
+          <img src="/nura-logo.svg" alt="Nura" style={{ height: 28, width: 'auto', cursor: 'pointer' }} />
+        </NavLink>
       </div>
 
       {/* ── Nav ── */}
@@ -390,14 +517,7 @@ function Sidebar() {
 
       {/* ── User footer ── */}
       <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="avatar">{initials(user?.fullName)}</div>
-          <div className="sidebar-user-info">
-            <div className="sidebar-user-name">{user?.fullName ?? 'User'}</div>
-            <div className="sidebar-user-role">{user?.isAdmin ? 'Administrator' : 'Analyst'}</div>
-          </div>
-          <ChevronRight size={14} style={{ color: 'var(--sidebar-icon-muted)', flexShrink: 0 }} />
-        </div>
+        <UserMenu user={user} />
       </div>
 
     </aside>
@@ -450,6 +570,7 @@ function Shell() {
           <Route path="/atlas/bed-placement"    element={<AtlasBedPlacement />} />
           <Route path="/ask-nura"          element={<AskNura />} />
           <Route path="/forecasts"         element={<PlaceholderPage title="Forecasts" />} />
+          <Route path="/admin"             element={<Admin />} />
         </Routes>
       </div>
     </>
