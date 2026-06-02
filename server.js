@@ -3,7 +3,7 @@ const express    = require('express');
 const sql        = require('mssql');
 const path       = require('path');
 const session    = require('express-session');
-const MSSQLStore = require('connect-mssql-v2')(session);
+const MSSQLStore = require('connect-mssql-v2');
 
 const app = express();
 app.use(express.json());
@@ -48,16 +48,26 @@ async function getTenantPool(tenantId) {
   return pool;
 }
 
+const isProd = process.env.NODE_ENV === 'production';
+
 // ── Session ────────────────────────────────────────────────────────
-app.use(session({
-  store:             new MSSQLStore(authConfig),
+const sessionOptions = {
   secret:            process.env.SESSION_SECRET || 'nura-change-me-in-production',
   resave:            false,
   saveUninitialized: false,
   cookie: { httpOnly: true, maxAge: 8 * 60 * 60 * 1000 },
-}));
+};
+if (isProd) {
+  sessionOptions.store = new MSSQLStore(authConfig, session);
+}
+app.use(session(sessionOptions));
 
-const isProd = process.env.NODE_ENV === 'production';
+// ── API error handler (returns JSON instead of HTML) ───────────────
+app.use((err, req, res, next) => {
+  console.error('Express error:', err.message);
+  if (req.path.startsWith('/api/')) return res.status(500).json({ error: err.message });
+  next(err);
+});
 
 // ── Auth middleware ────────────────────────────────────────────────
 const PUBLIC_API_PATHS = [
