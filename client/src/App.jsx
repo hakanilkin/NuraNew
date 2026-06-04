@@ -25,6 +25,7 @@ import AtlasDODC          from './pages/AtlasDODC'
 import AtlasBedPlacement  from './pages/AtlasBedPlacement'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
+import RoomRunning      from './pages/RoomRunning'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
@@ -563,6 +564,7 @@ function Shell() {
           <Route path="/"                  element={<ORPerformance />} />
           <Route path="/capacity"          element={<Capacity />} />
           <Route path="/block-utilization" element={<BlockUtilization />} />
+          <Route path="/room-running"     element={<RoomRunning />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
           <Route path="/atlas/fcot"        element={<AtlasFCOT />} />

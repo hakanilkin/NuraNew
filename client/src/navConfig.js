@@ -14,6 +14,7 @@ const navConfig = [
           { id: 'performance',      label: 'Performance',      pageTitle: 'OR Performance', type: 'link', path: '/',                  end: true },
           { id: 'capacity',         label: 'Capacity',                                       type: 'link', path: '/capacity' },
           { id: 'block-utilization',label: 'Block Utilization',                              type: 'link', path: '/block-utilization' },
+          { id: 'room-running',     label: 'Room Running',                                   type: 'link', path: '/room-running' },
         ],
       },
       {

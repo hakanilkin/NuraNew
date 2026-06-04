@@ -332,6 +332,70 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     }
   });
 
+  // ── GET /api/rr/meta ───────────────────────────────────────────────────────
+  // Returns max rrDate and distinct ORGroup values for filter defaults
+
+  router.get('/rr/meta', async (req, res) => {
+    try {
+      const db = await getTenantPool(req.session.tenantId);
+      const [dateRes, groupRes] = await Promise.all([
+        db.request().query(`SELECT MAX(rrDate) AS MaxDate FROM DS_RR`),
+        db.request().query(`SELECT DISTINCT ISNULL(ORGroup, 'Unknown') AS ORGroup FROM DS_RR ORDER BY ORGroup`),
+      ]);
+      res.json({
+        maxDate:  dateRes.recordset[0]?.MaxDate ?? null,
+        orGroups: groupRes.recordset.map(r => r.ORGroup),
+      });
+    } catch (err) {
+      console.error('/api/rr/meta error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── GET /api/rr/data ────────────────────────────────────────────────────────
+  // Returns avg and stdev of TotalOccupied per rrtimeslot
+
+  router.get('/rr/data', async (req, res) => {
+    try {
+      const db        = await getTenantPool(req.session.tenantId);
+      const request   = db.request();
+      const startDate = req.query.startDate;
+      const endDate   = req.query.endDate;
+      request.input('startDate', sql.Date, startDate);
+      request.input('endDate',   sql.Date, endDate);
+
+      // OR group filter
+      let orGroupFilter = '';
+      if (req.query.orGroups) {
+        const groups = req.query.orGroups.split(',').map(s => s.trim()).filter(Boolean);
+        if (groups.length) {
+          const placeholders = groups.map((g, i) => {
+            request.input(`og${i}`, sql.NVarChar, g);
+            return `@og${i}`;
+          });
+          orGroupFilter = ` AND ISNULL(ORGroup, 'Unknown') IN (${placeholders.join(', ')})`;
+        }
+      }
+
+      const result = await request.query(`
+        SELECT
+          rrtimeslot,
+          AVG(CAST(TotalOccupied AS FLOAT))                          AS AvgOccupied,
+          ISNULL(STDEV(CAST(TotalOccupied AS FLOAT)), 0)             AS StdevOccupied
+        FROM DS_RR
+        WHERE rrDate >= @startDate
+          AND rrDate <= @endDate
+          ${orGroupFilter}
+        GROUP BY rrtimeslot
+        ORDER BY rrtimeslot
+      `);
+      res.json(result.recordset);
+    } catch (err) {
+      console.error('/api/rr/data error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── GET /api/blazesql/url ───────────────────────────────────────────────────
 
   router.get('/blazesql/url', async (req, res) => {
