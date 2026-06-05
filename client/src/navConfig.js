@@ -1,59 +1,53 @@
+export const OR_NAV = [
+  {
+    id: 'analytics', label: 'Analytics', icon: 'BarChart3', type: 'expander',
+    children: [
+      { id: 'or-performance',    label: 'Case Volumes',          pageTitle: 'Case Volumes',          type: 'link', path: '/',                  end: true },
+      { id: 'capacity',          label: 'Prime Time Utilization', pageTitle: 'Prime Time Utilization', type: 'link', path: '/capacity' },
+      { id: 'block-utilization', label: 'Block Utilization',      type: 'link', path: '/block-utilization' },
+      { id: 'room-running',      label: 'Room Running',            type: 'link', path: '/room-running' },
+    ],
+  },
+  {
+    id: 'atlas', label: 'Atlas', icon: 'Map', type: 'expander',
+    children: [
+      { id: 'atlas-fcot',               label: 'FCOT Drivers',       type: 'link', path: '/atlas/fcot' },
+      { id: 'atlas-turnover',           label: 'Turnover Time',      type: 'link', path: '/atlas/turnover' },
+      { id: 'atlas-performance-briefs', label: 'Performance Briefs', type: 'link', path: '/atlas/performance-briefs' },
+    ],
+  },
+  { id: 'ask-nura',  label: 'Ask Nura',  icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
+  { id: 'forecasts', label: 'Forecasts', icon: 'TrendingUp',        type: 'link', path: '/forecasts' },
+]
+
+export const IP_NAV = [
+  {
+    id: 'analytics', label: 'Analytics', icon: 'BarChart3', type: 'expander',
+    children: [],
+  },
+  {
+    id: 'atlas', label: 'Atlas', icon: 'Map', type: 'expander',
+    children: [
+      { id: 'atlas-bed-placement', label: 'Bed Placement', type: 'link', path: '/atlas/bed-placement' },
+      { id: 'atlas-dodc',          label: 'DO→DC Time',    type: 'link', path: '/atlas/do-dc' },
+    ],
+  },
+  { id: 'ask-nura',  label: 'Ask Nura',  icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
+  { id: 'forecasts', label: 'Forecasts', icon: 'TrendingUp',        type: 'link', path: '/forecasts' },
+]
+
+// Combined for CHILD_PATHS / PAGE_TITLES — union of both domain trees
 const navConfig = [
   {
-    id:    'analytics',
-    label: 'Analytics',
-    icon:  'BarChart3',
-    type:  'expander',
-    children: [
-      {
-        id:    'or',
-        label: 'OR',
-        icon:  'Activity',
-        type:  'expander',
-        children: [
-          { id: 'performance',      label: 'Performance',      pageTitle: 'OR Performance', type: 'link', path: '/',                  end: true },
-          { id: 'capacity',         label: 'Capacity',                                       type: 'link', path: '/capacity' },
-          { id: 'block-utilization',label: 'Block Utilization',                              type: 'link', path: '/block-utilization' },
-          { id: 'room-running',     label: 'Room Running',                                   type: 'link', path: '/room-running' },
-        ],
-      },
-      {
-        id:    'ip',
-        label: 'IP',
-        icon:  'LayoutGrid',
-        type:  'expander',
-        children: [
-          { id: 'ip-flow', label: 'IP Flow', type: 'link', path: '/ip-flow' },
-        ],
-      },
-    ],
+    id: 'analytics', type: 'expander',
+    children: [...OR_NAV[0].children, ...IP_NAV[0].children],
   },
   {
-    id:    'atlas',
-    label: 'Atlas',
-    icon:  'Map',
-    type:  'expander',
-    children: [
-      { id: 'atlas-fcot',     label: 'FCOT Drivers',  type: 'link', path: '/atlas/fcot' },
-      { id: 'atlas-turnover', label: 'Turnover Time',  type: 'link', path: '/atlas/turnover' },
-      { id: 'atlas-dodc',          label: 'DO→DC Time',    type: 'link', path: '/atlas/do-dc' },
-      { id: 'atlas-bed-placement', label: 'Bed Placement',  type: 'link', path: '/atlas/bed-placement' },
-    ],
+    id: 'atlas', type: 'expander',
+    children: [...OR_NAV[1].children, ...IP_NAV[1].children],
   },
-  {
-    id:    'ask-nura',
-    label: 'Ask Nura',
-    icon:  'MessageSquareText',
-    type:  'link',
-    path:  '/ask-nura',
-  },
-  {
-    id:    'forecasts',
-    label: 'Forecasts',
-    icon:  'TrendingUp',
-    type:  'link',
-    path:  '/forecasts',
-  },
+  { id: 'ask-nura',  type: 'link', path: '/ask-nura' },
+  { id: 'forecasts', type: 'link', path: '/forecasts' },
 ]
 
 export default navConfig

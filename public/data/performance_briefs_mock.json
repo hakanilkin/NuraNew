@@ -1,0 +1,281 @@
+{
+  "groups": [
+    {
+      "name": "Penn Neuro",
+      "service": "Neurosurgery",
+      "cases": 161,
+      "status": "misaligned",
+      "inblock": 59.1,
+      "primetime": 84.7,
+      "nonprime": 20,
+      "pipeline": { "scheduled": 18, "forecasted": 42, "trend": "up", "change": "+2%" },
+      "finding": "Right amount of time, wrong timing. 20% of work outside block hours. Friday blocks exceed 100% primetime.",
+      "dow": [
+        { "d": "Mon", "v": 62 }, { "d": "Tue", "v": 25 }, { "d": "Wed", "v": 71 },
+        { "d": "Thu", "v": 88 }, { "d": "Fri", "v": 102 }
+      ],
+      "brief": "Penn Neuro has block time on ORs 5 and 11 but not on 1st/3rd Wed, 1st/3rd/5th Thu, or Fri mornings. Despite this, 18 cases were performed during non-block times with significant after-hours minutes. Friday blocks exceed 100% primetime utilization — demand exists outside allocated windows.",
+      "pipeRows": [
+        { "l": "Scheduled cases", "v": "18" }, { "l": "Forecasted (6mo)", "v": "42" },
+        { "l": "Clinic visits", "v": "156" }, { "l": "New patient %", "v": "22%" },
+        { "l": "Conversion rate", "v": "27%" }
+      ],
+      "metrics": {
+        "cases": 161, "inBlockMin": 15032, "outOfBlockMin": 3716,
+        "totalNonPrime": 5088, "nonPrimePct": 20.0,
+        "releasedTime": 4710, "releasedTimePct": 15.6,
+        "blockTime": 25440, "inblockUtil": 59.1, "primetimeUtil": 84.7
+      },
+      "dowTable": [
+        { "week": 1, "days": { "Mon": { "cases": 8, "nonPrime": 12, "ptUtil": 78, "hasBlock": true }, "Tue": { "cases": 4, "nonPrime": 25, "ptUtil": 52, "hasBlock": false }, "Wed": { "cases": 6, "nonPrime": 18, "ptUtil": 67, "hasBlock": false }, "Thu": { "cases": 7, "nonPrime": 14, "ptUtil": 71, "hasBlock": false }, "Fri": { "cases": 9, "nonPrime": 22, "ptUtil": 108, "hasBlock": true } } },
+        { "week": 2, "days": { "Mon": { "cases": 9, "nonPrime": 8, "ptUtil": 84, "hasBlock": true }, "Tue": { "cases": 5, "nonPrime": 15, "ptUtil": 61, "hasBlock": true }, "Wed": { "cases": 7, "nonPrime": 11, "ptUtil": 79, "hasBlock": true }, "Thu": { "cases": 8, "nonPrime": 19, "ptUtil": 88, "hasBlock": true }, "Fri": { "cases": 10, "nonPrime": 31, "ptUtil": 105, "hasBlock": true } } },
+        { "week": 3, "days": { "Mon": { "cases": 7, "nonPrime": 10, "ptUtil": 76, "hasBlock": true }, "Tue": { "cases": 3, "nonPrime": 28, "ptUtil": 48, "hasBlock": false }, "Wed": { "cases": 5, "nonPrime": 22, "ptUtil": 63, "hasBlock": false }, "Thu": { "cases": 6, "nonPrime": 16, "ptUtil": 72, "hasBlock": false }, "Fri": { "cases": 11, "nonPrime": 27, "ptUtil": 112, "hasBlock": true } } },
+        { "week": 4, "days": { "Mon": { "cases": 8, "nonPrime": 9, "ptUtil": 82, "hasBlock": true }, "Tue": { "cases": 6, "nonPrime": 12, "ptUtil": 68, "hasBlock": true }, "Wed": { "cases": 9, "nonPrime": 7, "ptUtil": 88, "hasBlock": true }, "Thu": { "cases": 10, "nonPrime": 14, "ptUtil": 91, "hasBlock": true }, "Fri": { "cases": 12, "nonPrime": 24, "ptUtil": 103, "hasBlock": true } } },
+        { "week": 5, "days": { "Mon": { "cases": 7, "nonPrime": 11, "ptUtil": 75, "hasBlock": true }, "Tue": { "cases": 4, "nonPrime": 19, "ptUtil": 55, "hasBlock": false }, "Wed": { "cases": 6, "nonPrime": 15, "ptUtil": 71, "hasBlock": true }, "Thu": { "cases": 5, "nonPrime": 20, "ptUtil": 65, "hasBlock": false }, "Fri": { "cases": 10, "nonPrime": 29, "ptUtil": 98, "hasBlock": true } } }
+      ]
+    },
+    {
+      "name": "General Surgery",
+      "service": "General Surgery",
+      "cases": 233,
+      "status": "under",
+      "inblock": 71.2,
+      "primetime": 92.4,
+      "nonprime": 14,
+      "pipeline": { "scheduled": 233, "forecasted": 738, "trend": "up", "change": "+18%" },
+      "finding": "Pipeline growing 18% YoY. At 92% primetime, insufficient block allocation for projected demand.",
+      "dow": [
+        { "d": "Mon", "v": 88 }, { "d": "Tue", "v": 91 }, { "d": "Wed", "v": 94 },
+        { "d": "Thu", "v": 89 }, { "d": "Fri", "v": 96 }
+      ],
+      "brief": "General Surgery is running near capacity across all days. With a growing pipeline and 44.7% clinic conversion rate, current block allocation will be insufficient within 2 quarters without adjustment.",
+      "pipeRows": [
+        { "l": "Scheduled cases", "v": "233" }, { "l": "Forecasted (6mo)", "v": "738" },
+        { "l": "Clinic visits", "v": "1,656" }, { "l": "New patient %", "v": "15.3%" },
+        { "l": "Conversion rate", "v": "44.7%" }
+      ],
+      "metrics": {
+        "cases": 233, "inBlockMin": 29904, "outOfBlockMin": 5832,
+        "totalNonPrime": 5880, "nonPrimePct": 14.0,
+        "releasedTime": 6300, "releasedTimePct": 15.0,
+        "blockTime": 42000, "inblockUtil": 71.2, "primetimeUtil": 92.4
+      },
+      "dowTable": [
+        { "week": 1, "days": { "Mon": { "cases": 11, "nonPrime": 12, "ptUtil": 90, "hasBlock": true }, "Tue": { "cases": 12, "nonPrime": 10, "ptUtil": 93, "hasBlock": true }, "Wed": { "cases": 13, "nonPrime": 14, "ptUtil": 95, "hasBlock": true }, "Thu": { "cases": 11, "nonPrime": 11, "ptUtil": 89, "hasBlock": true }, "Fri": { "cases": 12, "nonPrime": 16, "ptUtil": 97, "hasBlock": true } } },
+        { "week": 2, "days": { "Mon": { "cases": 12, "nonPrime": 9, "ptUtil": 91, "hasBlock": true }, "Tue": { "cases": 11, "nonPrime": 13, "ptUtil": 90, "hasBlock": true }, "Wed": { "cases": 14, "nonPrime": 15, "ptUtil": 96, "hasBlock": true }, "Thu": { "cases": 12, "nonPrime": 12, "ptUtil": 92, "hasBlock": true }, "Fri": { "cases": 13, "nonPrime": 18, "ptUtil": 94, "hasBlock": true } } },
+        { "week": 3, "days": { "Mon": { "cases": 10, "nonPrime": 11, "ptUtil": 87, "hasBlock": true }, "Tue": { "cases": 13, "nonPrime": 10, "ptUtil": 94, "hasBlock": true }, "Wed": { "cases": 12, "nonPrime": 13, "ptUtil": 92, "hasBlock": true }, "Thu": { "cases": 11, "nonPrime": 12, "ptUtil": 90, "hasBlock": true }, "Fri": { "cases": 14, "nonPrime": 19, "ptUtil": 98, "hasBlock": true } } },
+        { "week": 4, "days": { "Mon": { "cases": 12, "nonPrime": 8, "ptUtil": 93, "hasBlock": true }, "Tue": { "cases": 12, "nonPrime": 11, "ptUtil": 91, "hasBlock": true }, "Wed": { "cases": 13, "nonPrime": 15, "ptUtil": 94, "hasBlock": true }, "Thu": { "cases": 12, "nonPrime": 13, "ptUtil": 91, "hasBlock": true }, "Fri": { "cases": 11, "nonPrime": 17, "ptUtil": 95, "hasBlock": true } } },
+        { "week": 5, "days": { "Mon": { "cases": 11, "nonPrime": 10, "ptUtil": 89, "hasBlock": true }, "Tue": { "cases": 12, "nonPrime": 12, "ptUtil": 92, "hasBlock": true }, "Wed": { "cases": 13, "nonPrime": 14, "ptUtil": 93, "hasBlock": true }, "Thu": { "cases": 12, "nonPrime": 11, "ptUtil": 91, "hasBlock": true }, "Fri": { "cases": 14, "nonPrime": 20, "ptUtil": 99, "hasBlock": true } } }
+      ]
+    },
+    {
+      "name": "Orthopedics",
+      "service": "Orthopedics",
+      "cases": 331,
+      "status": "right",
+      "inblock": 78.4,
+      "primetime": 81.2,
+      "nonprime": 6,
+      "pipeline": { "scheduled": 331, "forecasted": 608, "trend": "flat", "change": "+1%" },
+      "finding": "Well-aligned. Block usage matches allocation. Pipeline stable.",
+      "dow": [
+        { "d": "Mon", "v": 79 }, { "d": "Tue", "v": 82 }, { "d": "Wed", "v": 77 },
+        { "d": "Thu", "v": 81 }, { "d": "Fri", "v": 78 }
+      ],
+      "brief": "Orthopedics block utilization is consistent across all days with minimal non-primetime spillover. Pipeline is stable. Current allocation appears appropriate for projected demand.",
+      "pipeRows": [
+        { "l": "Scheduled cases", "v": "331" }, { "l": "Forecasted (6mo)", "v": "608" },
+        { "l": "Clinic visits", "v": "2,312" }, { "l": "New patient %", "v": "6.9%" },
+        { "l": "Conversion rate", "v": "26.3%" }
+      ],
+      "metrics": {
+        "cases": 331, "inBlockMin": 44218, "outOfBlockMin": 4100,
+        "totalNonPrime": 3384, "nonPrimePct": 6.0,
+        "releasedTime": 8460, "releasedTimePct": 15.0,
+        "blockTime": 56400, "inblockUtil": 78.4, "primetimeUtil": 81.2
+      },
+      "dowTable": [
+        { "week": 1, "days": { "Mon": { "cases": 14, "nonPrime": 5, "ptUtil": 80, "hasBlock": true }, "Tue": { "cases": 15, "nonPrime": 6, "ptUtil": 83, "hasBlock": true }, "Wed": { "cases": 13, "nonPrime": 4, "ptUtil": 79, "hasBlock": true }, "Thu": { "cases": 14, "nonPrime": 7, "ptUtil": 82, "hasBlock": true }, "Fri": { "cases": 14, "nonPrime": 5, "ptUtil": 80, "hasBlock": true } } },
+        { "week": 2, "days": { "Mon": { "cases": 15, "nonPrime": 4, "ptUtil": 82, "hasBlock": true }, "Tue": { "cases": 14, "nonPrime": 6, "ptUtil": 80, "hasBlock": true }, "Wed": { "cases": 16, "nonPrime": 5, "ptUtil": 84, "hasBlock": true }, "Thu": { "cases": 15, "nonPrime": 7, "ptUtil": 83, "hasBlock": true }, "Fri": { "cases": 13, "nonPrime": 6, "ptUtil": 78, "hasBlock": true } } },
+        { "week": 3, "days": { "Mon": { "cases": 13, "nonPrime": 5, "ptUtil": 78, "hasBlock": true }, "Tue": { "cases": 15, "nonPrime": 6, "ptUtil": 82, "hasBlock": true }, "Wed": { "cases": 14, "nonPrime": 4, "ptUtil": 80, "hasBlock": true }, "Thu": { "cases": 14, "nonPrime": 6, "ptUtil": 81, "hasBlock": true }, "Fri": { "cases": 15, "nonPrime": 7, "ptUtil": 82, "hasBlock": true } } },
+        { "week": 4, "days": { "Mon": { "cases": 15, "nonPrime": 5, "ptUtil": 83, "hasBlock": true }, "Tue": { "cases": 14, "nonPrime": 5, "ptUtil": 80, "hasBlock": true }, "Wed": { "cases": 13, "nonPrime": 6, "ptUtil": 77, "hasBlock": true }, "Thu": { "cases": 15, "nonPrime": 7, "ptUtil": 82, "hasBlock": true }, "Fri": { "cases": 14, "nonPrime": 6, "ptUtil": 79, "hasBlock": true } } },
+        { "week": 5, "days": { "Mon": { "cases": 14, "nonPrime": 4, "ptUtil": 80, "hasBlock": true }, "Tue": { "cases": 15, "nonPrime": 6, "ptUtil": 83, "hasBlock": true }, "Wed": { "cases": 14, "nonPrime": 5, "ptUtil": 80, "hasBlock": true }, "Thu": { "cases": 13, "nonPrime": 6, "ptUtil": 77, "hasBlock": true }, "Fri": { "cases": 16, "nonPrime": 7, "ptUtil": 84, "hasBlock": true } } }
+      ]
+    },
+    {
+      "name": "Urology",
+      "service": "Urology",
+      "cases": 172,
+      "status": "misaligned",
+      "inblock": 52.8,
+      "primetime": 78.3,
+      "nonprime": 18,
+      "pipeline": { "scheduled": 172, "forecasted": 989, "trend": "up", "change": "+12%" },
+      "finding": "Low inblock Mon-Tue, high Wed-Thu. Block days misaligned with actual case volume.",
+      "dow": [
+        { "d": "Mon", "v": 48 }, { "d": "Tue", "v": 55 }, { "d": "Wed", "v": 81 },
+        { "d": "Thu", "v": 91 }, { "d": "Fri", "v": 74 }
+      ],
+      "brief": "Urology has low inblock utilization on Mon-Tue but high utilization Wed-Thu, suggesting block days are misaligned with actual surgical volume. With a large forecasted pipeline from 6,009 clinic visits, block schedule realignment is needed.",
+      "pipeRows": [
+        { "l": "Scheduled cases", "v": "172" }, { "l": "Forecasted (6mo)", "v": "989" },
+        { "l": "Clinic visits", "v": "6,009" }, { "l": "New patient %", "v": "4.3%" },
+        { "l": "Conversion rate", "v": "11.2%" }
+      ],
+      "metrics": {
+        "cases": 172, "inBlockMin": 15840, "outOfBlockMin": 5200,
+        "totalNonPrime": 5400, "nonPrimePct": 18.0,
+        "releasedTime": 4800, "releasedTimePct": 16.0,
+        "blockTime": 30000, "inblockUtil": 52.8, "primetimeUtil": 78.3
+      },
+      "dowTable": [
+        { "week": 1, "days": { "Mon": { "cases": 5, "nonPrime": 35, "ptUtil": 48, "hasBlock": false }, "Tue": { "cases": 4, "nonPrime": 40, "ptUtil": 52, "hasBlock": false }, "Wed": { "cases": 9, "nonPrime": 12, "ptUtil": 84, "hasBlock": true }, "Thu": { "cases": 10, "nonPrime": 8, "ptUtil": 91, "hasBlock": true }, "Fri": { "cases": 7, "nonPrime": 18, "ptUtil": 76, "hasBlock": true } } },
+        { "week": 2, "days": { "Mon": { "cases": 4, "nonPrime": 38, "ptUtil": 44, "hasBlock": false }, "Tue": { "cases": 6, "nonPrime": 33, "ptUtil": 58, "hasBlock": false }, "Wed": { "cases": 8, "nonPrime": 14, "ptUtil": 82, "hasBlock": true }, "Thu": { "cases": 11, "nonPrime": 9, "ptUtil": 94, "hasBlock": true }, "Fri": { "cases": 8, "nonPrime": 15, "ptUtil": 78, "hasBlock": true } } },
+        { "week": 3, "days": { "Mon": { "cases": 6, "nonPrime": 32, "ptUtil": 55, "hasBlock": false }, "Tue": { "cases": 5, "nonPrime": 37, "ptUtil": 50, "hasBlock": false }, "Wed": { "cases": 9, "nonPrime": 11, "ptUtil": 86, "hasBlock": true }, "Thu": { "cases": 10, "nonPrime": 10, "ptUtil": 88, "hasBlock": true }, "Fri": { "cases": 7, "nonPrime": 20, "ptUtil": 73, "hasBlock": true } } },
+        { "week": 4, "days": { "Mon": { "cases": 5, "nonPrime": 36, "ptUtil": 49, "hasBlock": false }, "Tue": { "cases": 4, "nonPrime": 42, "ptUtil": 47, "hasBlock": false }, "Wed": { "cases": 10, "nonPrime": 13, "ptUtil": 85, "hasBlock": true }, "Thu": { "cases": 11, "nonPrime": 8, "ptUtil": 92, "hasBlock": true }, "Fri": { "cases": 8, "nonPrime": 16, "ptUtil": 79, "hasBlock": true } } },
+        { "week": 5, "days": { "Mon": { "cases": 4, "nonPrime": 39, "ptUtil": 46, "hasBlock": false }, "Tue": { "cases": 5, "nonPrime": 34, "ptUtil": 53, "hasBlock": false }, "Wed": { "cases": 9, "nonPrime": 12, "ptUtil": 83, "hasBlock": true }, "Thu": { "cases": 10, "nonPrime": 9, "ptUtil": 89, "hasBlock": true }, "Fri": { "cases": 6, "nonPrime": 22, "ptUtil": 71, "hasBlock": true } } }
+      ]
+    },
+    {
+      "name": "ENT",
+      "service": "Otolaryngology",
+      "cases": 22,
+      "status": "over",
+      "inblock": 38.2,
+      "primetime": 51.4,
+      "nonprime": 3,
+      "pipeline": { "scheduled": 22, "forecasted": 68, "trend": "down", "change": "-8%" },
+      "finding": "Significantly over-allocated. Low utilization across all metrics with declining pipeline.",
+      "dow": [
+        { "d": "Mon", "v": 42 }, { "d": "Tue", "v": 38 }, { "d": "Wed", "v": 55 },
+        { "d": "Thu", "v": 39 }, { "d": "Fri", "v": 44 }
+      ],
+      "brief": "ENT block time is significantly underutilized. Despite a high new patient rate (42.3%), low conversion from visits to scheduled cases suggests demand is not converting to surgical cases at this facility.",
+      "pipeRows": [
+        { "l": "Scheduled cases", "v": "22" }, { "l": "Forecasted (6mo)", "v": "68" },
+        { "l": "Clinic visits", "v": "977" }, { "l": "New patient %", "v": "42.3%" },
+        { "l": "Conversion rate", "v": "31.2%" }
+      ],
+      "metrics": {
+        "cases": 22, "inBlockMin": 2750, "outOfBlockMin": 1440,
+        "totalNonPrime": 216, "nonPrimePct": 3.0,
+        "releasedTime": 2880, "releasedTimePct": 40.0,
+        "blockTime": 7200, "inblockUtil": 38.2, "primetimeUtil": 51.4
+      },
+      "dowTable": [
+        { "week": 1, "days": { "Mon": { "cases": 2, "nonPrime": 0, "ptUtil": 42, "hasBlock": true }, "Tue": { "cases": 1, "nonPrime": 0, "ptUtil": 38, "hasBlock": true }, "Wed": { "cases": 2, "nonPrime": 5, "ptUtil": 55, "hasBlock": true }, "Thu": { "cases": 1, "nonPrime": 0, "ptUtil": 39, "hasBlock": true }, "Fri": { "cases": 2, "nonPrime": 0, "ptUtil": 44, "hasBlock": true } } },
+        { "week": 2, "days": { "Mon": { "cases": 1, "nonPrime": 0, "ptUtil": 38, "hasBlock": true }, "Tue": { "cases": 2, "nonPrime": 0, "ptUtil": 45, "hasBlock": true }, "Wed": { "cases": 1, "nonPrime": 0, "ptUtil": 35, "hasBlock": true }, "Thu": { "cases": 2, "nonPrime": 5, "ptUtil": 42, "hasBlock": true }, "Fri": { "cases": 1, "nonPrime": 0, "ptUtil": 38, "hasBlock": true } } },
+        { "week": 3, "days": { "Mon": { "cases": 2, "nonPrime": 0, "ptUtil": 44, "hasBlock": true }, "Tue": { "cases": 1, "nonPrime": 0, "ptUtil": 36, "hasBlock": true }, "Wed": { "cases": 3, "nonPrime": 8, "ptUtil": 62, "hasBlock": true }, "Thu": { "cases": 1, "nonPrime": 0, "ptUtil": 38, "hasBlock": true }, "Fri": { "cases": 2, "nonPrime": 0, "ptUtil": 47, "hasBlock": true } } },
+        { "week": 4, "days": { "Mon": { "cases": 1, "nonPrime": 0, "ptUtil": 36, "hasBlock": true }, "Tue": { "cases": 2, "nonPrime": 0, "ptUtil": 44, "hasBlock": true }, "Wed": { "cases": 2, "nonPrime": 5, "ptUtil": 52, "hasBlock": true }, "Thu": { "cases": 1, "nonPrime": 0, "ptUtil": 37, "hasBlock": true }, "Fri": { "cases": 2, "nonPrime": 0, "ptUtil": 45, "hasBlock": true } } },
+        { "week": 5, "days": { "Mon": { "cases": 1, "nonPrime": 0, "ptUtil": 39, "hasBlock": true }, "Tue": { "cases": 2, "nonPrime": 0, "ptUtil": 43, "hasBlock": true }, "Wed": { "cases": 2, "nonPrime": 0, "ptUtil": 50, "hasBlock": true }, "Thu": { "cases": 1, "nonPrime": 0, "ptUtil": 38, "hasBlock": true }, "Fri": { "cases": 1, "nonPrime": 0, "ptUtil": 40, "hasBlock": true } } }
+      ]
+    }
+  ],
+
+  "pipelineSystem": {
+    "past": {
+      "stats": { "cases": 187, "visits": 1842, "conversion": "28.4%", "newPct": "22.1%", "period": "Jan 31 – Feb 28, 2026" },
+      "rows": [
+        { "sl": "General Surgery", "cases": 54,  "visits": 401,  "newPct": "19.3%", "conversion": "44.7%", "trend": "up",   "change": "+8%"  },
+        { "sl": "Orthopedics",     "cases": 79,  "visits": 562,  "newPct": "17.9%", "conversion": "26.3%", "trend": "flat", "change": "0%"   },
+        { "sl": "Urology",         "cases": 31,  "visits": 1102, "newPct": "6.9%",  "conversion": "11.2%", "trend": "up",   "change": "+4%"  },
+        { "sl": "ENT",             "cases": 9,   "visits": 241,  "newPct": "42.3%", "conversion": "31.2%", "trend": "down", "change": "-12%" },
+        { "sl": "Other",           "cases": 14,  "visits": 536,  "newPct": "14.1%", "conversion": "18.6%", "trend": "flat", "change": "+1%"  }
+      ]
+    },
+    "next": {
+      "stats": { "scheduled": 203, "clinicGen": 184, "orDays": 18, "avgPerDay": "11.3", "period": "Mar 7 – Apr 4, 2026" },
+      "rows": [
+        { "sl": "General Surgery", "scheduled": 58, "clinicGen": 53, "schedVisits": 181, "newVisits": 35, "estVisits": 105 },
+        { "sl": "Orthopedics",     "scheduled": 80, "clinicGen": 75, "schedVisits": 318, "newVisits": 57, "estVisits": 153 },
+        { "sl": "Urology",         "scheduled": 38, "clinicGen": 35, "schedVisits": 508, "newVisits": 35, "estVisits": 307 },
+        { "sl": "ENT",             "scheduled": 10, "clinicGen": 9,  "schedVisits": 241, "newVisits": 98, "estVisits": 123 },
+        { "sl": "Other",           "scheduled": 17, "clinicGen": 12, "schedVisits": 394, "newVisits": 44, "estVisits": 298 }
+      ]
+    },
+    "forecast": {
+      "stats": { "forecasted": 2583, "fromCompleted": 912, "fromScheduled": 1671, "clinicVisits": 12089 },
+      "rows": [
+        { "sl": "General Surgery", "scheduled": 233, "forecasted": 738, "fromCompleted": 279, "fromScheduled": 459, "visits": 1656  },
+        { "sl": "Orthopedics",     "scheduled": 331, "forecasted": 608, "fromCompleted": 299, "fromScheduled": 309, "visits": 2312  },
+        { "sl": "Urology",         "scheduled": 172, "forecasted": 989, "fromCompleted": 232, "fromScheduled": 756, "visits": 6009  },
+        { "sl": "ENT",             "scheduled": 22,  "forecasted": 68,  "fromCompleted": 16,  "fromScheduled": 52,  "visits": 977   },
+        { "sl": "Other",           "scheduled": 41,  "forecasted": 180, "fromCompleted": 86,  "fromScheduled": 95,  "visits": 1135  }
+      ]
+    }
+  },
+
+  "surgeons": {
+    "General Surgery": [
+      {
+        "name": "SMITH, John",
+        "sched": 21, "clGen": 19, "forecast": 36.9, "fromCompleted": 19.4, "fromScheduled": 17.5,
+        "visits": 57, "visNew": 20, "visPct": 35.1, "visEST": 33, "visOth": 4,
+        "past": { "sched": 19, "clGen": 17, "visits": 45, "visNew": 19, "visPct": 42.2, "visEST": 22, "visOth": 4 },
+        "next": { "sched": 21, "visits": 57, "visNew": 20, "visPct": 35.1, "visEST": 33, "visOth": 4 }
+      },
+      {
+        "name": "ALI, Noaman",
+        "sched": 40, "clGen": 39, "forecast": 108, "fromCompleted": 41, "fromScheduled": 67,
+        "visits": 181, "visNew": 35, "visPct": 19.3, "visEST": 105, "visOth": 41,
+        "past": { "sched": 38, "clGen": 37, "visits": 172, "visNew": 31, "visPct": 18.0, "visEST": 99,  "visOth": 42 },
+        "next": { "sched": 42, "visits": 189, "visNew": 37, "visPct": 19.6, "visEST": 110, "visOth": 42 }
+      },
+      {
+        "name": "BAUMAN, Marita",
+        "sched": 28, "clGen": 28, "forecast": 94, "fromCompleted": 33, "fromScheduled": 62,
+        "visits": 115, "visNew": 56, "visPct": 48.7, "visEST": 44, "visOth": 15,
+        "past": { "sched": 26, "clGen": 26, "visits": 110, "visNew": 54, "visPct": 49.1, "visEST": 42, "visOth": 14 },
+        "next": { "sched": 29, "visits": 118, "visNew": 57, "visPct": 48.3, "visEST": 46, "visOth": 15 }
+      },
+      {
+        "name": "DAIGLE, Chris",
+        "sched": 37, "clGen": 37, "forecast": 75, "fromCompleted": 26, "fromScheduled": 49,
+        "visits": 182, "visNew": 13, "visPct": 7.1, "visEST": 135, "visOth": 34,
+        "past": { "sched": 35, "clGen": 35, "visits": 175, "visNew": 12, "visPct": 6.9,  "visEST": 130, "visOth": 33 },
+        "next": { "sched": 38, "visits": 185, "visNew": 14, "visPct": 7.6,  "visEST": 138, "visOth": 33 }
+      }
+    ],
+    "Orthopedics": [
+      {
+        "name": "DINICOLA, Nicholas",
+        "sched": 3, "clGen": 2, "forecast": 13, "fromCompleted": 8, "fromScheduled": 5,
+        "visits": 70, "visNew": 1, "visPct": 1.4, "visEST": 46, "visOth": 23,
+        "past": { "sched": 3, "clGen": 2, "visits": 68, "visNew": 1, "visPct": 1.5, "visEST": 44, "visOth": 23 },
+        "next": { "sched": 3, "visits": 72, "visNew": 1, "visPct": 1.4, "visEST": 48, "visOth": 23 }
+      },
+      {
+        "name": "KANTARAS, Anthony",
+        "sched": 30, "clGen": 30, "forecast": 59, "fromCompleted": 32, "fromScheduled": 27,
+        "visits": 281, "visNew": 13, "visPct": 4.6, "visEST": 176, "visOth": 92,
+        "past": { "sched": 28, "clGen": 28, "visits": 270, "visNew": 12, "visPct": 4.4, "visEST": 168, "visOth": 90 },
+        "next": { "sched": 31, "visits": 285, "visNew": 14, "visPct": 4.9, "visEST": 178, "visOth": 93 }
+      }
+    ],
+    "Urology": [
+      {
+        "name": "BENTLEY, Dennis",
+        "sched": 12, "clGen": 10, "forecast": 128, "fromCompleted": 26, "fromScheduled": 102,
+        "visits": 942, "visNew": 37, "visPct": 3.9, "visEST": 803, "visOth": 102,
+        "past": { "sched": 11, "clGen": 9,  "visits": 910, "visNew": 35, "visPct": 3.8, "visEST": 778, "visOth": 97  },
+        "next": { "sched": 13, "visits": 958, "visNew": 38, "visPct": 4.0, "visEST": 820, "visOth": 100 }
+      },
+      {
+        "name": "BOLOGNA, Raymond",
+        "sched": 41, "clGen": 37, "forecast": 108, "fromCompleted": 31, "fromScheduled": 77,
+        "visits": 508, "visNew": 35, "visPct": 6.9, "visEST": 307, "visOth": 166,
+        "past": { "sched": 39, "clGen": 35, "visits": 490, "visNew": 33, "visPct": 6.7, "visEST": 296, "visOth": 161 },
+        "next": { "sched": 42, "visits": 515, "visNew": 36, "visPct": 7.0, "visEST": 310, "visOth": 169 }
+      }
+    ],
+    "ENT": [
+      {
+        "name": "STERMAN, Bruce",
+        "sched": 22, "clGen": 21, "forecast": 68, "fromCompleted": 16, "fromScheduled": 52,
+        "visits": 977, "visNew": 413, "visPct": 42.3, "visEST": 507, "visOth": 57,
+        "past": { "sched": 20, "clGen": 19, "visits": 944, "visNew": 399, "visPct": 42.3, "visEST": 490, "visOth": 55 },
+        "next": { "sched": 23, "visits": 991, "visNew": 420, "visPct": 42.4, "visEST": 515, "visOth": 56 }
+      }
+    ]
+  }
+}
