@@ -271,17 +271,17 @@ function DataCell({ cell, isTotalRow, thick, isTotal, onEnter, onLeave }) {
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-        <span style={{ fontSize: 13, fontWeight: isTotalRow ? 700 : 600,
-          color: 'var(--color-gray-900)', lineHeight: 1 }}>
-          {CaseCount}
-        </span>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
         {ptPct != null && (
-          <span style={{ fontSize: 10, fontWeight: 700,
+          <span style={{ fontSize: 15, fontWeight: 700,
             color: colors?.text ?? 'var(--color-gray-500)', lineHeight: 1 }}>
             {ptPct.toFixed(0)}%
           </span>
         )}
+        <span style={{ fontSize: 10, fontWeight: isTotalRow ? 700 : 500,
+          color: 'var(--color-gray-500)', lineHeight: 1 }}>
+          {CaseCount} cases
+        </span>
       </div>
     </td>
   )

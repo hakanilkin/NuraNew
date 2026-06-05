@@ -377,6 +377,13 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
         }
       }
 
+      // Day of week filter
+      let dowFilter = '';
+      if (req.query.dow) {
+        const days = req.query.dow.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        if (days.length) dowFilter = ` AND DATEPART(WEEKDAY, rrDate) IN (${days.join(', ')})`;
+      }
+
       const result = await request.query(`
         SELECT
           rrtimeslot,
@@ -386,6 +393,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
         WHERE rrDate >= @startDate
           AND rrDate <= @endDate
           ${orGroupFilter}
+          ${dowFilter}
         GROUP BY rrtimeslot
         ORDER BY rrtimeslot
       `);
