@@ -462,6 +462,7 @@ function Sidebar() {
                 <LeafLink to="/" end>Performance</LeafLink>
                 <LeafLink to="/capacity">Capacity</LeafLink>
                 <LeafLink to="/block-utilization">Block Utilization</LeafLink>
+                <LeafLink to="/room-running">Room Running</LeafLink>
               </NavGroup>
             )}
 
