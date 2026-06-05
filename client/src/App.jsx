@@ -22,10 +22,12 @@ import BlockUtilization from './pages/BlockUtilization'
 import AtlasFCOT        from './pages/AtlasFCOT'
 import AtlasTurnover    from './pages/AtlasTurnover'
 import AtlasDODC          from './pages/AtlasDODC'
-import AtlasBedPlacement  from './pages/AtlasBedPlacement'
+import AtlasBedPlacement        from './pages/AtlasBedPlacement'
+import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
-import RoomRunning      from './pages/RoomRunning'
+import RoomRunning        from './pages/RoomRunning'
+import ForecastsPipeline  from './pages/ForecastsPipeline'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
@@ -404,18 +406,25 @@ function UserMenu({ user }) {
 function Sidebar() {
   const { user }     = useAuth()
   const { pathname } = useLocation()
-  const [open, setOpen] = useState({ analytics: false, or: false, ip: false, atlas: false })
+  const [open,   setOpen]   = useState({ analytics: false, atlas: false })
+  const [domain, setDomain] = useState(() => localStorage.getItem('nura_domain') ?? 'OR')
 
-  // A section is open if manually toggled OR any of its child paths is currently active
   function isOpen(id) {
-    return !!open[id] || CHILD_PATHS[id].includes(pathname)
+    return !!open[id] || (CHILD_PATHS[id] ?? []).includes(pathname)
   }
 
-  // Clicking an expander whose child is active is a no-op (active item must stay visible)
   function toggle(id) {
-    if (CHILD_PATHS[id].includes(pathname)) return
+    if ((CHILD_PATHS[id] ?? []).includes(pathname)) return
     setOpen(prev => ({ ...prev, [id]: !prev[id] }))
   }
+
+  function switchDomain(d) {
+    localStorage.setItem('nura_domain', d)
+    setDomain(d)
+    setOpen({ analytics: false, atlas: false })
+  }
+
+  const isOR = domain === 'OR'
 
   return (
     <aside className="sidebar">
@@ -427,16 +436,44 @@ function Sidebar() {
         </NavLink>
       </div>
 
+      {/* ── Domain toggle ── */}
+      <div style={{
+        display: 'flex',
+        margin: '0 12px 12px',
+        background: 'rgba(255,255,255,0.08)',
+        borderRadius: 8,
+        padding: 3,
+        gap: 3,
+      }}>
+        {['OR', 'IP'].map(d => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => switchDomain(d)}
+            style={{
+              flex: 1,
+              padding: '5px 0',
+              borderRadius: 6,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              transition: 'background 150ms, color 150ms',
+              background: domain === d ? '#3E53E3' : 'transparent',
+              color: domain === d ? 'white' : 'rgba(255,255,255,0.45)',
+            }}
+          >
+            {d}
+          </button>
+        ))}
+      </div>
+
       {/* ── Nav ── */}
       <nav className="sidebar-nav">
 
-        {/* Analytics — L1 expander */}
-        <button
-          type="button"
-          onClick={() => toggle('analytics')}
-          className="nav-item"
-          style={BTN_RESET}
-        >
+        {/* Analytics */}
+        <button type="button" onClick={() => toggle('analytics')} className="nav-item" style={BTN_RESET}>
           <BarChart3 size={18} className="nav-icon" />
           <span style={{ flex: 1 }}>Analytics</span>
           <Chevron open={isOpen('analytics')} />
@@ -444,56 +481,28 @@ function Sidebar() {
 
         {isOpen('analytics') && (
           <NavGroup opacity={0.09}>
-
-            {/* OR — L2 expander */}
-            <button
-              type="button"
-              onClick={() => toggle('or')}
-              className="nav-item"
-              style={BTN_RESET}
-            >
-              <Activity size={16} className="nav-icon" />
-              <span style={{ flex: 1 }}>OR</span>
-              <Chevron open={isOpen('or')} size={12} />
-            </button>
-
-            {isOpen('or') && (
-              <NavGroup opacity={0.06}>
-                <LeafLink to="/" end>Performance</LeafLink>
-                <LeafLink to="/capacity">Capacity</LeafLink>
+            {isOR ? (
+              <>
+                <LeafLink to="/" end>Case Volumes</LeafLink>
+                <LeafLink to="/capacity">Prime Time Utilization</LeafLink>
                 <LeafLink to="/block-utilization">Block Utilization</LeafLink>
                 <LeafLink to="/room-running">Room Running</LeafLink>
-              </NavGroup>
+              </>
+            ) : (
+              <div style={{
+                padding: '7px 14px',
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.3)',
+                fontStyle: 'italic',
+              }}>
+                Coming soon
+              </div>
             )}
-
-            {/* IP — L2 expander */}
-            <button
-              type="button"
-              onClick={() => toggle('ip')}
-              className="nav-item"
-              style={BTN_RESET}
-            >
-              <LayoutGrid size={16} className="nav-icon" />
-              <span style={{ flex: 1 }}>IP</span>
-              <Chevron open={isOpen('ip')} size={12} />
-            </button>
-
-            {isOpen('ip') && (
-              <NavGroup opacity={0.06}>
-                <LeafLink to="/ip-flow">IP Flow</LeafLink>
-              </NavGroup>
-            )}
-
           </NavGroup>
         )}
 
-        {/* Atlas — L1 expander */}
-        <button
-          type="button"
-          onClick={() => toggle('atlas')}
-          className="nav-item"
-          style={BTN_RESET}
-        >
+        {/* Atlas */}
+        <button type="button" onClick={() => toggle('atlas')} className="nav-item" style={BTN_RESET}>
           <Map size={18} className="nav-icon" />
           <span style={{ flex: 1 }}>Atlas</span>
           <Chevron open={isOpen('atlas')} />
@@ -501,12 +510,21 @@ function Sidebar() {
 
         {isOpen('atlas') && (
           <NavGroup opacity={0.09}>
-            <LeafLink to="/atlas/fcot">FCOT Drivers</LeafLink>
-            <LeafLink to="/atlas/turnover">Turnover Time</LeafLink>
-            <LeafLink to="/atlas/do-dc">DO→DC Time</LeafLink>
-            <LeafLink to="/atlas/bed-placement">Bed Placement</LeafLink>
+            {isOR ? (
+              <>
+                <LeafLink to="/atlas/fcot">FCOT Drivers</LeafLink>
+                <LeafLink to="/atlas/turnover">Turnover Time</LeafLink>
+                <LeafLink to="/atlas/performance-briefs">Performance Briefs</LeafLink>
+              </>
+            ) : (
+              <>
+                <LeafLink to="/atlas/bed-placement">Bed Placement</LeafLink>
+                <LeafLink to="/atlas/do-dc">DO→DC Time</LeafLink>
+              </>
+            )}
           </NavGroup>
         )}
+
         <NavLink to="/ask-nura" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <MessageSquareText size={18} className="nav-icon" />
           Ask Nura
@@ -568,12 +586,13 @@ function Shell() {
           <Route path="/room-running"     element={<RoomRunning />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
+          <Route path="/atlas/performance-briefs" element={<AtlasPerformanceBriefs />} />
           <Route path="/atlas/fcot"        element={<AtlasFCOT />} />
           <Route path="/atlas/turnover"    element={<AtlasTurnover />} />
           <Route path="/atlas/do-dc"            element={<AtlasDODC />} />
           <Route path="/atlas/bed-placement"    element={<AtlasBedPlacement />} />
           <Route path="/ask-nura"          element={<AskNura />} />
-          <Route path="/forecasts"         element={<PlaceholderPage title="Forecasts" />} />
+          <Route path="/forecasts"         element={<ForecastsPipeline />} />
           <Route path="/admin"             element={<Admin />} />
         </Routes>
       </div>

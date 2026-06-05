@@ -189,4 +189,38 @@ router.get('/turnover-combinations', (_req, res) => {
   }
 });
 
+// GET /api/atlas/fcot-combinations
+router.get('/fcot-combinations', (_req, res) => {
+  try {
+    res.json(readJsonFile('fcot_combinations.json'));
+  } catch (err) {
+    if (err.message === 'not_found') {
+      return res.json({ combinations: [], system_mean: 0 });
+    }
+    if (err instanceof SyntaxError) {
+      console.error('/api/atlas/fcot-combinations parse error:', err.message);
+      return res.status(500).json({ error: 'Combinations file is corrupted or not valid JSON' });
+    }
+    console.error('/api/atlas/fcot-combinations read error:', err.message);
+    res.status(500).json({ error: 'Could not read combinations file' });
+  }
+});
+
+// GET /api/atlas/performance-briefs-mock
+router.get('/performance-briefs-mock', (_req, res) => {
+  try {
+    res.json(readJsonFile('performance_briefs_mock.json'));
+  } catch (err) {
+    if (err.message === 'not_found') {
+      return res.status(404).json({ error: 'Mock data file not found' });
+    }
+    if (err instanceof SyntaxError) {
+      console.error('/api/atlas/performance-briefs-mock parse error:', err.message);
+      return res.status(500).json({ error: 'Mock data file is corrupted or not valid JSON' });
+    }
+    console.error('/api/atlas/performance-briefs-mock read error:', err.message);
+    res.status(500).json({ error: 'Could not read mock data file' });
+  }
+});
+
 module.exports = router;

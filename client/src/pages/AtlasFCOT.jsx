@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import {
-  BarChart3, AlertCircle, ChevronDown,
-} from 'lucide-react'
+import { BarChart3, AlertCircle } from 'lucide-react'
 
 /* ─── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -22,17 +20,27 @@ const FEAT_NAMES = {
   Anes_Anestype:           'Anesthesia Type',
 }
 
-// EBM encoding artifacts — hide these x_labels from shape function and interaction displays
 const SF_LABEL_FILTER = new Set(['-0.75', '-1.0', '-1'])
 
-// Returns true for EBM artifact labels: exact-match entries above, or any raw negative number string
 function isBadLabel(l) {
   const s = String(l).trim()
   return SF_LABEL_FILTER.has(s) || /^-\d+(\.\d+)?$/.test(s)
 }
 
-// Grouped-bar palette: [first binary value, second binary value]
-const IX_COLORS = ['#93A8F4', '#E55353']
+const FILTER_PILLS = [
+  { label: 'All combinations',       type: null },
+  { label: 'Service × Surgeon',      type: 'service_surgeon' },
+  { label: 'Location × Service',     type: 'location_service' },
+  { label: 'Day × Service',          type: 'day_service' },
+  { label: 'Case Type × Service',    type: 'casetype_service' },
+  { label: 'Duration × Surgeon',     type: 'duration_surgeon' },
+]
+
+const TABS = [
+  { id: 'drivers',      label: 'Drivers' },
+  { id: 'combinations', label: 'Combinations' },
+  { id: 'explorer',     label: 'Explorer' },
+]
 
 /* ─── Helpers ───────────────────────────────────────────────────────────────── */
 
@@ -46,293 +54,6 @@ function badge(rank) {
   return                                   { label: 'Low',    bg: 'rgba(148,163,184,0.12)', color: '#64748b' }
 }
 
-// Resolve axis labels from labels array (preferred) or values array (fallback)
-function axisLabels(labels, values) {
-  if (labels?.length) return labels.map(String)
-  if (values?.length) return values.map(v => typeof v === 'number' ? v.toFixed(1) : String(v))
-  return []
-}
-
-// Determine viz type: 'grouped' when either feature has exactly 2 values, else 'ranked'
-function ixVizType(ix) {
-  const n1 = ix.scores_matrix?.length ?? 0
-  const n2 = ix.scores_matrix?.[0]?.length ?? 0
-  return (n1 === 2 || n2 === 2) ? 'grouped' : 'ranked'
-}
-
-function ixSubtitle(f1, f2) {
-  return `Does ${featName(f1)} affect start time differently by ${featName(f2)}?`
-}
-
-/* ─── Grouped Bars ──────────────────────────────────────────────────────────── */
-
-function GroupedBars({ ix, preview }) {
-  const { scores_matrix, x_labels_1, x_labels_2, x_values_1, x_values_2 } = ix
-  const n1 = scores_matrix?.length ?? 0
-  const f1Binary = n1 === 2
-
-  // The "binary" axis has 2 values and becomes the bar legend
-  const binaryLabels = axisLabels(
-    f1Binary ? x_labels_1 : x_labels_2,
-    f1Binary ? x_values_1 : x_values_2,
-  )
-  // The "group" axis provides one group per category
-  const groupLabels = axisLabels(
-    f1Binary ? x_labels_2 : x_labels_1,
-    f1Binary ? x_values_2 : x_values_1,
-  )
-
-  const allGroups = groupLabels
-    .map((label, i) => ({
-      label,
-      values: f1Binary
-        ? [scores_matrix[0]?.[i] ?? 0, scores_matrix[1]?.[i] ?? 0]
-        : [scores_matrix[i]?.[0] ?? 0, scores_matrix[i]?.[1] ?? 0],
-    }))
-    .filter(g => !isBadLabel(g.label))
-
-  const displayGroups = preview ? allGroups.slice(0, 4) : allGroups
-  const moreCount     = allGroups.length - 4
-
-  const maxAbs = Math.max(...allGroups.flatMap(g => g.values.map(Math.abs)), 0.001)
-
-  const BAR_H = 72
-  const BAR_W = 18
-  const BAR_GAP = 2
-
-  return (
-    <div>
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-        {binaryLabels.slice(0, 2).map((l, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
-            <div style={{
-              width: 10, height: 10, borderRadius: 2,
-              background: IX_COLORS[i], flexShrink: 0,
-            }} />
-            <span style={{ color: 'var(--color-gray-500)' }}>{l}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Bar groups */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
-        {displayGroups.map((g, gi) => (
-          <div key={gi} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            {/* Bars */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: BAR_GAP, height: BAR_H + 18 }}>
-              {g.values.map((v, vi) => {
-                const h   = Math.max(2, Math.round((Math.abs(v) / maxAbs) * BAR_H))
-                const col = IX_COLORS[vi]
-                return (
-                  <div
-                    key={vi}
-                    style={{
-                      display: 'flex', flexDirection: 'column',
-                      alignItems: 'center', justifyContent: 'flex-end', height: '100%',
-                    }}
-                  >
-                    <div style={{ fontSize: 8, color: col, fontWeight: 700, marginBottom: 2, whiteSpace: 'nowrap' }}>
-                      {v >= 0 ? '+' : ''}{v.toFixed(1)}
-                    </div>
-                    <div style={{
-                      width: BAR_W, height: h,
-                      background: col,
-                      borderRadius: '3px 3px 0 0',
-                      flexShrink: 0,
-                    }} />
-                  </div>
-                )
-              })}
-            </div>
-            {/* Group label */}
-            <div style={{
-              fontSize: 9,
-              color: 'var(--color-gray-400)',
-              textAlign: 'center',
-              maxWidth: BAR_W * 2 + BAR_GAP + 8,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}>
-              {g.label}
-            </div>
-          </div>
-        ))}
-
-        {preview && moreCount > 0 && (
-          <div style={{
-            fontSize: 11, color: 'var(--color-gray-400)',
-            alignSelf: 'center', flexShrink: 0, paddingBottom: 20,
-          }}>
-            +{moreCount} more
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Ranked List ───────────────────────────────────────────────────────────── */
-
-function RankedList({ ix, preview }) {
-  const { scores_matrix, x_labels_1, x_labels_2, x_values_1, x_values_2 } = ix
-
-  const rowLabels = axisLabels(x_labels_1, x_values_1)
-  const colLabels = axisLabels(x_labels_2, x_values_2)
-
-  const cells = []
-  for (let r = 0; r < (scores_matrix?.length ?? 0); r++) {
-    if (isBadLabel(rowLabels[r] ?? r)) continue
-    for (let c = 0; c < (scores_matrix[r]?.length ?? 0); c++) {
-      if (isBadLabel(colLabels[c] ?? c)) continue
-      cells.push({ part1: rowLabels[r] ?? String(r), part2: colLabels[c] ?? String(c), score: scores_matrix[r][c] })
-    }
-  }
-  cells.sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
-
-  const display = cells.slice(0, preview ? 3 : 8)
-  const maxAbs  = Math.max(...display.map(c => Math.abs(c.score)), 0.001)
-
-  if (!display.length) return (
-    <div style={{ color: 'var(--color-gray-400)', fontSize: 'var(--font-size-xs)' }}>No data</div>
-  )
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      {display.map((c, i) => {
-        const isPos = c.score >= 0
-        const color = isPos ? '#ef4444' : '#3b82f6'
-        const pct   = (Math.abs(c.score) / maxAbs) * 100
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 170, flexShrink: 0, lineHeight: 1.35 }}>
-              <div style={{ fontSize: 11, color: 'var(--color-gray-700)', fontWeight: 500 }}>{c.part1}</div>
-              <div style={{ fontSize: 10, color: 'var(--color-gray-400)' }}>{c.part2}</div>
-            </div>
-            <div style={{
-              flex: 1, height: 14,
-              background: 'var(--color-gray-100)',
-              borderRadius: 3, overflow: 'hidden',
-            }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3 }} />
-            </div>
-            <div style={{
-              width: 48, fontSize: 11, fontWeight: 600,
-              color, textAlign: 'right', flexShrink: 0,
-              fontVariantNumeric: 'tabular-nums',
-            }}>
-              {isPos ? '+' : ''}{c.score.toFixed(1)}m
-            </div>
-            <div style={{ width: 110, fontSize: 10, color: 'var(--color-gray-400)', flexShrink: 0 }}>
-              {isPos ? 'later than expected' : 'earlier than expected'}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-/* ─── Interaction Tile ──────────────────────────────────────────────────────── */
-
-function InteractionTile({ ix, expanded, onToggle, narrative, narrativeLoading }) {
-  const { feature_1, feature_2 } = ix
-  const vizType = ixVizType(ix)
-  const Viz     = vizType === 'grouped' ? GroupedBars : RankedList
-
-  return (
-    <div style={{
-      background: 'var(--surface-card)',
-      border: '1px solid var(--surface-border)',
-      borderRadius: 'var(--radius-lg)',
-      overflow: 'hidden',
-    }}>
-      {/* Header — click to toggle */}
-      <button
-        type="button"
-        onClick={onToggle}
-        style={{
-          width: '100%', background: 'none', border: 'none',
-          cursor: 'pointer', textAlign: 'left',
-          padding: 'var(--space-4) var(--space-4) var(--space-2)',
-          display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 'var(--font-size-sm)',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--color-gray-900)',
-            marginBottom: 2,
-          }}>
-            {featName(feature_1)}
-            {' '}<span style={{ color: 'var(--color-blue)', fontWeight: 700 }}>×</span>{' '}
-            {featName(feature_2)}
-          </div>
-          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)' }}>
-            {ixSubtitle(feature_1, feature_2)}
-          </div>
-        </div>
-        <div style={{
-          flexShrink: 0,
-          color: 'var(--color-gray-400)',
-          transform: expanded ? 'rotate(180deg)' : 'none',
-          transition: 'transform 200ms ease',
-          marginTop: 3,
-        }}>
-          <ChevronDown size={14} />
-        </div>
-      </button>
-
-      {/* Visualization: preview when collapsed, full when expanded */}
-      <div style={{ padding: '0 var(--space-4) var(--space-4)' }}>
-        <Viz ix={ix} preview={!expanded} />
-      </div>
-
-      {/* Narrative — only when expanded */}
-      {expanded && (
-        <div style={{ borderTop: '1px solid var(--surface-border)', padding: 'var(--space-4)' }}>
-          {narrativeLoading ? (
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              gap: 'var(--space-2)',
-              color: 'var(--color-gray-400)',
-              fontSize: 'var(--font-size-sm)',
-            }}>
-              <div style={{
-                width: 14, height: 14, borderRadius: '50%',
-                border: '2px solid var(--color-blue)',
-                borderTopColor: 'transparent',
-                animation: 'spin 0.7s linear infinite',
-                flexShrink: 0,
-              }} />
-              Generating insight…
-            </div>
-          ) : narrative ? (
-            <p style={{
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-gray-600)',
-              lineHeight: 'var(--line-height-relaxed)',
-              margin: 0,
-              padding: 'var(--space-3) var(--space-4)',
-              background: 'var(--color-gray-50)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--surface-border)',
-            }}>
-              {narrative}
-            </p>
-          ) : (
-            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', margin: 0 }}>
-              Insight could not be generated.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 /* ─── Shape Bar ─────────────────────────────────────────────────────────────── */
 
 function ShapeBar({ label, score, maxAbs }) {
@@ -344,7 +65,6 @@ function ShapeBar({ label, score, maxAbs }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', padding: '2px 0' }}>
-      {/* Zone 1 — category label: 180px content + 12px right-padding = 192px total */}
       <div style={{
         width: 180, flexShrink: 0, paddingRight: 12, boxSizing: 'content-box',
         fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)',
@@ -353,7 +73,6 @@ function ShapeBar({ label, score, maxAbs }) {
       }}>
         {label}
       </div>
-      {/* Zone 2 — track: 400px, zero at left 200px */}
       <div style={{ width: 400, flexShrink: 0, height: 20, position: 'relative' }}>
         <div style={{
           position: 'absolute', top: 3, height: 14,
@@ -364,7 +83,6 @@ function ShapeBar({ label, score, maxAbs }) {
           zIndex: 1,
         }} />
       </div>
-      {/* Zone 3 — value label: always outside track to the right */}
       <div style={{
         minWidth: 70, flexShrink: 0, paddingLeft: 8,
         fontSize: 11, fontWeight: 500, color,
@@ -376,7 +94,23 @@ function ShapeBar({ label, score, maxAbs }) {
   )
 }
 
-/* ─── Meta Pill ─────────────────────────────────────────────────────────────── */
+/* ─── Importance Bar ────────────────────────────────────────────────────────── */
+
+function ImportanceBar({ pct }) {
+  return (
+    <div style={{
+      flex: 1, height: 6,
+      background: 'var(--color-gray-100)',
+      borderRadius: 3, overflow: 'hidden',
+    }}>
+      <div style={{
+        height: '100%', width: `${pct}%`,
+        background: 'var(--color-blue)',
+        borderRadius: 3, transition: 'width 200ms ease',
+      }} />
+    </div>
+  )
+}
 
 /* ─── Stat Card ─────────────────────────────────────────────────────────────── */
 
@@ -420,20 +154,508 @@ function StatCard({ label, value, sub, accent }) {
   )
 }
 
-/* ─── Importance Bar ────────────────────────────────────────────────────────── */
+/* ─── High-impact combinations (Drivers tab) ────────────────────────────────── */
 
-function ImportanceBar({ pct }) {
-  return (
-    <div style={{
-      flex: 1, height: 6,
-      background: 'var(--color-gray-100)',
-      borderRadius: 3, overflow: 'hidden',
-    }}>
+function FCOTCombinationsSection({ combinations, systemMean }) {
+  if (!combinations?.length) {
+    return (
       <div style={{
-        height: '100%', width: `${pct}%`,
-        background: 'var(--color-blue)',
-        borderRadius: 3, transition: 'width 200ms ease',
-      }} />
+        marginTop: 'var(--space-6)',
+        padding: 'var(--space-5)',
+        background: 'var(--color-gray-50)',
+        border: '1px solid var(--surface-border)',
+        borderRadius: 'var(--radius-lg)',
+        color: 'var(--color-gray-400)',
+        fontSize: 'var(--font-size-sm)',
+      }}>
+        Combinations data not yet computed.
+      </div>
+    )
+  }
+
+  const maxAbove = Math.max(...combinations.map(c => c.above_mean), 1)
+  const maxAvg   = Math.max(...combinations.map(c => c.avg_fcot), 1)
+  const meanPct  = systemMean != null ? (systemMean / maxAvg) * 100 : null
+
+  return (
+    <div style={{ marginTop: 'var(--space-6)' }}>
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <h2 style={{
+          fontSize: 'var(--font-size-lg)',
+          fontWeight: 'var(--font-weight-semibold)',
+          color: 'var(--color-gray-900)',
+          marginBottom: 'var(--space-1)',
+        }}>
+          High-impact combinations
+        </h2>
+        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>
+          Combinations of factors associated with the longest first-case start delays.
+        </p>
+      </div>
+
+      <div className="card">
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+          padding: 'var(--space-2) var(--space-4)',
+          borderBottom: '1px solid var(--surface-border)',
+        }}>
+          <div style={{ width: 28, flexShrink: 0 }} />
+          <div style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)' }}>Combination</div>
+          <div style={{ width: 240, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)' }}>Above mean</div>
+          <div style={{ width: 100, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)', textAlign: 'right' }}>Avg FCOT delay</div>
+          <div style={{ width: 72, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)', textAlign: 'right' }}>Cases</div>
+        </div>
+
+        {combinations.map((combo, i) => {
+          const barPct = maxAbove > 0 ? (combo.above_mean / maxAbove) * 100 : 0
+          return (
+            <div
+              key={i}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                padding: 'var(--space-3) var(--space-4)',
+                borderBottom: i < combinations.length - 1 ? '1px solid var(--surface-border)' : 'none',
+              }}
+            >
+              <div style={{ width: 28, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>{i + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-800)', fontWeight: 'var(--font-weight-medium)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{combo.label}</div>
+                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', marginTop: 2 }}>{combo.sub}</div>
+              </div>
+              <div style={{ width: 240, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div style={{ flex: 1, height: 8, background: 'var(--color-gray-100)', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ height: '100%', width: `${barPct}%`, background: '#ef4444', borderRadius: 4 }} />
+                  {meanPct != null && (
+                    <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${meanPct}%`, width: 2, background: '#94a3b8' }} />
+                  )}
+                </div>
+                <div style={{ width: 60, flexShrink: 0, fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: '#ef4444', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  +{combo.above_mean} min
+                </div>
+              </div>
+              <div style={{ width: 100, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{combo.avg_fcot} min</div>
+              <div style={{ width: 72, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{combo.cnt.toLocaleString()}</div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Combinations Tab ──────────────────────────────────────────────────────── */
+
+function CombinationsTab({ combos, combosLoading, combosError, combosMean, model, filter, onFilterChange }) {
+  const worstCombo = combos[0] ?? null
+  const maxAbove   = combos.length > 0 ? combos[0].above_mean : 1
+  const displayed  = filter ? combos.filter(c => c.type === filter) : combos
+
+  if (combosLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280 }}>
+        <div style={{ textAlign: 'center', color: 'var(--color-gray-400)' }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            border: '3px solid var(--color-blue)',
+            borderTopColor: 'transparent',
+            animation: 'spin 0.7s linear infinite',
+            margin: '0 auto var(--space-3)',
+          }} />
+          <p style={{ fontSize: 'var(--font-size-sm)' }}>Loading combinations…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (combosError) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
+        padding: 'var(--space-5)',
+        background: 'var(--color-danger-light)',
+        border: '1px solid #fecaca',
+        borderRadius: 'var(--radius-lg)',
+        color: '#b91c1c', fontSize: 'var(--font-size-sm)',
+      }}>
+        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <div style={{ fontWeight: 'var(--font-weight-semibold)', marginBottom: 2 }}>Could not load combinations</div>
+          <div>{combosError}</div>
+          <div style={{ marginTop: 6, color: '#ef4444' }}>
+            Run <code>python fcot_ebm_pipeline.py</code> to generate the combinations file.
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 'var(--space-4)', marginBottom: 'var(--space-5)',
+      }}>
+        <StatCard
+          label="System Mean"
+          value={combosMean != null ? `${combosMean} min` : (model?.system_mean != null ? `${model.system_mean} min` : '—')}
+          sub="Average FCOT delay"
+        />
+        <StatCard
+          label="Cases Analyzed"
+          value={model?.n_training_samples?.toLocaleString() ?? '—'}
+          sub="OR cases analyzed"
+        />
+        <StatCard
+          label="Worst Combination"
+          value={worstCombo ? `+${worstCombo.above_mean} min` : '—'}
+          sub={worstCombo?.label ?? 'No data'}
+          accent="#ef4444"
+        />
+        <StatCard
+          label="Model MAE"
+          value={model?.mae != null ? `${model.mae} min` : '—'}
+          sub="Mean absolute error"
+        />
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+        {FILTER_PILLS.map(p => {
+          const active = filter === p.type
+          return (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => onFilterChange(p.type)}
+              style={{
+                padding: '5px var(--space-3)',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid',
+                cursor: 'pointer',
+                fontSize: 'var(--font-size-xs)',
+                fontWeight: 'var(--font-weight-medium)',
+                transition: 'all 150ms',
+                background: active ? 'var(--color-blue)' : 'transparent',
+                borderColor: active ? 'var(--color-blue)' : 'var(--surface-border)',
+                color: active ? 'white' : 'var(--color-gray-600)',
+              }}
+            >
+              {p.label}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="card">
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+          padding: 'var(--space-2) var(--space-4)',
+          borderBottom: '1px solid var(--surface-border)',
+        }}>
+          <div style={{ width: 28, flexShrink: 0 }} />
+          <div style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)' }}>Combination</div>
+          <div style={{ width: 220, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)' }}>Above mean</div>
+          <div style={{ width: 96, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)', textAlign: 'right' }}>Avg FCOT delay</div>
+          <div style={{ width: 72, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontWeight: 'var(--font-weight-semibold)', textAlign: 'right' }}>Cases/yr</div>
+        </div>
+
+        {displayed.length === 0 ? (
+          <div style={{ padding: 'var(--space-10)', textAlign: 'center', color: 'var(--color-gray-400)', fontSize: 'var(--font-size-sm)' }}>
+            No combinations above the system mean for this filter.
+          </div>
+        ) : displayed.map((combo, i) => {
+          const barPct = maxAbove > 0 ? (combo.above_mean / maxAbove) * 100 : 0
+          return (
+            <div
+              key={i}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                padding: 'var(--space-3) var(--space-4)',
+                borderBottom: i < displayed.length - 1 ? '1px solid var(--surface-border)' : 'none',
+              }}
+            >
+              <div style={{ width: 28, flexShrink: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>{i + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-800)', fontWeight: 'var(--font-weight-medium)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{combo.label}</div>
+                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', marginTop: 2 }}>{combo.sub}</div>
+              </div>
+              <div style={{ width: 220, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div style={{ flex: 1, height: 8, background: 'var(--color-gray-100)', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${barPct}%`, background: '#ef4444', borderRadius: 4 }} />
+                </div>
+                <div style={{ width: 56, flexShrink: 0, fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', color: '#ef4444', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  +{combo.above_mean} min
+                </div>
+              </div>
+              <div style={{ width: 96, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{combo.avg_fcot} min</div>
+              <div style={{ width: 72, flexShrink: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{combo.cnt.toLocaleString()}</div>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+/* ─── Waterfall Chart ───────────────────────────────────────────────────────── */
+
+function WaterfallChart({ baseline, baselineLabel, contributions, benchmark, projected }) {
+  const BAR_H   = 28
+  const LABEL_W = 190
+  const CHART_W = 340
+  const VALUE_W = 80
+  const ROW_H   = 46
+  const SVG_W   = LABEL_W + CHART_W + VALUE_W
+
+  const rows = []
+  let running = baseline
+
+  rows.push({
+    label: baselineLabel ?? `Baseline (${Math.round(baseline)} min)`,
+    barStart: 0, barEnd: baseline, delta: null, running: baseline, isTotal: false, isBase: true,
+  })
+
+  for (const c of contributions) {
+    const start = running
+    const end   = running + c.score
+    rows.push({
+      label: `${c.label}: ${c.optionLabel}`,
+      barStart: Math.min(start, end), barEnd: Math.max(start, end),
+      delta: c.score, running: end, isTotal: false, isBase: false,
+    })
+    running = end
+  }
+
+  rows.push({
+    label: 'Projected',
+    barStart: 0, barEnd: projected, delta: null, running: projected, isTotal: true, isBase: false,
+  })
+
+  const SVG_H  = rows.length * ROW_H + 24
+  const maxVal = Math.max(projected, baseline, benchmark) * 1.12
+  const xs     = v => LABEL_W + (v / maxVal) * CHART_W
+  const bx     = xs(benchmark)
+
+  let totalColor
+  if (projected <= benchmark)            totalColor = '#22c55e'
+  else if (projected <= benchmark * 1.5) totalColor = '#f59e0b'
+  else if (projected <= benchmark * 2.0) totalColor = '#f97316'
+  else                                   totalColor = '#ef4444'
+
+  return (
+    <svg width={SVG_W} height={SVG_H} style={{ display: 'block', overflow: 'visible' }}>
+      <line x1={bx} y1={0} x2={bx} y2={SVG_H - 20} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4,3" />
+      <text x={bx} y={SVG_H - 4} textAnchor="middle" fontSize={9} fill="#f59e0b" fontWeight={600}>
+        Benchmark ({benchmark} min)
+      </text>
+
+      {rows.map((row, i) => {
+        const y  = i * ROW_H
+        const x1 = xs(row.barStart)
+        const x2 = xs(row.barEnd)
+        const bw = Math.max(x2 - x1, 3)
+
+        let fill
+        if (row.isTotal)      fill = totalColor
+        else if (row.isBase)  fill = '#94a3b8'
+        else                  fill = (row.delta ?? 0) >= 0 ? '#ef4444' : '#3b82f6'
+
+        const valLabel = row.delta === null
+          ? `${Math.round(row.barEnd)} min`
+          : `${row.delta >= 0 ? '+' : ''}${Math.round(row.delta)} min`
+
+        return (
+          <g key={i}>
+            <text
+              x={LABEL_W - 8} y={y + BAR_H / 2 + 4}
+              textAnchor="end" fontSize={11}
+              fill={row.isTotal ? '#1e293b' : '#64748b'}
+              fontWeight={row.isTotal ? 600 : 400}
+            >
+              {row.label}
+            </text>
+            <rect x={x1} y={y} width={bw} height={BAR_H} fill={fill} rx={3} opacity={row.isTotal ? 1 : 0.85} />
+            {i < rows.length - 1 && !row.isBase && !row.isTotal && (
+              <line
+                x1={xs(row.running)} y1={y + BAR_H}
+                x2={xs(row.running)} y2={(i + 1) * ROW_H}
+                stroke="#cbd5e1" strokeWidth={1}
+              />
+            )}
+            <text
+              x={Math.max(x1, x2) + 6} y={y + BAR_H / 2 + 4}
+              fontSize={11} fontWeight={row.isTotal ? 700 : 600}
+              fill={fill}
+            >
+              {valLabel}
+            </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+/* ─── Explorer Tab ──────────────────────────────────────────────────────────── */
+
+function ExplorerTab({ model, metric, benchmark, benchmarkLabel }) {
+  const catFeatures = useMemo(() => {
+    if (!model?.shape_functions) return []
+    return model.shape_functions
+      .filter(sf => {
+        const labels = sf.x_labels ?? []
+        return labels.length > 0 && labels.some(l => isNaN(parseFloat(String(l))))
+      })
+      .map(sf => ({ key: sf.feature, label: featName(sf.feature), sf }))
+  }, [model])
+
+  const [selections, setSelections] = useState({})
+
+  const baseline = model?.system_mean ?? benchmark
+
+  const contributions = catFeatures
+    .filter(f => selections[f.key] != null)
+    .map(f => {
+      const sel = selections[f.key]
+      return { label: f.label, optionLabel: sel.label, score: sel.score }
+    })
+
+  const projected = baseline + contributions.reduce((s, c) => s + c.score, 0)
+
+  let risk, riskColor
+  if (projected <= benchmark)            { risk = 'Within target'; riskColor = '#22c55e' }
+  else if (projected <= benchmark * 1.5) { risk = 'Moderate';     riskColor = '#f59e0b' }
+  else if (projected <= benchmark * 2.0) { risk = 'High';         riskColor = '#f97316' }
+  else                                   { risk = 'Severe';       riskColor = '#ef4444' }
+
+  if (!catFeatures.length) return (
+    <div style={{ textAlign: 'center', padding: 'var(--space-10)', color: 'var(--color-gray-400)', fontSize: 'var(--font-size-sm)' }}>
+      No categorical features found in model data.
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 'var(--space-5)', alignItems: 'start' }}>
+
+      {/* Left: dropdowns */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Configure Scenario</div>
+            <div className="card-subtitle">Select factors to see their combined effect on {metric}</div>
+          </div>
+        </div>
+        <div style={{ padding: '0 var(--space-4) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {catFeatures.map(f => {
+            const options = (f.sf.x_labels ?? [])
+              .map((label, i) => ({ label, score: f.sf.y_scores?.[i] ?? 0 }))
+              .filter(o => !isBadLabel(o.label))
+            return (
+              <div key={f.key}>
+                <label style={{
+                  fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)',
+                  display: 'block', marginBottom: 4, fontWeight: 'var(--font-weight-medium)',
+                }}>
+                  {f.label}
+                </label>
+                <select
+                  value={selections[f.key]?.label ?? ''}
+                  onChange={e => {
+                    const opt = options.find(o => o.label === e.target.value) ?? null
+                    setSelections(prev => ({ ...prev, [f.key]: opt }))
+                  }}
+                  style={{
+                    width: '100%', padding: '8px var(--space-3)',
+                    fontSize: 'var(--font-size-sm)',
+                    border: '1px solid var(--surface-border)',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--surface-card)',
+                    color: 'var(--color-gray-700)',
+                    cursor: 'pointer', appearance: 'auto',
+                  }}
+                >
+                  <option value="">— Any —</option>
+                  {options.map(o => (
+                    <option key={o.label} value={o.label}>
+                      {o.label}{'  '}({o.score >= 0 ? '+' : ''}{Math.round(o.score)} min)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )
+          })}
+          {contributions.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelections({})}
+              style={{
+                background: 'none', border: '1px solid var(--surface-border)',
+                borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                padding: '6px var(--space-3)',
+                fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)',
+              }}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Right: waterfall + summary */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Projected {metric}</div>
+              <div className="card-subtitle">Each bar shows the average effect of that factor. Dashed line = {benchmarkLabel}.</div>
+            </div>
+          </div>
+          <div style={{ padding: 'var(--space-4)', overflowX: 'auto' }}>
+            {contributions.length === 0 ? (
+              <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8) 0' }}>
+                <BarChart3 size={32} strokeWidth={1.25} style={{ margin: '0 auto var(--space-3)' }} />
+                <p style={{ fontSize: 'var(--font-size-sm)' }}>Select factors on the left to build a scenario</p>
+              </div>
+            ) : (
+              <WaterfallChart
+                baseline={baseline}
+                baselineLabel={`System mean (${Math.round(baseline)} min)`}
+                contributions={contributions}
+                benchmark={benchmark}
+                projected={projected}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="card">
+          <div style={{ padding: 'var(--space-5)', display: 'flex', alignItems: 'center', gap: 'var(--space-5)' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', marginBottom: 4 }}>Projected {metric}</div>
+              <div style={{ fontSize: 32, fontWeight: 700, color: riskColor, lineHeight: 1 }}>{Math.round(projected)} min</div>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', marginTop: 6 }}>
+                Baseline: {Math.round(baseline)} min · {benchmarkLabel}
+              </div>
+            </div>
+            <div style={{
+              padding: '8px 20px', borderRadius: 'var(--radius-full)',
+              background: `${riskColor}1a`, color: riskColor,
+              fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)',
+              flexShrink: 0,
+            }}>
+              {risk}
+            </div>
+          </div>
+          <div style={{
+            padding: 'var(--space-3) var(--space-5)',
+            borderTop: '1px solid var(--surface-border)',
+            background: 'var(--color-gray-50)',
+          }}>
+            <p style={{ fontSize: 11, color: 'var(--color-gray-400)', margin: 0 }}>
+              Values shown are average effects from the EBM model. Actual outcomes vary by individual case.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -441,15 +663,17 @@ function ImportanceBar({ pct }) {
 /* ─── Atlas Page ────────────────────────────────────────────────────────────── */
 
 export default function AtlasFCOT() {
-  const [model,        setModel]        = useState(null)
-  const [loading,      setLoading]      = useState(true)
-  const [error,        setError]        = useState('')
-  const [selectedFeat, setSelectedFeat] = useState(null)
-  const [expandedIx,   setExpandedIx]   = useState(null)
-  const [ixNarratives, setIxNarratives] = useState({})
-  const [ixLoadings,   setIxLoadings]   = useState({})
+  const [model,         setModel]         = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [error,         setError]         = useState('')
+  const [selectedFeat,  setSelectedFeat]  = useState(null)
+  const [activeTab,     setActiveTab]     = useState('drivers')
+  const [combos,        setCombos]        = useState([])
+  const [combosLoading, setCombosLoading] = useState(true)
+  const [combosError,   setCombosError]   = useState('')
+  const [combosMean,    setCombosMean]    = useState(null)
+  const [comboFilter,   setComboFilter]   = useState(null)
 
-  /* ── Fetch model ── */
   useEffect(() => {
     setLoading(true)
     setError('')
@@ -465,9 +689,20 @@ export default function AtlasFCOT() {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
+
+    fetch('/api/atlas/fcot-combinations')
+      .then(r => {
+        if (!r.ok) return r.json().then(d => Promise.reject(new Error(d.error || `HTTP ${r.status}`)))
+        return r.json()
+      })
+      .then(data => {
+        setCombos(data.combinations ?? [])
+        setCombosMean(data.system_mean ?? null)
+      })
+      .catch(err => setCombosError(err.message))
+      .finally(() => setCombosLoading(false))
   }, [])
 
-  /* ── Derived ── */
   const mainEffects = useMemo(() => {
     if (!model?.feature_importance) return []
     return model.feature_importance.filter(f => !f.feature.includes(' & '))
@@ -493,12 +728,10 @@ export default function AtlasFCOT() {
     const scores = selectedSF.y_scores ?? []
     const n      = scores.length
 
-    // For continuous features, downsample to at most 20 evenly-spaced points
     let indices
     if (isCat || n <= 20) {
       indices = Array.from({ length: n }, (_, i) => i)
     } else {
-      // First, last, and 18 evenly spaced in between (step across full range)
       const step = (n - 1) / 19
       indices = Array.from({ length: 20 }, (_, k) => Math.round(k * step))
     }
@@ -518,31 +751,6 @@ export default function AtlasFCOT() {
     [sfEntries],
   )
 
-  /* ── Interaction toggle + narrative fetch ── */
-  function toggleInteraction(key, ix) {
-    if (expandedIx === key) { setExpandedIx(null); return }
-    setExpandedIx(key)
-    if (ixNarratives[key] !== undefined) return
-
-    setIxLoadings(prev => ({ ...prev, [key]: true }))
-    fetch('/api/atlas/explain-interaction', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        feature_1:     ix.feature_1,
-        feature_2:     ix.feature_2,
-        x_labels_1:    ix.x_labels_1,
-        x_labels_2:    ix.x_labels_2,
-        scores_matrix: ix.scores_matrix,
-      }),
-    })
-      .then(r => r.json())
-      .then(d => setIxNarratives(prev => ({ ...prev, [key]: d.narrative ?? '' })))
-      .catch(() => setIxNarratives(prev => ({ ...prev, [key]: '' })))
-      .finally(() => setIxLoadings(prev => ({ ...prev, [key]: false })))
-  }
-
-  /* ── Loading / Error states ── */
   if (loading) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
@@ -586,251 +794,193 @@ export default function AtlasFCOT() {
 
   if (!model) return null
 
-  const interactions = model.interactions ?? []
-
   return (
     <div className="page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* ─── Section 1: Stat cards ────────────────────────────────────────────── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'var(--space-4)',
-        marginBottom: 'var(--space-6)',
-      }}>
-        <StatCard
-          label="Cases Analyzed"
-          value={model.n_training_samples?.toLocaleString() ?? '—'}
-          sub="OR cases analyzed"
-        />
-        <StatCard
-          label="Median FCOT Delay"
-          value={model.system_median != null ? `${model.system_median} min` : '—'}
-          sub="Midpoint across all cases"
-        />
-        <StatCard
-          label="Mean FCOT Delay"
-          value={model.system_mean != null ? `${model.system_mean} min` : '—'}
-          sub="Average across all cases"
-        />
-        <StatCard
-          label="Top Driver"
-          value={model.feature_importance?.[0]?.feature ? featName(model.feature_importance[0].feature) : '—'}
-          sub="Highest importance factor"
-        />
+      {/* ─── Tab bar ──────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--space-6)' }}>
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              background: 'none', border: 'none',
+              borderBottom: activeTab === tab.id ? '2px solid var(--color-blue)' : '2px solid transparent',
+              cursor: 'pointer',
+              padding: 'var(--space-3) var(--space-4)',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: activeTab === tab.id ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
+              color: activeTab === tab.id ? 'var(--color-blue)' : 'var(--color-gray-500)',
+              marginBottom: -1, transition: 'color 150ms',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* ─── Key Findings ──────────────────────────────────────────────────── */}
-      <div style={{
-        background: 'var(--color-background-secondary, var(--color-gray-50))',
-        border: '1px solid var(--surface-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-5)',
-        marginBottom: 'var(--space-6)',
-      }}>
-        <div style={{
-          fontSize: 'var(--font-size-sm)',
-          fontWeight: 'var(--font-weight-semibold)',
-          color: 'var(--color-gray-800)',
-          marginBottom: 'var(--space-4)',
-          letterSpacing: 'var(--letter-spacing-tight)',
-        }}>
-          Key Findings
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {[
-            { color: '#ef4444', text: 'Add-on cases are associated with starts averaging 10+ minutes later than scheduled cases.' },
-            { color: '#ef4444', text: 'Weekend cases (Saturday and Sunday) show the strongest day-of-week association, running 18–20 minutes later on average.' },
-            { color: '#ef4444', text: 'Neurosurgery and Spine Surgery are the most consistently late service lines, associated with 10–12 minute delays.' },
-            { color: '#ef4444', text: 'Cases scheduled same-day run 9 minutes later on average than cases planned 2+ weeks ahead.' },
-          ].map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-              <div style={{
-                width: 7, height: 7,
-                borderRadius: '50%',
-                background: f.color,
-                flexShrink: 0,
-                marginTop: 5,
-              }} />
-              <span style={{
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-gray-700)',
-                lineHeight: 'var(--line-height-relaxed)',
-              }}>
-                {f.text}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── Section 2: Feature Drivers + Shape Functions ──────────────────── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '340px 1fr',
-        gap: 'var(--space-5)',
-        marginBottom: 'var(--space-6)',
-        alignItems: 'start',
-      }}>
-
-        {/* Left: feature driver list */}
-        <div className="card" style={{
-          position: 'sticky',
-          top: 'calc(var(--topbar-h, 56px) + var(--space-4))',
-          maxHeight: 'calc(100vh - 120px)',
-          display: 'flex', flexDirection: 'column',
-        }}>
-          <div className="card-header" style={{ flexShrink: 0 }}>
-            <div>
-              <div className="card-title">What drives FCOT variance</div>
-              <div className="card-subtitle">Click a feature to see its shape function</div>
-            </div>
+      {/* ─── Drivers tab ──────────────────────────────────────────────────────── */}
+      {activeTab === 'drivers' && (
+        <>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 'var(--space-4)', marginBottom: 'var(--space-6)',
+          }}>
+            <StatCard label="Cases Analyzed"   value={model.n_training_samples?.toLocaleString() ?? '—'} sub="OR cases analyzed" />
+            <StatCard label="Median FCOT Delay" value={model.system_median != null ? `${model.system_median} min` : '—'} sub="Midpoint across all cases" />
+            <StatCard label="Mean FCOT Delay"   value={model.system_mean != null ? `${model.system_mean} min` : '—'} sub="Average across all cases" />
+            <StatCard label="Top Driver"        value={model.feature_importance?.[0]?.feature ? featName(model.feature_importance[0].feature) : '—'} sub="Highest importance factor" />
           </div>
-          <div style={{ overflowY: 'auto', flex: 1, padding: 'var(--space-1) 0' }}>
-            {mainEffects.map(f => {
-              const b          = badge(f.rank)
-              const pct        = maxImp > 0 ? (f.importance_score / maxImp) * 100 : 0
-              const share      = totalImp > 0 ? ((f.importance_score / totalImp) * 100).toFixed(1) : '0'
-              const isSelected = selectedFeat === f.feature
 
-              return (
-                <button
-                  key={f.feature}
-                  type="button"
-                  onClick={() => setSelectedFeat(f.feature)}
-                  style={{
-                    width: '100%',
-                    background: isSelected ? 'rgba(59,130,246,0.06)' : 'none',
-                    border: 'none',
-                    borderLeft: isSelected ? '3px solid var(--color-blue)' : '3px solid transparent',
-                    cursor: 'pointer', textAlign: 'left',
-                    padding: 'var(--space-3) var(--space-4)',
-                    transition: 'background 150ms',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
-                    <span style={{
-                      flex: 1,
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: isSelected ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
-                      color: isSelected ? 'var(--color-blue)' : 'var(--color-gray-700)',
-                      overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-                    }}>
-                      {featName(f.feature)}
-                    </span>
-                    <span style={{
-                      fontSize: 'var(--font-size-xs)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: b.color, background: b.bg,
-                      padding: '1px 6px', borderRadius: 'var(--radius-full)', flexShrink: 0,
-                    }}>
-                      {b.label}
-                    </span>
-                    <span style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-gray-400)',
-                      flexShrink: 0, fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {share}%
-                    </span>
-                  </div>
-                  <ImportanceBar pct={pct} />
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Right: shape function panel */}
-        <div className="card">
-          {!selectedSF ? (
-            <div className="card-body" style={{ minHeight: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ textAlign: 'center', color: 'var(--color-gray-400)' }}>
-                <BarChart3 size={36} strokeWidth={1.25} style={{ margin: '0 auto var(--space-3)' }} />
-                <p style={{ fontSize: 'var(--font-size-sm)' }}>Select a feature to see its shape function</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="card-header">
+          <div style={{
+            display: 'grid', gridTemplateColumns: '340px 1fr',
+            gap: 'var(--space-5)', marginBottom: 'var(--space-6)', alignItems: 'start',
+          }}>
+            {/* Left: feature driver list */}
+            <div className="card" style={{
+              position: 'sticky',
+              top: 'calc(var(--topbar-h, 56px) + var(--space-4))',
+              maxHeight: 'calc(100vh - 120px)',
+              display: 'flex', flexDirection: 'column',
+            }}>
+              <div className="card-header" style={{ flexShrink: 0 }}>
                 <div>
-                  <div className="card-title">
-                    How <em>{featName(selectedSF.feature)}</em> affects start time
-                  </div>
-                  <div className="card-subtitle">
-                    Values show minutes above (red) or below (blue) the system average{model.system_mean != null ? ` of ${model.system_mean} min` : ''}
-                  </div>
+                  <div className="card-title">What drives FCOT variance</div>
+                  <div className="card-subtitle">Click a feature to see its shape function</div>
                 </div>
               </div>
-              <div className="card-body">
-                {sfEntries.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8) 0' }}>
-                    No shape data available
-                  </div>
-                ) : (
-                  <div style={{ position: 'relative', padding: '16px 0' }}>
-                    {/* Full-height zero line spanning all rows */}
-                    <div style={{
-                      position: 'absolute', left: 392, top: 0, bottom: 0,
-                      width: 1, background: 'var(--color-gray-200)',
-                      zIndex: 0, pointerEvents: 'none',
-                    }} />
-                    {/* Avg label at top of zero line */}
-                    <div style={{
-                      position: 'absolute', left: 392, top: 0,
-                      transform: 'translateX(-50%)',
-                      fontSize: 9, color: 'var(--color-gray-400)',
-                      whiteSpace: 'nowrap', fontWeight: 600, lineHeight: 1,
-                    }}>
-                      {model.system_mean != null ? `avg ${model.system_mean} min` : 'avg'}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {sfEntries.map((e, i) => (
-                        <ShapeBar key={i} label={e.label} score={e.score} maxAbs={sfMaxAbs} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div style={{ overflowY: 'auto', flex: 1, padding: 'var(--space-1) 0' }}>
+                {mainEffects.map(f => {
+                  const b          = badge(f.rank)
+                  const pct        = maxImp > 0 ? (f.importance_score / maxImp) * 100 : 0
+                  const share      = totalImp > 0 ? ((f.importance_score / totalImp) * 100).toFixed(1) : '0'
+                  const isSelected = selectedFeat === f.feature
+                  return (
+                    <button
+                      key={f.feature}
+                      type="button"
+                      onClick={() => setSelectedFeat(f.feature)}
+                      style={{
+                        width: '100%',
+                        background: isSelected ? 'rgba(59,130,246,0.06)' : 'none',
+                        border: 'none',
+                        borderLeft: isSelected ? '3px solid var(--color-blue)' : '3px solid transparent',
+                        cursor: 'pointer', textAlign: 'left',
+                        padding: 'var(--space-3) var(--space-4)',
+                        transition: 'background 150ms',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                        <span style={{
+                          flex: 1, fontSize: 'var(--font-size-sm)',
+                          fontWeight: isSelected ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
+                          color: isSelected ? 'var(--color-blue)' : 'var(--color-gray-700)',
+                          overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                        }}>
+                          {featName(f.feature)}
+                        </span>
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)',
+                          color: b.color, background: b.bg,
+                          padding: '1px 6px', borderRadius: 'var(--radius-full)', flexShrink: 0,
+                        }}>
+                          {b.label}
+                        </span>
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)',
+                          flexShrink: 0, fontVariantNumeric: 'tabular-nums',
+                        }}>
+                          {share}%
+                        </span>
+                      </div>
+                      <ImportanceBar pct={pct} />
+                    </button>
+                  )
+                })}
               </div>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
 
-      {/* ─── Section 3: Interaction Effects ────────────────────────────────── */}
-      {interactions.length > 0 && (
-        <div>
-          <div style={{ marginBottom: 'var(--space-4)' }}>
-            <h2 style={{
-              fontSize: 'var(--font-size-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--color-gray-900)',
-              marginBottom: 'var(--space-1)',
-            }}>
-              Interaction Effects
-            </h2>
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>
-              How pairs of features combine to jointly influence start time. Click a tile to expand.
-            </p>
+            {/* Right: shape function panel */}
+            <div className="card">
+              {!selectedSF ? (
+                <div className="card-body" style={{ minHeight: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--color-gray-400)' }}>
+                    <BarChart3 size={36} strokeWidth={1.25} style={{ margin: '0 auto var(--space-3)' }} />
+                    <p style={{ fontSize: 'var(--font-size-sm)' }}>Select a feature to see its shape function</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="card-header">
+                    <div>
+                      <div className="card-title">How <em>{featName(selectedSF.feature)}</em> affects start time</div>
+                      <div className="card-subtitle">
+                        Values show minutes above (red) or below (blue) the system average{model.system_mean != null ? ` of ${model.system_mean} min` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="card-body">
+                    {sfEntries.length === 0 ? (
+                      <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8) 0' }}>No shape data available</div>
+                    ) : (
+                      <div style={{ position: 'relative', padding: '16px 0' }}>
+                        <div style={{
+                          position: 'absolute', left: 392, top: 0, bottom: 0,
+                          width: 1, background: 'var(--color-gray-200)',
+                          zIndex: 0, pointerEvents: 'none',
+                        }} />
+                        <div style={{
+                          position: 'absolute', left: 392, top: 0,
+                          transform: 'translateX(-50%)',
+                          fontSize: 9, color: 'var(--color-gray-400)',
+                          whiteSpace: 'nowrap', fontWeight: 600, lineHeight: 1,
+                        }}>
+                          {model.system_mean != null ? `avg ${model.system_mean} min` : 'avg'}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {sfEntries.map((e, i) => (
+                            <ShapeBar key={i} label={e.label} score={e.score} maxAbs={sfMaxAbs} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-4)' }}>
-            {interactions.map(ix => {
-              const key = `${ix.feature_1}__${ix.feature_2}`
-              return (
-                <InteractionTile
-                  key={key}
-                  ix={ix}
-                  expanded={expandedIx === key}
-                  onToggle={() => toggleInteraction(key, ix)}
-                  narrative={ixNarratives[key]}
-                  narrativeLoading={!!ixLoadings[key]}
-                />
-              )
-            })}
-          </div>
-        </div>
+          {/* High-impact combinations */}
+          <FCOTCombinationsSection
+            combinations={model.combinations}
+            systemMean={model.system_mean}
+          />
+        </>
+      )}
+
+      {/* ─── Combinations tab ─────────────────────────────────────────────────── */}
+      {activeTab === 'combinations' && (
+        <CombinationsTab
+          combos={combos}
+          combosLoading={combosLoading}
+          combosError={combosError}
+          combosMean={combosMean}
+          model={model}
+          filter={comboFilter}
+          onFilterChange={setComboFilter}
+        />
+      )}
+
+      {/* ─── Explorer tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 'explorer' && (
+        <ExplorerTab
+          model={model}
+          metric="FCOT Delay"
+          benchmark={15}
+          benchmarkLabel="15 min aspirational target"
+        />
       )}
     </div>
   )
