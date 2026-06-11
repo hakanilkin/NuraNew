@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
-import { Eye, EyeOff, Shield, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Shield, KeyRound, ArrowLeft, AlertCircle } from 'lucide-react'
 import { useAuth } from '../AuthContext'
+import ChangePasswordForm from '../components/ChangePasswordForm'
 
 const LOGO_PATH = 'M3 14.5V3.5L9 9L15 3.5V14.5'
 
@@ -324,6 +325,47 @@ function TotpStep({ mode, qrData, onSuccess, onBack }) {
   )
 }
 
+/* ─── Step: forced password change ───────────────────────────────────────── */
+
+function ChangePasswordStep({ onSuccess }) {
+  return (
+    <>
+      <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
+        <div style={{
+          width: 52,
+          height: 52,
+          borderRadius: 'var(--radius-full)',
+          background: 'var(--color-blue-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto var(--space-4)',
+        }}>
+          <KeyRound size={24} style={{ color: 'var(--color-blue)' }} />
+        </div>
+        <h2 style={{
+          fontSize: 'var(--font-size-xl)',
+          fontWeight: 'var(--font-weight-bold)',
+          color: 'var(--color-gray-900)',
+          letterSpacing: 'var(--letter-spacing-tight)',
+          marginBottom: 'var(--space-2)',
+        }}>
+          Update your password
+        </h2>
+        <p style={{
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-gray-500)',
+          lineHeight: 'var(--line-height-relaxed)',
+        }}>
+          Your password must be changed before you can continue.
+        </p>
+      </div>
+
+      <ChangePasswordForm onSuccess={onSuccess} submitLabel="Update Password & Continue" />
+    </>
+  )
+}
+
 /* ─── Step: select tenant ────────────────────────────────────────────────── */
 
 function TenantPickerStep({ tenants, onSelect }) {
@@ -404,10 +446,10 @@ export default function Login() {
   const { user, setUser } = useAuth()
   const navigate = useNavigate()
 
-  // step: 'login' | 'verify-totp' | 'setup-totp' | 'select-tenant'
-  const [step,    setStep]    = useState('login')
-  const [qrData,  setQrData]  = useState(null)
-  const [tenants, setTenants] = useState([])
+  // step: 'login' | 'verify-totp' | 'setup-totp' | 'change-password' | 'select-tenant'
+  const [step,     setStep]     = useState('login')
+  const [qrData,   setQrData]   = useState(null)
+  const [authData, setAuthData] = useState(null)
 
   // Already authenticated — send to dashboard
   if (user) return <Navigate to="/" replace />
@@ -421,24 +463,41 @@ export default function Login() {
     }
   }
 
-  function handleTotpSuccess(data) {
+  function proceedAfterAuth(data) {
     if (!data.tenantSelected) {
-      setTenants(data.tenants || [])
       setStep('select-tenant')
     } else {
       setUser({
-        isAdmin:    data.isAdmin,
+        isAdmin:       data.isAdmin,
         mustChangePwd: data.mustChangePwd,
-        tenantId:   data.tenantId,
-        tenantName: data.tenantName,
-        tenants:    data.tenants || [],
+        tenantId:      data.tenantId,
+        tenantName:    data.tenantName,
+        tenants:       data.tenants || [],
       })
       navigate('/', { replace: true })
     }
   }
 
+  function handleTotpSuccess(data) {
+    setAuthData(data)
+    if (data.mustChangePwd) {
+      setStep('change-password')
+    } else {
+      proceedAfterAuth(data)
+    }
+  }
+
+  function handlePasswordChanged() {
+    proceedAfterAuth({ ...authData, mustChangePwd: false })
+  }
+
   function handleTenantSelect(tenantInfo) {
-    setUser(prev => ({ ...prev, ...tenantInfo }))
+    setUser({
+      isAdmin:       authData?.isAdmin,
+      mustChangePwd: false,
+      tenants:       authData?.tenants || [],
+      ...tenantInfo,
+    })
     navigate('/', { replace: true })
   }
 
@@ -544,9 +603,12 @@ export default function Login() {
               onBack={handleBack}
             />
           )}
+          {step === 'change-password' && (
+            <ChangePasswordStep onSuccess={handlePasswordChanged} />
+          )}
           {step === 'select-tenant' && (
             <TenantPickerStep
-              tenants={tenants}
+              tenants={authData?.tenants ?? []}
               onSelect={handleTenantSelect}
             />
           )}

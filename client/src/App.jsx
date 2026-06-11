@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
+  KeyRound,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
 import navConfig from './navConfig'
@@ -28,6 +29,7 @@ import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
 import RoomRunning        from './pages/RoomRunning'
 import ForecastsPipeline  from './pages/ForecastsPipeline'
+import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
@@ -72,8 +74,12 @@ const PAGE_TITLES = collectTitles(navConfig)
 
 function RequireAuth({ children }) {
   const { user, checking } = useAuth()
+  const { pathname }       = useLocation()
   if (checking) return <AppLoadingScreen />
   if (!user)    return <Navigate to="/login" replace />
+  if (user.mustChangePwd && pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />
+  }
   return children
 }
 
@@ -377,6 +383,15 @@ function UserMenu({ user }) {
             </button>
           )}
           <button
+            onClick={() => { setMenuOpen(false); navigate('/change-password') }}
+            style={menuBtnStyle}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <KeyRound size={15} style={{ opacity: 0.7 }} />
+            Change password
+          </button>
+          <button
             onClick={handleSignOut}
             style={menuBtnStyle}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
@@ -608,6 +623,14 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route
+            path="/change-password"
+            element={
+              <RequireAuth>
+                <ChangePassword />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/*"
             element={

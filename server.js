@@ -2,6 +2,7 @@ require('dotenv').config();
 const express    = require('express');
 const sql        = require('mssql');
 const path       = require('path');
+const crypto     = require('crypto');
 const session    = require('express-session');
 const MSSQLStore = require('connect-mssql-v2');
 
@@ -51,11 +52,28 @@ async function getTenantPool(tenantId) {
 const isProd = process.env.NODE_ENV === 'production';
 
 // ── Session ────────────────────────────────────────────────────────
+if (!process.env.SESSION_SECRET && isProd) {
+  console.error('FATAL: SESSION_SECRET environment variable must be set in production.');
+  process.exit(1);
+}
+if (!process.env.SESSION_SECRET) {
+  console.warn('WARNING: SESSION_SECRET not set — using a random secret (sessions reset on restart).');
+}
+
+if (isProd) {
+  app.set('trust proxy', 1); // needed for secure cookies behind a reverse proxy
+}
+
 const sessionOptions = {
-  secret:            process.env.SESSION_SECRET || 'nura-change-me-in-production',
+  secret:            process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
   resave:            false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, maxAge: 8 * 60 * 60 * 1000 },
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure:   isProd,
+    maxAge:   8 * 60 * 60 * 1000,
+  },
 };
 if (isProd) {
   sessionOptions.store = new MSSQLStore(authConfig, session);
@@ -75,11 +93,25 @@ const PUBLIC_API_PATHS = [
   '/api/auth/confirm-totp', '/api/auth/select-tenant',
 ];
 
+// Paths still usable while a password change is pending
+const PWD_CHANGE_ALLOWED_PATHS = [
+  '/api/auth/change-password', '/api/auth/logout', '/api/auth/me',
+];
+
 function requireAuth(req, res, next) {
   if (PUBLIC_API_PATHS.includes(req.path)) return next();
-  if (req.session && req.session.userId && req.session.totpVerified) return next();
-  // Only block API calls — React Router handles page-level redirects
-  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
+  if (req.session && req.session.userId && req.session.totpVerified) {
+    if (req.session.mustChangePwd
+        && req.path.startsWith('/api/')
+        && !PWD_CHANGE_ALLOWED_PATHS.includes(req.path)) {
+      return res.status(403).json({ error: 'Password change required', code: 'PWD_CHANGE_REQUIRED' });
+    }
+    return next();
+  }
+  // Block API calls and data files — React Router handles page-level redirects
+  if (req.path.startsWith('/api/') || req.path.startsWith('/data/')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   return next();
 }
 
