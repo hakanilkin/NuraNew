@@ -1,4 +1,5 @@
-const express = require('express');
+const express     = require('express');
+const makeFilters = require('./filters');
 
 module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
   const router = express.Router();
@@ -6,46 +7,20 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
   // All data routes require a tenant to be selected
   router.use(requireTenant);
 
-  // ── Filter helpers ──────────────────────────────────────────────────────────
+  const {
+    addSitesFilter, addLocationsFilter, addCaseBlocksFilter,
+    addDowFilter, dateOr, isValidDate,
+  } = makeFilters(sql);
 
-  function addSitesFilter(request, sitesParam) {
-    if (!sitesParam) return '';
-    const sites = sitesParam.split(',').map(s => s.trim()).filter(Boolean);
-    if (!sites.length) return '';
-    const placeholders = sites.map((s, i) => {
-      request.input(`site${i}`, sql.NVarChar, s);
-      return `@site${i}`;
-    });
-    return ` AND ISNULL(Loc_ORGrp2, 'Unknown') IN (${placeholders.join(', ')})`;
-  }
-
-  function addLocationsFilter(request, locParam) {
-    if (!locParam) return '';
-    const locs = locParam.split(',').map(s => s.trim()).filter(Boolean);
-    if (!locs.length) return '';
-    const placeholders = locs.map((l, i) => {
-      request.input(`loc${i}`, sql.NVarChar, l);
-      return `@loc${i}`;
-    });
-    return ` AND ISNULL(LocationGroup, 'Unknown') IN (${placeholders.join(', ')})`;
-  }
-
-  function addCaseBlocksFilter(request, cbParam) {
-    if (!cbParam) return '';
-    const blocks = cbParam.split(',').map(s => s.trim()).filter(Boolean);
-    if (!blocks.length) return '';
-    const placeholders = blocks.map((b, i) => {
-      request.input(`cb${i}`, sql.NVarChar, b);
-      return `@cb${i}`;
-    });
-    return ` AND ISNULL(CaseBlock, 'Unknown') IN (${placeholders.join(', ')})`;
-  }
-
-  function addDowFilter(dowParam) {
-    if (!dowParam) return '';
-    const days = dowParam.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-    if (!days.length) return '';
-    return ` AND DATEPART(WEEKDAY, BlockDate) IN (${days.join(', ')})`;
+  // Default to the trailing 12 months when no valid range is supplied
+  function dateRange(query) {
+    const fmt   = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+    return {
+      startDate: dateOr(query.startDate, fmt(start)),
+      endDate:   dateOr(query.endDate,   fmt(today)),
+    };
   }
 
   // ── GET /api/sites ──────────────────────────────────────────────────────────
@@ -61,7 +36,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset.map(r => r.Site));
     } catch (err) {
       console.error('/api/sites error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -71,8 +46,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db        = await getTenantPool(req.session.tenantId);
       const request   = db.request();
-      const startDate = req.query.startDate || '2025-01-01';
-      const endDate   = req.query.endDate   || '2025-12-31';
+      const { startDate, endDate } = dateRange(req.query);
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
       const siteFilter = addSitesFilter(request, req.query.sites);
@@ -92,7 +66,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset);
     } catch (err) {
       console.error('/api/summary error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -102,8 +76,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db        = await getTenantPool(req.session.tenantId);
       const request   = db.request();
-      const startDate = req.query.startDate || '2025-01-01';
-      const endDate   = req.query.endDate   || '2025-12-31';
+      const { startDate, endDate } = dateRange(req.query);
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
       const siteFilter = addSitesFilter(request, req.query.sites);
@@ -123,7 +96,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset);
     } catch (err) {
       console.error('/api/monthly-trend error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -140,7 +113,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset.map(r => r.LocationGroup));
     } catch (err) {
       console.error('/api/capacity/location-groups error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -150,8 +123,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db        = await getTenantPool(req.session.tenantId);
       const request   = db.request();
-      const startDate = req.query.startDate || '2025-01-01';
-      const endDate   = req.query.endDate   || '2025-12-31';
+      const { startDate, endDate } = dateRange(req.query);
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
       const locFilter = addLocationsFilter(request, req.query.locations);
@@ -178,7 +150,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset);
     } catch (err) {
       console.error('/api/capacity/prime-time error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -188,8 +160,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db        = await getTenantPool(req.session.tenantId);
       const request   = db.request();
-      const startDate = req.query.startDate || '2025-01-01';
-      const endDate   = req.query.endDate   || '2025-12-31';
+      const { startDate, endDate } = dateRange(req.query);
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
       const locFilter = addLocationsFilter(request, req.query.locations);
@@ -216,7 +187,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset);
     } catch (err) {
       console.error('/api/capacity/non-prime-time error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -226,8 +197,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db        = await getTenantPool(req.session.tenantId);
       const request   = db.request();
-      const startDate = req.query.startDate || '2025-01-01';
-      const endDate   = req.query.endDate   || '2025-12-31';
+      const { startDate, endDate } = dateRange(req.query);
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
       const locFilter = addLocationsFilter(request, req.query.locations);
@@ -244,7 +214,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset.map(r => r.CaseBlock));
     } catch (err) {
       console.error('/api/blockutil/caseblocks error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -254,8 +224,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db        = await getTenantPool(req.session.tenantId);
       const request   = db.request();
-      const startDate = req.query.startDate || '2025-01-01';
-      const endDate   = req.query.endDate   || '2025-12-31';
+      const { startDate, endDate } = dateRange(req.query);
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
       const locFilter = addLocationsFilter(request, req.query.locations);
@@ -285,7 +254,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset);
     } catch (err) {
       console.error('/api/blockutil/data error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -295,8 +264,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db        = await getTenantPool(req.session.tenantId);
       const request   = db.request();
-      const startDate = req.query.startDate || '2025-01-01';
-      const endDate   = req.query.endDate   || '2025-12-31';
+      const { startDate, endDate } = dateRange(req.query);
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
       const locFilter = addLocationsFilter(request, req.query.locations);
@@ -328,7 +296,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset);
     } catch (err) {
       console.error('/api/blockutil/monthly-detail error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -348,7 +316,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       });
     } catch (err) {
       console.error('/api/rr/meta error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -357,10 +325,12 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
 
   router.get('/rr/data', async (req, res) => {
     try {
-      const db        = await getTenantPool(req.session.tenantId);
-      const request   = db.request();
-      const startDate = req.query.startDate;
-      const endDate   = req.query.endDate;
+      const { startDate, endDate } = req.query;
+      if (!isValidDate(startDate) || !isValidDate(endDate)) {
+        return res.status(400).json({ error: 'startDate and endDate are required (YYYY-MM-DD)' });
+      }
+      const db      = await getTenantPool(req.session.tenantId);
+      const request = db.request();
       request.input('startDate', sql.Date, startDate);
       request.input('endDate',   sql.Date, endDate);
 
@@ -400,7 +370,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       res.json(result.recordset);
     } catch (err) {
       console.error('/api/rr/data error:', err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

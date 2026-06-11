@@ -23,38 +23,33 @@ function readJsonFile(filename) {
   return JSON.parse(raw);
 }
 
-// GET /api/atlas/fcot-model
-router.get('/fcot-model', (_req, res) => {
+// Standard JSON-file responder: 404 (or an empty fallback) when the file is
+// missing, 500 with a clean message when it's unreadable or corrupted.
+function sendJsonFile(res, route, filename, { notFoundMsg, emptyFallback } = {}) {
   try {
-    res.json(readJsonFile('fcot_ebm.json'));
+    res.json(readJsonFile(filename));
   } catch (err) {
     if (err.message === 'not_found') {
-      return res.status(404).json({ error: 'Model file not found — run ebm_pipeline.py first' });
+      if (emptyFallback) return res.json(emptyFallback);
+      return res.status(404).json({ error: notFoundMsg ?? 'Data file not found' });
     }
     if (err instanceof SyntaxError) {
-      console.error('/api/atlas/fcot-model parse error:', err.message);
-      return res.status(500).json({ error: 'Model file is corrupted or not valid JSON' });
+      console.error(`${route} parse error:`, err.message);
+      return res.status(500).json({ error: 'Data file is corrupted or not valid JSON' });
     }
-    console.error('/api/atlas/fcot-model read error:', err.message);
-    res.status(500).json({ error: 'Could not read model file' });
+    console.error(`${route} read error:`, err.message);
+    res.status(500).json({ error: 'Could not read data file' });
   }
+}
+
+// GET /api/atlas/fcot-model
+router.get('/fcot-model', (_req, res) => {
+  sendJsonFile(res, '/api/atlas/fcot-model', 'fcot_ebm.json', { notFoundMsg: 'Model file not found — run ebm_pipeline.py first' });
 });
 
 // GET /api/atlas/turnover-model
 router.get('/turnover-model', (_req, res) => {
-  try {
-    res.json(readJsonFile('turnover_ebm.json'));
-  } catch (err) {
-    if (err.message === 'not_found') {
-      return res.status(404).json({ error: 'Model file not found — run turnover_ebm_pipeline.py first' });
-    }
-    if (err instanceof SyntaxError) {
-      console.error('/api/atlas/turnover-model parse error:', err.message);
-      return res.status(500).json({ error: 'Model file is corrupted or not valid JSON' });
-    }
-    console.error('/api/atlas/turnover-model read error:', err.message);
-    res.status(500).json({ error: 'Could not read model file' });
-  }
+  sendJsonFile(res, '/api/atlas/turnover-model', 'turnover_ebm.json', { notFoundMsg: 'Model file not found — run turnover_ebm_pipeline.py first' });
 });
 
 // POST /api/atlas/explain-interaction
@@ -118,109 +113,44 @@ ${topRows}`;
   }
 });
 
-// GET /api/atlas/do-dc-overall
-router.get('/do-dc-overall', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/data/do_dc_overall_ebm.json'));
-});
-
-// GET /api/atlas/do-dc-home
-router.get('/do-dc-home', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/data/do_dc_home_ebm.json'));
-});
-
-// GET /api/atlas/do-dc-snf
-router.get('/do-dc-snf', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/data/do_dc_snf_ebm.json'));
-});
-
-// GET /api/atlas/do-dc-hh
-router.get('/do-dc-hh', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/data/do_dc_hh_ebm.json'));
-});
+// GET /api/atlas/do-dc-{overall,home,snf,hh}
+const DODC_FILES = {
+  'do-dc-overall': 'do_dc_overall_ebm.json',
+  'do-dc-home':    'do_dc_home_ebm.json',
+  'do-dc-snf':     'do_dc_snf_ebm.json',
+  'do-dc-hh':      'do_dc_hh_ebm.json',
+};
+for (const [route, filename] of Object.entries(DODC_FILES)) {
+  router.get(`/${route}`, (_req, res) => {
+    sendJsonFile(res, `/api/atlas/${route}`, filename, {
+      notFoundMsg: 'Model file not found — run do_dc_pipeline.py first',
+    });
+  });
+}
 
 // GET /api/atlas/bed-placement-model
 router.get('/bed-placement-model', (_req, res) => {
-  try {
-    res.json(readJsonFile('bed_placement_ebm.json'));
-  } catch (err) {
-    if (err.message === 'not_found') {
-      return res.status(404).json({ error: 'Model file not found — run bed_placement_pipeline.py first' });
-    }
-    if (err instanceof SyntaxError) {
-      console.error('/api/atlas/bed-placement-model parse error:', err.message);
-      return res.status(500).json({ error: 'Model file is corrupted or not valid JSON' });
-    }
-    console.error('/api/atlas/bed-placement-model read error:', err.message);
-    res.status(500).json({ error: 'Could not read model file' });
-  }
+  sendJsonFile(res, '/api/atlas/bed-placement-model', 'bed_placement_ebm.json', { notFoundMsg: 'Model file not found — run bed_placement_pipeline.py first' });
 });
 
 // GET /api/atlas/bed-placement-combinations
 router.get('/bed-placement-combinations', (_req, res) => {
-  try {
-    res.json(readJsonFile('bed_placement_combinations.json'));
-  } catch (err) {
-    if (err.message === 'not_found') {
-      return res.json({ combinations: [], system_mean: 0 });
-    }
-    if (err instanceof SyntaxError) {
-      console.error('/api/atlas/bed-placement-combinations parse error:', err.message);
-      return res.status(500).json({ error: 'Combinations file is corrupted or not valid JSON' });
-    }
-    console.error('/api/atlas/bed-placement-combinations read error:', err.message);
-    res.status(500).json({ error: 'Could not read combinations file' });
-  }
+  sendJsonFile(res, '/api/atlas/bed-placement-combinations', 'bed_placement_combinations.json', { emptyFallback: { combinations: [], system_mean: 0 } });
 });
 
 // GET /api/atlas/turnover-combinations
 router.get('/turnover-combinations', (_req, res) => {
-  try {
-    res.json(readJsonFile('turnover_combinations.json'));
-  } catch (err) {
-    if (err.message === 'not_found') {
-      return res.status(404).json({ error: 'Combinations file not found — run turnover_ebm_pipeline.py first' });
-    }
-    if (err instanceof SyntaxError) {
-      console.error('/api/atlas/turnover-combinations parse error:', err.message);
-      return res.status(500).json({ error: 'Combinations file is corrupted or not valid JSON' });
-    }
-    console.error('/api/atlas/turnover-combinations read error:', err.message);
-    res.status(500).json({ error: 'Could not read combinations file' });
-  }
+  sendJsonFile(res, '/api/atlas/turnover-combinations', 'turnover_combinations.json', { notFoundMsg: 'Combinations file not found — run turnover_ebm_pipeline.py first' });
 });
 
 // GET /api/atlas/fcot-combinations
 router.get('/fcot-combinations', (_req, res) => {
-  try {
-    res.json(readJsonFile('fcot_combinations.json'));
-  } catch (err) {
-    if (err.message === 'not_found') {
-      return res.json({ combinations: [], system_mean: 0 });
-    }
-    if (err instanceof SyntaxError) {
-      console.error('/api/atlas/fcot-combinations parse error:', err.message);
-      return res.status(500).json({ error: 'Combinations file is corrupted or not valid JSON' });
-    }
-    console.error('/api/atlas/fcot-combinations read error:', err.message);
-    res.status(500).json({ error: 'Could not read combinations file' });
-  }
+  sendJsonFile(res, '/api/atlas/fcot-combinations', 'fcot_combinations.json', { emptyFallback: { combinations: [], system_mean: 0 } });
 });
 
 // GET /api/atlas/performance-briefs-mock
 router.get('/performance-briefs-mock', (_req, res) => {
-  try {
-    res.json(readJsonFile('performance_briefs_mock.json'));
-  } catch (err) {
-    if (err.message === 'not_found') {
-      return res.status(404).json({ error: 'Mock data file not found' });
-    }
-    if (err instanceof SyntaxError) {
-      console.error('/api/atlas/performance-briefs-mock parse error:', err.message);
-      return res.status(500).json({ error: 'Mock data file is corrupted or not valid JSON' });
-    }
-    console.error('/api/atlas/performance-briefs-mock read error:', err.message);
-    res.status(500).json({ error: 'Could not read mock data file' });
-  }
+  sendJsonFile(res, '/api/atlas/performance-briefs-mock', 'performance_briefs_mock.json', { notFoundMsg: 'Mock data file not found' });
 });
 
 module.exports = router;
