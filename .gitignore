@@ -1,1 +1,6 @@
 .env
+node_modules/
+.DS_Store
+client/dist/
+*.xlsx
+__pycache__/

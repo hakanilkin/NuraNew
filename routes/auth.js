@@ -52,6 +52,7 @@ module.exports = function authRoutes(getAuthPool, sql) {
     req.session.totpVerified  = true;
     req.session.mustChangePwd = mustChangePwd;
     req.session.tenants       = tenants;
+    req.session.lastValidated = Date.now();
 
     // Auto-select if only one tenant
     if (tenants.length === 1) {
@@ -116,6 +117,8 @@ module.exports = function authRoutes(getAuthPool, sql) {
       await _finalizeLogin(req, db);
       res.json({
         ok:             true,
+        userId:         req.session.userId,
+        fullName:       req.session.fullName,
         isAdmin:        req.session.isAdmin,
         mustChangePwd:  req.session.mustChangePwd,
         tenants:        req.session.tenants,
@@ -149,6 +152,8 @@ module.exports = function authRoutes(getAuthPool, sql) {
       await _finalizeLogin(req, db);
       res.json({
         ok:             true,
+        userId:         req.session.userId,
+        fullName:       req.session.fullName,
         isAdmin:        req.session.isAdmin,
         mustChangePwd:  req.session.mustChangePwd,
         tenants:        req.session.tenants,
@@ -162,8 +167,9 @@ module.exports = function authRoutes(getAuthPool, sql) {
     }
   });
 
-  // POST /api/auth/select-tenant  (called from tenant picker after login)
-  router.post('/select-tenant', async (req, res) => {
+  // POST /api/auth/select-tenant  (tenant picker after login)
+  // POST /api/auth/switch-tenant  (sidebar while already in app)
+  function handleTenantSelection(req, res) {
     if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
     const { tenantId } = req.body;
     const allowed = (req.session.tenants || []).find(t => t.TenantID === tenantId);
@@ -171,18 +177,9 @@ module.exports = function authRoutes(getAuthPool, sql) {
     req.session.tenantId   = allowed.TenantID;
     req.session.tenantName = allowed.TenantName;
     res.json({ ok: true, tenantId: allowed.TenantID, tenantName: allowed.TenantName });
-  });
-
-  // POST /api/auth/switch-tenant  (called from sidebar while already in app)
-  router.post('/switch-tenant', async (req, res) => {
-    if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
-    const { tenantId } = req.body;
-    const allowed = (req.session.tenants || []).find(t => t.TenantID === tenantId);
-    if (!allowed) return res.status(403).json({ error: 'Access denied to this client' });
-    req.session.tenantId   = allowed.TenantID;
-    req.session.tenantName = allowed.TenantName;
-    res.json({ ok: true, tenantId: allowed.TenantID, tenantName: allowed.TenantName });
-  });
+  }
+  router.post('/select-tenant', handleTenantSelection);
+  router.post('/switch-tenant', handleTenantSelection);
 
   // POST /api/auth/change-password
   router.post('/change-password', async (req, res) => {

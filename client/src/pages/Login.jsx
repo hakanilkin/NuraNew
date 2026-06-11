@@ -410,6 +410,17 @@ function TenantPickerStep({ tenants, onSelect }) {
 
       <ErrorBanner message={error} />
 
+      {tenants.length === 0 && (
+        <p style={{
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-gray-500)',
+          lineHeight: 'var(--line-height-relaxed)',
+        }}>
+          No clients are assigned to your account yet. Please contact your
+          administrator to request access.
+        </p>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         {tenants.map(t => (
           <button
@@ -468,6 +479,8 @@ export default function Login() {
       setStep('select-tenant')
     } else {
       setUser({
+        userId:        data.userId,
+        fullName:      data.fullName,
         isAdmin:       data.isAdmin,
         mustChangePwd: data.mustChangePwd,
         tenantId:      data.tenantId,
@@ -493,6 +506,8 @@ export default function Login() {
 
   function handleTenantSelect(tenantInfo) {
     setUser({
+      userId:        authData?.userId,
+      fullName:      authData?.fullName,
       isAdmin:       authData?.isAdmin,
       mustChangePwd: false,
       tenants:       authData?.tenants || [],

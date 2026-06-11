@@ -1,17 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Send } from 'lucide-react'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+import { useAuth } from '../AuthContext'
 
 marked.setOptions({ breaks: true, gfm: true })
 
-const SUGGESTED_QUESTIONS = [
-  'What is the current bed assignment delay rate at OLLH?',
-  'What are the top drivers of bed assignment delays?',
-  'How long does it take for SNF patients to leave after a discharge order?',
-  'What combinations of factors have the longest DO→DC times?',
-  'What is OLLH turnover time performance?',
-  'What drives first case on-time starts?',
-]
+function suggestedQuestions(orgName) {
+  const at = orgName ? ` at ${orgName}` : ''
+  return [
+    `What is the current bed assignment delay rate${at}?`,
+    'What are the top drivers of bed assignment delays?',
+    'How long does it take for SNF patients to leave after a discharge order?',
+    'What combinations of factors have the longest DO→DC times?',
+    `What is${orgName ? ` ${orgName}'s` : ' our'} turnover time performance?`,
+    'What drives first case on-time starts?',
+  ]
+}
 
 /* ─── Shared sub-components ──────────────────────────────────────────────── */
 
@@ -92,7 +97,7 @@ function AssistantBubble({ content, verified }) {
             boxShadow: 'var(--shadow-xs)',
             wordBreak: 'break-word',
           }}
-          dangerouslySetInnerHTML={{ __html: marked.parse(content) }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(content)) }}
         />
         <VerifiedBadge verified={verified} />
       </div>
@@ -166,7 +171,7 @@ function SuggestionCard({ question, onSelect }) {
 
 /* ─── Empty state ────────────────────────────────────────────────────────── */
 
-function EmptyState({ onSelect }) {
+function EmptyState({ onSelect, questions }) {
   return (
     <div style={{
       flex: 1,
@@ -210,7 +215,7 @@ function EmptyState({ onSelect }) {
         width: '100%',
         maxWidth: 700,
       }}>
-        {SUGGESTED_QUESTIONS.map(q => (
+        {questions.map(q => (
           <SuggestionCard key={q} question={q} onSelect={onSelect} />
         ))}
       </div>
@@ -221,6 +226,7 @@ function EmptyState({ onSelect }) {
 /* ─── Main page ──────────────────────────────────────────────────────────── */
 
 export default function AskNura() {
+  const { user } = useAuth()
   const [messages, setMessages] = useState([])
   const [history,  setHistory]  = useState([])
   const [input,    setInput]    = useState('')
@@ -387,7 +393,7 @@ export default function AskNura() {
         }}
       >
         {!hasMessages ? (
-          <EmptyState onSelect={send} />
+          <EmptyState onSelect={send} questions={suggestedQuestions(user?.tenantName)} />
         ) : (
           <div style={{ maxWidth: 860, width: '100%', margin: '0 auto' }}>
             {messages.map((m, i) =>

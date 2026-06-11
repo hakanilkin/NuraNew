@@ -1,5 +1,5 @@
 -- ================================================================
--- Nura Dashboard – Users Table
+-- Nura Dashboard â€” Users Table
 -- Run this script once in your SQL Server database
 -- ================================================================
 
@@ -21,36 +21,20 @@ CREATE TABLE Users (
 
 -- ----------------------------------------------------------------
 -- Seed: first admin user
--- Password: Admin@1234  (bcrypt hash — change immediately after first login)
+--
+-- 1. Generate a bcrypt hash for a strong, unique password:
+--      node -e "console.log(require('bcryptjs').hashSync('YOUR_PASSWORD', 10))"
+-- 2. Replace REPLACE_WITH_BCRYPT_HASH below before running.
+--
+-- MustChangePwd = 1 forces a password change on first login.
+-- Do NOT commit real password hashes to source control.
 -- ----------------------------------------------------------------
 INSERT INTO Users (Username, Email, FullName, PasswordHash, IsAdmin, MustChangePwd)
 VALUES (
   'admin',
   'admin@hospital.org',
   'System Administrator',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhy8',  -- Admin@1234
+  'REPLACE_WITH_BCRYPT_HASH',
   1,
   1
 );
-
-
-UPDATE Users 
-SET PasswordHash = '$2b$10$BVc19T0PsQ2Kn2V37viTneeetxK.DzbjCRTVsG9ERL6qiaR3DivlK'
-WHERE Username = 'admin'
-
-
---SELECT * FROM users
-
-
---SELECT PasswordHash FROM Users WHERE Username = 'admin'
-
-
---SELECT UserID, Username, IsActive, LEFT(PasswordHash,30) AS HashPreview FROM Users
-
-
-UPDATE Users 
-SET PasswordHash = '$2b$10$BVc19T0PsQ2Kn2V37viTneeetxK.DzbjCRTVsG9ERL6qiaR3DivlK'
-WHERE Username = 'admin'
-
-
-SELECT  *FROM ds_Cases

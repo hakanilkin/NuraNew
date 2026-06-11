@@ -6,16 +6,32 @@ const crypto     = require('crypto');
 const session    = require('express-session');
 const MSSQLStore = require('connect-mssql-v2');
 
+const { decryptSecret } = require('./lib/secrets');
+
 const app = express();
 app.use(express.json());
 
+// ── Security headers ───────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Referrer-Policy', 'same-origin');
+  if (process.env.NODE_ENV === 'production') {
+    res.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+  next();
+});
+
 // ── SQL Server connections ─────────────────────────────────────────
+// Only trust self-signed DB certificates when explicitly opted in (local dev)
+const trustServerCertificate = process.env.DB_TRUST_SERVER_CERT === 'true';
+
 const baseConfig = {
   server:   process.env.DB_SERVER,
   port:     parseInt(process.env.DB_PORT) || 1433,
   user:     process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  options: { encrypt: true, trustServerCertificate: true, enableArithAbort: true },
+  options: { encrypt: true, trustServerCertificate, enableArithAbort: true },
 };
 
 const authConfig = { ...baseConfig, database: process.env.AUTH_DB_DATABASE };  // NuraOps — users/auth/tenants
@@ -41,12 +57,23 @@ async function getTenantPool(tenantId) {
     server:   t.DBServer,
     database: t.DBName,
     user:     t.DBUser,
-    password: t.DBPassword,
+    password: decryptSecret(t.DBPassword),
     port:     parseInt(process.env.DB_PORT) || 1433,
-    options:  { encrypt: true, trustServerCertificate: true, enableArithAbort: true },
+    options:  { encrypt: true, trustServerCertificate, enableArithAbort: true },
   }).connect();
   tenantPools[tenantId] = pool;
   return pool;
+}
+
+// Drop a cached pool when a tenant's connection details change or the
+// tenant is deactivated/deleted, so stale credentials aren't reused.
+async function invalidateTenantPool(tenantId) {
+  const pool = tenantPools[tenantId];
+  if (!pool) return;
+  delete tenantPools[tenantId];
+  try { await pool.close(); } catch (err) {
+    console.error(`Error closing pool for tenant ${tenantId}:`, err.message);
+  }
 }
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -80,13 +107,6 @@ if (isProd) {
 }
 app.use(session(sessionOptions));
 
-// ── API error handler (returns JSON instead of HTML) ───────────────
-app.use((err, req, res, next) => {
-  console.error('Express error:', err.message);
-  if (req.path.startsWith('/api/')) return res.status(500).json({ error: err.message });
-  next(err);
-});
-
 // ── Auth middleware ────────────────────────────────────────────────
 const PUBLIC_API_PATHS = [
   '/api/auth/login', '/api/auth/verify-totp',
@@ -98,9 +118,54 @@ const PWD_CHANGE_ALLOWED_PATHS = [
   '/api/auth/change-password', '/api/auth/logout', '/api/auth/me',
 ];
 
-function requireAuth(req, res, next) {
+// Periodically re-check the user against the auth DB so that deactivating
+// a user, removing a tenant assignment, or revoking admin takes effect on
+// live sessions instead of waiting for the cookie to expire.
+const SESSION_REVALIDATE_MS = 60 * 1000;
+
+async function revalidateSession(req) {
+  const now = Date.now();
+  if (req.session.lastValidated && now - req.session.lastValidated < SESSION_REVALIDATE_MS) {
+    return true;
+  }
+  try {
+    const db = await getAuthPool();
+    const uRes = await db.request()
+      .input('uid', sql.Int, req.session.userId)
+      .query(`SELECT IsActive, IsAdmin, MustChangePwd FROM Users WHERE UserID = @uid`);
+    const u = uRes.recordset[0];
+    if (!u || !(u.IsActive === true || u.IsActive === 1)) return false;
+    req.session.isAdmin       = u.IsAdmin === true || u.IsAdmin === 1;
+    req.session.mustChangePwd = u.MustChangePwd === true || u.MustChangePwd === 1;
+
+    const tRes = await db.request()
+      .input('uid', sql.Int, req.session.userId)
+      .query(`SELECT t.TenantID, t.TenantName
+              FROM Tenants t
+              JOIN UserTenants ut ON t.TenantID = ut.TenantID
+              WHERE ut.UserID = @uid AND t.IsActive = 1
+              ORDER BY t.TenantName`);
+    req.session.tenants = tRes.recordset;
+    if (req.session.tenantId && !tRes.recordset.some(t => t.TenantID === req.session.tenantId)) {
+      delete req.session.tenantId;
+      delete req.session.tenantName;
+    }
+    req.session.lastValidated = now;
+    return true;
+  } catch (err) {
+    // Fail open on transient auth-DB errors — data routes will surface
+    // their own failures, and we re-check on the next request.
+    console.error('Session revalidation error:', err.message);
+    return true;
+  }
+}
+
+async function requireAuth(req, res, next) {
   if (PUBLIC_API_PATHS.includes(req.path)) return next();
   if (req.session && req.session.userId && req.session.totpVerified) {
+    if (!(await revalidateSession(req))) {
+      return req.session.destroy(() => res.status(401).json({ error: 'Unauthorized' }));
+    }
     if (req.session.mustChangePwd
         && req.path.startsWith('/api/')
         && !PWD_CHANGE_ALLOWED_PATHS.includes(req.path)) {
@@ -135,16 +200,24 @@ if (isProd) {
 
 // ── Route modules ──────────────────────────────────────────────────
 const authRouter      = require('./routes/auth')(getAuthPool, sql);
-const adminRouter     = require('./routes/admin')(getAuthPool, sql, requireAdmin);
+const adminRouter     = require('./routes/admin')(getAuthPool, sql, requireAdmin, invalidateTenantPool);
 const analyticsRouter = require('./routes/analytics')(getTenantPool, sql, requireTenant);
 const atlasRouter     = require('./routes/atlas');
-const askNuraRouter   = require('./routes/askNura')(getTenantPool, sql);
+const askNuraRouter   = require('./routes/askNura')(getTenantPool, sql, requireTenant);
 
 app.use('/api/auth',  authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/atlas', atlasRouter);
 app.use('/api',       analyticsRouter);
 app.use('/api',       askNuraRouter);
+
+// ── API error handler (returns JSON instead of HTML) ───────────────
+// Must be registered after the routes to catch their errors.
+app.use((err, req, res, next) => {
+  console.error('Express error:', err.message);
+  if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Internal server error' });
+  next(err);
+});
 
 // ── React Router catch-all (production only) ──────────────────────
 if (isProd) {

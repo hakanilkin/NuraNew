@@ -8,14 +8,12 @@ import {
   MessageSquareText,
   TrendingUp,
   ChevronRight,
-  Bell,
-  Settings,
   LogOut,
   ShieldCheck,
   KeyRound,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
-import navConfig from './navConfig'
+import navConfig, { OR_NAV, IP_NAV } from './navConfig'
 import Login            from './pages/Login'
 import ORPerformance    from './pages/ORPerformance'
 import Capacity         from './pages/Capacity'
@@ -80,6 +78,12 @@ function RequireAuth({ children }) {
   if (user.mustChangePwd && pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />
   }
+  return children
+}
+
+function RequireAdmin({ children }) {
+  const { user } = useAuth()
+  if (!user?.isAdmin) return <Navigate to="/" replace />
   return children
 }
 
@@ -194,6 +198,7 @@ function renderNavItems(items, level, { isOpen, toggle }) {
       const iconSize = level === 0 ? 18 : 16
       const chevSize = level === 0 ? 13 : 12
       const opacity  = level === 0 ? 0.09 : 0.06
+      const children = item.children ?? []
       return (
         <Fragment key={item.id}>
           <button
@@ -208,7 +213,16 @@ function renderNavItems(items, level, { isOpen, toggle }) {
           </button>
           {isOpen(item.id) && (
             <NavGroup opacity={opacity}>
-              {renderNavItems(item.children ?? [], level + 1, { isOpen, toggle })}
+              {children.length
+                ? renderNavItems(children, level + 1, { isOpen, toggle })
+                : <div style={{
+                    padding: '7px 14px',
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.3)',
+                    fontStyle: 'italic',
+                  }}>
+                    Coming soon
+                  </div>}
             </NavGroup>
           )}
         </Fragment>
@@ -309,15 +323,14 @@ function UserMenu({ user }) {
 
   async function handleSwitchTenant(tenant) {
     setMenuOpen(false)
-    const res  = await fetch('/api/auth/switch-tenant', {
+    const res = await fetch('/api/auth/switch-tenant', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ tenantId: tenant.TenantID }),
     })
-    const data = await res.json()
     if (res.ok) {
-      setUser(prev => ({ ...prev, tenantId: data.tenantId, tenantName: data.tenantName }))
-      navigate('/', { replace: true })
+      // Full reload so every page refetches against the new tenant
+      window.location.assign('/')
     }
   }
 
@@ -486,69 +499,7 @@ function Sidebar() {
 
       {/* ── Nav ── */}
       <nav className="sidebar-nav">
-
-        {/* Analytics */}
-        <button type="button" onClick={() => toggle('analytics')} className="nav-item" style={BTN_RESET}>
-          <BarChart3 size={18} className="nav-icon" />
-          <span style={{ flex: 1 }}>Analytics</span>
-          <Chevron open={isOpen('analytics')} />
-        </button>
-
-        {isOpen('analytics') && (
-          <NavGroup opacity={0.09}>
-            {isOR ? (
-              <>
-                <LeafLink to="/" end>Case Volumes</LeafLink>
-                <LeafLink to="/capacity">Prime Time Utilization</LeafLink>
-                <LeafLink to="/block-utilization">Block Utilization</LeafLink>
-                <LeafLink to="/room-running">Room Running</LeafLink>
-              </>
-            ) : (
-              <div style={{
-                padding: '7px 14px',
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.3)',
-                fontStyle: 'italic',
-              }}>
-                Coming soon
-              </div>
-            )}
-          </NavGroup>
-        )}
-
-        {/* Atlas */}
-        <button type="button" onClick={() => toggle('atlas')} className="nav-item" style={BTN_RESET}>
-          <Map size={18} className="nav-icon" />
-          <span style={{ flex: 1 }}>Atlas</span>
-          <Chevron open={isOpen('atlas')} />
-        </button>
-
-        {isOpen('atlas') && (
-          <NavGroup opacity={0.09}>
-            {isOR ? (
-              <>
-                <LeafLink to="/atlas/fcot">FCOT Drivers</LeafLink>
-                <LeafLink to="/atlas/turnover">Turnover Time</LeafLink>
-                <LeafLink to="/atlas/performance-briefs">Performance Briefs</LeafLink>
-              </>
-            ) : (
-              <>
-                <LeafLink to="/atlas/bed-placement">Bed Placement</LeafLink>
-                <LeafLink to="/atlas/do-dc">DO→DC Time</LeafLink>
-              </>
-            )}
-          </NavGroup>
-        )}
-
-        <NavLink to="/ask-nura" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-          <MessageSquareText size={18} className="nav-icon" />
-          Ask Nura
-        </NavLink>
-        <NavLink to="/forecasts" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-          <TrendingUp size={18} className="nav-icon" />
-          Forecasts
-        </NavLink>
-
+        {renderNavItems(isOR ? OR_NAV : IP_NAV, 0, { isOpen, toggle })}
       </nav>
 
       {/* ── User footer ── */}
@@ -572,12 +523,6 @@ function Topbar() {
       <span className="topbar-title">{title}</span>
       <div className="topbar-spacer" />
       <div className="topbar-actions">
-        <button className="btn btn-ghost btn-icon" aria-label="Notifications">
-          <Bell size={18} />
-        </button>
-        <button className="btn btn-ghost btn-icon" aria-label="Settings">
-          <Settings size={18} />
-        </button>
         <div className="avatar" title={user?.fullName} style={{ cursor: 'default' }}>
           {initials(user?.fullName)}
         </div>
@@ -608,7 +553,7 @@ function Shell() {
           <Route path="/atlas/bed-placement"    element={<AtlasBedPlacement />} />
           <Route path="/ask-nura"          element={<AskNura />} />
           <Route path="/forecasts"         element={<ForecastsPipeline />} />
-          <Route path="/admin"             element={<Admin />} />
+          <Route path="/admin"             element={<RequireAdmin><Admin /></RequireAdmin>} />
         </Routes>
       </div>
     </>

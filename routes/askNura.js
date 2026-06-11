@@ -1,12 +1,14 @@
-const express = require('express');
-const path    = require('path');
-const fs      = require('fs');
+const express     = require('express');
+const path        = require('path');
+const fs          = require('fs');
+const makeFilters = require('./filters');
 
 // Resolve public/data from the project root (one level above routes/)
 const DATA_DIR = path.join(__dirname, '..', 'public', 'data');
 
-module.exports = function askNuraRoutes(getTenantPool, sql) {
+module.exports = function askNuraRoutes(getTenantPool, sql, requireTenant) {
   const router = express.Router();
+  const { addSitesFilter, addLocationsFilter, addDowFilter } = makeFilters(sql);
 
   // ── EBM helpers ─────────────────────────────────────────────────────────────
 
@@ -40,17 +42,12 @@ module.exports = function askNuraRoutes(getTenantPool, sql) {
 
   // ── Tool functions ───────────────────────────────────────────────────────────
 
-  async function tool_getORSummary(startDate, endDate, sites) {
-    const db  = await getTenantPool(req.session.tenantId);
-    const req = db.request();
-    req.input('startDate', sql.Date, startDate);
-    req.input('endDate',   sql.Date, endDate);
-    let siteFilter = '';
-    if (sites?.length) {
-      const placeholders = sites.map((s, i) => { req.input(`ts${i}`, sql.NVarChar, s); return `@ts${i}`; });
-      siteFilter = ` AND ISNULL(Loc_ORGrp2, 'Unknown') IN (${placeholders.join(', ')})`;
-    }
-    const result = await req.query(`
+  async function tool_getORSummary(db, startDate, endDate, sites) {
+    const request = db.request();
+    request.input('startDate', sql.Date, startDate);
+    request.input('endDate',   sql.Date, endDate);
+    const siteFilter = addSitesFilter(request, sites);
+    const result = await request.query(`
       SELECT
         ISNULL(Loc_ORGrp2, 'Unknown')          AS Site,
         COUNT(*)                                AS TotalCases,
@@ -80,20 +77,13 @@ module.exports = function askNuraRoutes(getTenantPool, sql) {
     };
   }
 
-  async function tool_getCapacity(startDate, endDate, locations, dow) {
-    const db  = await getTenantPool(req.session.tenantId);
-    const req = db.request();
-    req.input('startDate', sql.Date, startDate);
-    req.input('endDate',   sql.Date, endDate);
-    let locFilter = '';
-    if (locations?.length) {
-      const placeholders = locations.map((l, i) => { req.input(`tl${i}`, sql.NVarChar, l); return `@tl${i}`; });
-      locFilter = ` AND ISNULL(LocationGroup, 'Unknown') IN (${placeholders.join(', ')})`;
-    }
-    const dowFilter = dow?.length
-      ? ` AND DATEPART(WEEKDAY, BlockDate) IN (${dow.map(d => parseInt(d)).filter(n => !isNaN(n)).join(', ')})`
-      : '';
-    const result = await req.query(`
+  async function tool_getCapacity(db, startDate, endDate, locations, dow) {
+    const request = db.request();
+    request.input('startDate', sql.Date, startDate);
+    request.input('endDate',   sql.Date, endDate);
+    const locFilter = addLocationsFilter(request, locations);
+    const dowFilter = addDowFilter(dow);
+    const result = await request.query(`
       SELECT
         ISNULL(LocationGroup, 'Unknown')     AS LocationGroup,
         SUM(ISNULL(Total_Prime_Time, 0))     AS SumPrimeTime,
@@ -117,17 +107,16 @@ module.exports = function askNuraRoutes(getTenantPool, sql) {
     }));
   }
 
-  async function tool_getBlockUtilization(startDate, endDate, location) {
-    const db  = await getTenantPool(req.session.tenantId);
-    const req = db.request();
-    req.input('startDate', sql.Date, startDate);
-    req.input('endDate',   sql.Date, endDate);
+  async function tool_getBlockUtilization(db, startDate, endDate, location) {
+    const request = db.request();
+    request.input('startDate', sql.Date, startDate);
+    request.input('endDate',   sql.Date, endDate);
     let locFilter = '';
     if (location) {
-      req.input('tloc', sql.NVarChar, location);
+      request.input('tloc', sql.NVarChar, location);
       locFilter = ` AND ISNULL(LocationGroup, 'Unknown') = @tloc`;
     }
-    const result = await req.query(`
+    const result = await request.query(`
       SELECT
         ISNULL(CaseBlock, 'Unknown')        AS CaseBlock,
         COUNT(DISTINCT CaseID)              AS TotalCases,
@@ -378,8 +367,7 @@ module.exports = function askNuraRoutes(getTenantPool, sql) {
     }
   }
 
-  async function tool_getSurgeonPerformance(surgeonName, metric, startDate, endDate) {
-    const db        = await getPool();
+  async function tool_getSurgeonPerformance(db, surgeonName, metric, startDate, endDate) {
     const isFcot    = metric === 'fcot';
     const metricCol = isFcot ? 'Dur_Act_vs_SchedStart' : 'Turnover_Turnover';
     const metricFilter = isFcot
@@ -606,16 +594,18 @@ module.exports = function askNuraRoutes(getTenantPool, sql) {
 
   const NURA_SYSTEM = `You are Ask Nura, an analytical assistant for OLLH operational data. Answer questions using only the tools available to you. Never make recommendations or suggest interventions. Describe and explain what the data shows. Respond in plain English with no markdown formatting. Keep responses under 150 words. If a question cannot be answered with available tools say so directly.`;
 
-  async function dispatchTool(name, input) {
+  async function dispatchTool(name, input, tenantId) {
+    // Live-data tools query the selected tenant's database
+    const db = TOOL_SOURCE_TYPE[name] === 'live_data' ? await getTenantPool(tenantId) : null;
     switch (name) {
-      case 'tool_getORSummary':          return tool_getORSummary(input.startDate, input.endDate, input.sites);
-      case 'tool_getCapacity':           return tool_getCapacity(input.startDate, input.endDate, input.locations, input.dow);
-      case 'tool_getBlockUtilization':   return tool_getBlockUtilization(input.startDate, input.endDate, input.location);
+      case 'tool_getORSummary':          return tool_getORSummary(db, input.startDate, input.endDate, input.sites);
+      case 'tool_getCapacity':           return tool_getCapacity(db, input.startDate, input.endDate, input.locations, input.dow);
+      case 'tool_getBlockUtilization':   return tool_getBlockUtilization(db, input.startDate, input.endDate, input.location);
       case 'tool_getFCOTDrivers':        return tool_getFCOTDrivers();
       case 'tool_getTurnoverDrivers':    return tool_getTurnoverDrivers();
       case 'tool_getShapeFunction':      return tool_getShapeFunction(input.modelName, input.featureName);
       case 'tool_getInteractionFinding': return tool_getInteractionFinding(input.modelName, input.feature1, input.feature2);
-      case 'tool_getSurgeonPerformance':    return tool_getSurgeonPerformance(input.surgeonName, input.metric, input.startDate, input.endDate);
+      case 'tool_getSurgeonPerformance':    return tool_getSurgeonPerformance(db, input.surgeonName, input.metric, input.startDate, input.endDate);
       case 'tool_getBedPlacementSummary':   return tool_getBedPlacementSummary();
       case 'tool_getAssignmentDrivers':     return tool_getAssignmentDrivers();
       case 'tool_getAssignmentCombinations':return tool_getAssignmentCombinations();
@@ -628,14 +618,31 @@ module.exports = function askNuraRoutes(getTenantPool, sql) {
 
   // ── POST /api/ask-nura ───────────────────────────────────────────────────────
 
-  router.post('/ask-nura', async (req, res) => {
+  const MAX_HISTORY_MESSAGES = 20;
+  const MAX_MESSAGE_CHARS    = 4000;
+
+  router.post('/ask-nura', requireTenant, async (req, res) => {
     const { message, conversationHistory = [] } = req.body;
-    if (!message) return res.status(400).json({ error: 'message is required' });
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'message is required' });
+    }
+    if (message.length > MAX_MESSAGE_CHARS) {
+      return res.status(400).json({ error: `Message too long (max ${MAX_MESSAGE_CHARS} characters)` });
+    }
 
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
     if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
 
-    const messages   = [...conversationHistory, { role: 'user', content: message }];
+    // Accept only well-formed, bounded history from the client
+    const history = (Array.isArray(conversationHistory) ? conversationHistory : [])
+      .filter(m => m
+        && (m.role === 'user' || m.role === 'assistant')
+        && typeof m.content === 'string'
+        && m.content.length <= MAX_MESSAGE_CHARS)
+      .slice(-MAX_HISTORY_MESSAGES)
+      .map(m => ({ role: m.role, content: m.content }));
+
+    const messages   = [...history, { role: 'user', content: message }];
     const toolsUsed  = [];
     const sourceTypes = new Set();
     const MAX_ITER   = 8;
@@ -679,10 +686,10 @@ module.exports = function askNuraRoutes(getTenantPool, sql) {
             sourceTypes.add(TOOL_SOURCE_TYPE[block.name] ?? 'live_data');
             let result;
             try {
-              result = await dispatchTool(block.name, block.input ?? {});
+              result = await dispatchTool(block.name, block.input ?? {}, req.session.tenantId);
             } catch (toolErr) {
               console.error(`Tool ${block.name} error:`, toolErr.message);
-              result = { error: toolErr.message };
+              result = { error: 'The tool could not be executed — the data may be temporarily unavailable.' };
             }
             return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) };
           })
