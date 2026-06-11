@@ -1,14 +1,31 @@
-const express   = require('express');
-const bcrypt    = require('bcryptjs');
-const speakeasy = require('speakeasy');
-const QRCode    = require('qrcode');
+const express           = require('express');
+const bcrypt            = require('bcryptjs');
+const speakeasy         = require('speakeasy');
+const QRCode            = require('qrcode');
+const createRateLimiter = require('../middleware/rateLimit');
 
 module.exports = function authRoutes(getAuthPool, sql) {
   const router = express.Router();
 
-  // ── Finalize login: set session, fetch tenant list ─────────────────
+  const loginLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max:      10,
+    message:  'Too many login attempts — please try again in a few minutes',
+  });
+  const totpLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max:      10,
+    message:  'Too many verification attempts — please try again in a few minutes',
+  });
+
+  // ── Finalize login: regenerate session, set identity, fetch tenants ─
   async function _finalizeLogin(req, db) {
-    const uid = req.session.pendingUserId;
+    const uid           = req.session.pendingUserId;
+    const isAdmin       = req.session.pendingIsAdmin;
+    const fullName      = req.session.pendingName;
+    const email         = req.session.pendingEmail;
+    const mustChangePwd = req.session.mustChangePwd;
+
     await db.request()
       .input('uid', sql.Int, uid)
       .query(`UPDATE Users SET LastLogin = GETDATE() WHERE UserID = @uid`);
@@ -22,12 +39,18 @@ module.exports = function authRoutes(getAuthPool, sql) {
               ORDER BY t.TenantName`);
     const tenants = tResult.recordset;
 
+    // New session ID on privilege change — prevents session fixation.
+    // This also discards all pending* fields from the pre-login session.
+    await new Promise((resolve, reject) =>
+      req.session.regenerate(err => (err ? reject(err) : resolve()))
+    );
+
     req.session.userId        = uid;
-    req.session.isAdmin       = req.session.pendingIsAdmin;
-    req.session.fullName      = req.session.pendingName;
-    req.session.email         = req.session.pendingEmail;
+    req.session.isAdmin       = isAdmin;
+    req.session.fullName      = fullName;
+    req.session.email         = email;
     req.session.totpVerified  = true;
-    req.session.mustChangePwd = req.session.mustChangePwd;
+    req.session.mustChangePwd = mustChangePwd;
     req.session.tenants       = tenants;
 
     // Auto-select if only one tenant
@@ -35,16 +58,10 @@ module.exports = function authRoutes(getAuthPool, sql) {
       req.session.tenantId   = tenants[0].TenantID;
       req.session.tenantName = tenants[0].TenantName;
     }
-
-    delete req.session.pendingUserId;
-    delete req.session.pendingIsAdmin;
-    delete req.session.pendingName;
-    delete req.session.pendingEmail;
-    delete req.session.pendingTOTPSecret;
   }
 
   // POST /api/auth/login
-  router.post('/login', async (req, res) => {
+  router.post('/login', loginLimiter, async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
     try {
@@ -82,7 +99,7 @@ module.exports = function authRoutes(getAuthPool, sql) {
   });
 
   // POST /api/auth/verify-totp
-  router.post('/verify-totp', async (req, res) => {
+  router.post('/verify-totp', totpLimiter, async (req, res) => {
     const { code } = req.body;
     if (!req.session.pendingUserId) return res.status(401).json({ error: 'No pending authentication' });
     try {
@@ -113,7 +130,7 @@ module.exports = function authRoutes(getAuthPool, sql) {
   });
 
   // POST /api/auth/confirm-totp  (first-time TOTP enrollment)
-  router.post('/confirm-totp', async (req, res) => {
+  router.post('/confirm-totp', totpLimiter, async (req, res) => {
     const { code } = req.body;
     if (!req.session.pendingUserId || !req.session.pendingTOTPSecret) {
       return res.status(401).json({ error: 'No pending setup' });
@@ -171,8 +188,14 @@ module.exports = function authRoutes(getAuthPool, sql) {
   router.post('/change-password', async (req, res) => {
     if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
     const { currentPassword, newPassword } = req.body;
+    if (!currentPassword) {
+      return res.status(400).json({ error: 'Current password is required' });
+    }
     if (!newPassword || newPassword.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    if (newPassword === currentPassword) {
+      return res.status(400).json({ error: 'New password must be different from the current password' });
     }
     try {
       const db     = await getAuthPool();
