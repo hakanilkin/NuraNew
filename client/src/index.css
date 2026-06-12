@@ -949,6 +949,10 @@ ul, ol {
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
+/* Mobile drawer controls — desktop never shows them */
+.topbar-menu-btn  { display: none; }
+.sidebar-backdrop { display: none; }
+
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -965,6 +969,21 @@ ul, ol {
 
   .sidebar.open {
     transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .topbar-menu-btn {
+    display: inline-flex;
+    margin-right: var(--space-2);
+    flex-shrink: 0;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: calc(var(--z-sidebar) - 1);
   }
 
   .main-layout { margin-left: 0; }
