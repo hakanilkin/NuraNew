@@ -193,9 +193,22 @@ function requireTenant(req, res, next) {
 app.use(requireAuth);
 
 // ── Static files ───────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, 'public')));              // data files (EBM JSON etc.)
+// Model/data JSON only, mounted at /data — nothing else in public/ is
+// reachable, so leftover files from old deployments can't shadow the app
+app.use('/data', express.static(path.join(__dirname, 'public', 'data')));
+
 if (isProd) {
-  app.use(express.static(path.join(__dirname, 'client', 'dist')));    // React build
+  // React build. Hashed assets are immutable and cacheable forever;
+  // index.html is served by the catch-all below with no-cache so
+  // browsers always pick up new deployments.
+  app.use(express.static(path.join(__dirname, 'client', 'dist'), {
+    index: false,
+    setHeaders(res, filePath) {
+      if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+        res.set('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
+  }));
 }
 
 // ── Route modules ──────────────────────────────────────────────────
@@ -222,6 +235,7 @@ app.use((err, req, res, next) => {
 // ── React Router catch-all (production only) ──────────────────────
 if (isProd) {
   app.get('*', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
     res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
   });
 }
