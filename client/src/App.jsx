@@ -1,4 +1,4 @@
-import { useState, Fragment, useRef, useEffect } from 'react'
+import { useState, Fragment, useRef, useEffect, useCallback } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, BrowserRouter, useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -11,6 +11,7 @@ import {
   LogOut,
   ShieldCheck,
   KeyRound,
+  Menu,
 } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
 import navConfig, { OR_NAV, IP_NAV } from './navConfig'
@@ -431,11 +432,16 @@ function UserMenu({ user }) {
   )
 }
 
-function Sidebar() {
+function Sidebar({ drawerOpen, onDrawerClose }) {
   const { user }     = useAuth()
   const { pathname } = useLocation()
   const [open,   setOpen]   = useState({ analytics: false, atlas: false })
   const [domain, setDomain] = useState(() => localStorage.getItem('nura_domain') ?? 'OR')
+
+  // Close the mobile drawer whenever navigation happens
+  useEffect(() => {
+    onDrawerClose()
+  }, [pathname, onDrawerClose])
 
   function isOpen(id) {
     return !!open[id] || (CHILD_PATHS[id] ?? []).includes(pathname)
@@ -455,7 +461,9 @@ function Sidebar() {
   const isOR = domain === 'OR'
 
   return (
-    <aside className="sidebar">
+    <>
+    {drawerOpen && <div className="sidebar-backdrop" onClick={onDrawerClose} />}
+    <aside className={`sidebar${drawerOpen ? ' open' : ''}`}>
 
       {/* ── Logo ── */}
       <div className="sidebar-logo">
@@ -508,18 +516,26 @@ function Sidebar() {
       </div>
 
     </aside>
+    </>
   )
 }
 
 /* ─── Topbar ─────────────────────────────────────────────────────────────── */
 
-function Topbar() {
+function Topbar({ onMenuClick }) {
   const { pathname } = useLocation()
   const { user }     = useAuth()
   const title        = PAGE_TITLES[pathname] ?? 'Nura'
 
   return (
     <header className="topbar">
+      <button
+        className="topbar-menu-btn btn btn-ghost btn-icon"
+        aria-label="Open menu"
+        onClick={onMenuClick}
+      >
+        <Menu size={20} />
+      </button>
       <span className="topbar-title">{title}</span>
       <div className="topbar-spacer" />
       <div className="topbar-actions">
@@ -534,11 +550,14 @@ function Topbar() {
 /* ─── Shell ──────────────────────────────────────────────────────────────── */
 
 function Shell() {
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const closeDrawer = useCallback(() => setDrawerOpen(false), [])
+
   return (
     <>
-      <Sidebar />
+      <Sidebar drawerOpen={drawerOpen} onDrawerClose={closeDrawer} />
       <div className="main-layout">
-        <Topbar />
+        <Topbar onMenuClick={() => setDrawerOpen(true)} />
         <Routes>
           <Route path="/"                  element={<ORPerformance />} />
           <Route path="/capacity"          element={<Capacity />} />
