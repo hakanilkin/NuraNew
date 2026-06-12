@@ -12,6 +12,9 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -41,6 +44,27 @@ function buildQS({ startDate, endDate, sites }) {
   const p = new URLSearchParams({ startDate, endDate })
   if (sites.length) p.set('sites', sites.join(','))
   return p.toString()
+}
+
+/* ── Year-over-year: YTD of the end date's year vs the full previous year ── */
+async function loadYoy(endDateStr, sites) {
+  const endYear  = parseInt(endDateStr.slice(0, 4))
+  const endMonth = parseInt(endDateStr.slice(5, 7))
+  const qs  = buildQS({ startDate: `${endYear - 1}-01-01`, endDate: endDateStr, sites })
+  const res = await fetch(`/api/monthly-trend?${qs}`)
+  if (!res.ok) throw new Error(`YoY trend failed: ${res.status}`)
+  const rows  = await res.json()
+  const byKey = new Map((Array.isArray(rows) ? rows : []).map(r => [`${r.Year}-${r.Month}`, r.TotalCases]))
+  const data  = MONTHS.map((m, i) => ({
+    month: m,
+    prev:  byKey.get(`${endYear - 1}-${i + 1}`) ?? 0,
+    // Months after the end date have no "current year" bar (YTD cut-off)
+    curr:  i + 1 <= endMonth ? (byKey.get(`${endYear}-${i + 1}`) ?? 0) : null,
+  }))
+  const currYTD = data.reduce((s, r) => s + (r.curr ?? 0), 0)
+  const prevYTD = data.slice(0, endMonth).reduce((s, r) => s + r.prev, 0)
+  const prevFullYear = data.reduce((s, r) => s + r.prev, 0)
+  return { data, currYear: endYear, prevYear: endYear - 1, endMonth, currYTD, prevYTD, prevFullYear }
 }
 
 /* ─── Sites multi-select dropdown ────────────────────────────────────────── */
@@ -215,6 +239,32 @@ function ChartTooltip({ active, payload, label }) {
   )
 }
 
+/* ─── YoY chart tooltip — one line per year ──────────────────────────────── */
+
+function YoyTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  const rows = payload.filter(p => p.value != null)
+  if (!rows.length) return null
+  return (
+    <div style={{
+      background: 'var(--color-white)',
+      border: '1px solid var(--surface-border)',
+      borderRadius: 'var(--radius-md)',
+      padding: 'var(--space-3) var(--space-4)',
+      boxShadow: 'var(--shadow-lg)',
+    }}>
+      <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-gray-900)', marginBottom: 4 }}>
+        {label}
+      </p>
+      {rows.map(p => (
+        <p key={p.dataKey} style={{ fontSize: 'var(--font-size-sm)', color: p.color, fontWeight: 'var(--font-weight-medium)' }}>
+          {p.name}: {p.value.toLocaleString()} cases
+        </p>
+      ))}
+    </div>
+  )
+}
+
 /* ─── Loading skeleton ───────────────────────────────────────────────────── */
 
 function Skeleton({ height = 20, width = '100%', style = {} }) {
@@ -246,6 +296,8 @@ export default function ORPerformance() {
   const [chartSite,      setChartSite]      = useState(null)   // site clicked in table
   const [chartTrend,     setChartTrend]     = useState([])     // trend for clicked site
   const [chartLoading,   setChartLoading]   = useState(false)
+  const [yoy,            setYoy]            = useState(null)   // YoY for the filtered sites
+  const [chartYoy,       setChartYoy]       = useState(null)   // YoY for clicked site
   const [activeDates,    setActiveDates]    = useState({ startDate: DEFAULT_START, endDate: DEFAULT_END })
 
   /* ── Derived KPIs ── */
@@ -254,6 +306,10 @@ export default function ORPerformance() {
   const avgMinutes   = totalCases > 0 ? totalMinutes / totalCases : 0
 
   /* ── Chart data — use site-specific trend when a row is clicked ── */
+  const activeYoy   = chartSite ? chartYoy : yoy
+  const yoyDeltaPct = activeYoy && activeYoy.prevYTD > 0
+    ? ((activeYoy.currYTD - activeYoy.prevYTD) / activeYoy.prevYTD) * 100
+    : null
   const activeTrend = chartSite ? chartTrend : trend
   const multiYear   = new Set(activeTrend.map(r => r.Year)).size > 1
   const chartData   = activeTrend.map(r => ({
@@ -266,17 +322,23 @@ export default function ORPerformance() {
     if (chartSite === site) {
       setChartSite(null)
       setChartTrend([])
+      setChartYoy(null)
       return
     }
     setChartSite(site)
     setChartLoading(true)
     try {
       const qs = buildQS({ startDate: activeDates.startDate, endDate: activeDates.endDate, sites: [site] })
-      const res = await fetch(`/api/monthly-trend?${qs}`)
+      const [res, yoyResult] = await Promise.all([
+        fetch(`/api/monthly-trend?${qs}`),
+        loadYoy(activeDates.endDate, [site]).catch(() => null),
+      ])
       const data = await res.json()
       setChartTrend(Array.isArray(data) ? data : [])
+      setChartYoy(yoyResult)
     } catch (_) {
       setChartTrend([])
+      setChartYoy(null)
     } finally {
       setChartLoading(false)
     }
@@ -297,18 +359,21 @@ export default function ORPerformance() {
     setError(null)
     setChartSite(null)
     setChartTrend([])
+    setChartYoy(null)
     setActiveDates({ startDate: filters.startDate, endDate: filters.endDate })
     const qs = buildQS(filters)
     try {
-      const [sumRes, trendRes] = await Promise.all([
+      const [sumRes, trendRes, yoyResult] = await Promise.all([
         fetch(`/api/summary?${qs}`),
         fetch(`/api/monthly-trend?${qs}`),
+        loadYoy(filters.endDate, filters.sites).catch(() => null),
       ])
       if (!sumRes.ok)   throw new Error(`Summary failed: ${sumRes.status}`)
       if (!trendRes.ok) throw new Error(`Trend failed: ${trendRes.status}`)
       const [sumData, trendData] = await Promise.all([sumRes.json(), trendRes.json()])
       setSummary(Array.isArray(sumData)   ? sumData   : [])
       setTrend(Array.isArray(trendData)   ? trendData : [])
+      setYoy(yoyResult)
     } catch (e) {
       setError(e.message || 'Failed to load data. Check your connection and try again.')
     } finally {
@@ -583,7 +648,7 @@ export default function ORPerformance() {
       </div>
 
       {/* ── Monthly Case Volume Chart ─────────────────────────────── */}
-      <div className="card">
+      <div className="card mb-6">
         <div className="card-header">
           <div>
             <div className="card-title">
@@ -655,6 +720,86 @@ export default function ORPerformance() {
                   activeDot={{ r: 6, fill: 'var(--color-blue)', stroke: 'var(--color-white)', strokeWidth: 2 }}
                 />
               </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* ── Year-over-Year Case Volume Chart ──────────────────────── */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">
+              Year over Year{chartSite ? ` — ${chartSite}` : ''}
+            </div>
+            <div className="card-subtitle">
+              {activeYoy
+                ? `${activeYoy.prevYear} full year vs ${activeYoy.currYear} through ${MONTHS[activeYoy.endMonth - 1]}`
+                : 'Current year-to-date vs previous full year'}
+            </div>
+          </div>
+          {!loading && !chartLoading && yoyDeltaPct != null && (
+            <div className={`badge ${yoyDeltaPct >= 0 ? 'badge-green' : 'badge-red'}`}>
+              <TrendingUp size={11} />
+              {yoyDeltaPct >= 0 ? '+' : ''}{yoyDeltaPct.toFixed(1)}% YTD vs same period {activeYoy.prevYear}
+            </div>
+          )}
+        </div>
+
+        <div className="card-body">
+          {loading || chartLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <Skeleton height={200} />
+            </div>
+          ) : !activeYoy || (activeYoy.currYTD === 0 && activeYoy.prevFullYear === 0) ? (
+            <div style={{
+              height: 220,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-gray-400)',
+            }}>
+              <TrendingUp size={36} strokeWidth={1.25} style={{ marginBottom: 'var(--space-3)' }} />
+              <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-gray-500)' }}>
+                No year-over-year data available
+              </p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={activeYoy.data}
+                margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+                barGap={2}
+              >
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  stroke="var(--color-gray-200)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 12, fill: 'var(--color-gray-500)', fontFamily: 'var(--font-family)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={8}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: 'var(--color-gray-500)', fontFamily: 'var(--font-family)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
+                  width={48}
+                />
+                <Tooltip content={<YoyTooltip />} cursor={{ fill: 'var(--color-gray-100)' }} />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-family)' }}
+                  iconType="circle"
+                  iconSize={9}
+                />
+                <Bar dataKey="prev" name={String(activeYoy.prevYear)}        fill="#CBD5E1"          radius={[3, 3, 0, 0]} />
+                <Bar dataKey="curr" name={`${activeYoy.currYear} YTD`}       fill="var(--color-blue)" radius={[3, 3, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           )}
         </div>
