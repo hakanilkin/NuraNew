@@ -12,11 +12,13 @@ import {
   ReferenceLine,
   LabelList,
 } from 'recharts'
+import { TODAY, subtractMonths, fetchDateMeta } from '../lib/dates'
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
-const DEFAULT_START    = '2025-01-01'
-const DEFAULT_END      = '2025-12-31'
+// Fallbacks until /api/meta/dates resolves (or if it fails)
+const DEFAULT_END      = TODAY
+const DEFAULT_START    = subtractMonths(DEFAULT_END, 12)
 const PRIME_TARGET     = 80
 const NON_PRIME_TARGET = 15
 
@@ -507,7 +509,13 @@ export default function Capacity() {
   }, [])
 
   useEffect(() => {
-    fetchData({ startDate: DEFAULT_START, endDate: DEFAULT_END, locations: [], dow: '' })
+    fetchDateMeta().then(({ maxBlockDate }) => {
+      const end   = maxBlockDate ? String(maxBlockDate).slice(0, 10) : DEFAULT_END
+      const start = subtractMonths(end, 12)
+      setStartDate(start)
+      setEndDate(end)
+      fetchData({ startDate: start, endDate: end, locations: [], dow: '' })
+    })
   }, [fetchData])
 
   function handleApply() {

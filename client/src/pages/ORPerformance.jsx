@@ -17,12 +17,14 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts'
+import { TODAY, subtractMonths, fetchDateMeta } from '../lib/dates'
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-const DEFAULT_START = '2025-01-01'
-const DEFAULT_END   = '2025-12-31'
+// Fallbacks until /api/meta/dates resolves (or if it fails)
+const DEFAULT_END   = TODAY
+const DEFAULT_START = subtractMonths(DEFAULT_END, 12)
 
 /* ─── Formatters ─────────────────────────────────────────────────────────── */
 
@@ -315,7 +317,13 @@ export default function ORPerformance() {
   }, [])
 
   useEffect(() => {
-    fetchData({ startDate: DEFAULT_START, endDate: DEFAULT_END, sites: [] })
+    fetchDateMeta().then(({ maxCaseDate }) => {
+      const end   = maxCaseDate ? String(maxCaseDate).slice(0, 10) : DEFAULT_END
+      const start = subtractMonths(end, 12)
+      setStartDate(start)
+      setEndDate(end)
+      fetchData({ startDate: start, endDate: end, sites: [] })
+    })
   }, [fetchData])
 
   function handleApply() {

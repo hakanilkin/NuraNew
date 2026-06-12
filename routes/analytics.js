@@ -40,6 +40,27 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     }
   });
 
+  // ── GET /api/meta/dates ─────────────────────────────────────────────────────
+  // Max available date per filtered column, used by the OR analytics pages to
+  // default their end date to the latest data actually in the database.
+
+  router.get('/meta/dates', async (req, res) => {
+    try {
+      const db = await getTenantPool(req.session.tenantId);
+      const [caseRes, blockRes] = await Promise.all([
+        db.request().query(`SELECT MAX(Date_SchedDate) AS MaxDate FROM DS_CASES`),
+        db.request().query(`SELECT MAX(BlockDate) AS MaxDate FROM V4_BlockResultsView`),
+      ]);
+      res.json({
+        maxCaseDate:  caseRes.recordset[0]?.MaxDate  ?? null,
+        maxBlockDate: blockRes.recordset[0]?.MaxDate ?? null,
+      });
+    } catch (err) {
+      console.error('/api/meta/dates error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // ── GET /api/summary ────────────────────────────────────────────────────────
 
   router.get('/summary', async (req, res) => {

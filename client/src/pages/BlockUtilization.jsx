@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { ChevronDown, Check, AlertCircle, LayoutGrid } from 'lucide-react'
+import { TODAY, subtractMonths, fetchDateMeta } from '../lib/dates'
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
-const DEFAULT_START = '2025-01-01'
-const DEFAULT_END   = '2025-12-31'
+// Fallbacks until /api/meta/dates resolves (or if it fails)
+const DEFAULT_END   = TODAY
+const DEFAULT_START = subtractMonths(DEFAULT_END, 12)
 const MONTHS_SHORT  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const WEEKS    = [1, 2, 3, 4, 5]
@@ -467,17 +469,20 @@ export default function BlockUtilization() {
 
   /* ── Fetch location groups once, default to first ── */
   useEffect(() => {
-    fetch('/api/capacity/location-groups')
-      .then(r => r.ok ? r.json() : [])
-      .then(d => {
+    Promise.all([
+      fetchDateMeta(),
+      fetch('/api/capacity/location-groups').then(r => r.ok ? r.json() : []).catch(() => []),
+    ])
+      .then(([meta, d]) => {
+        const end   = meta.maxBlockDate ? String(meta.maxBlockDate).slice(0, 10) : DEFAULT_END
+        const start = subtractMonths(end, 12)
+        setStartDate(start)
+        setEndDate(end)
         const groups = Array.isArray(d) ? d : []
         setLocationGroups(groups)
         const defaultLoc = groups[0] ?? ''
         setSelectedLoc(defaultLoc)
-        fetchData({ startDate: DEFAULT_START, endDate: DEFAULT_END, location: defaultLoc, caseblocks: [] })
-      })
-      .catch(() => {
-        fetchData({ startDate: DEFAULT_START, endDate: DEFAULT_END, location: '', caseblocks: [] })
+        fetchData({ startDate: start, endDate: end, location: defaultLoc, caseblocks: [] })
       })
       .finally(() => setLocsLoading(false))
   }, []) // fetchData is stable (useCallback []) so omitting it is safe; dep array is evaluated before fetchData is declared
