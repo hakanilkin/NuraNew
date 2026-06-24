@@ -128,6 +128,28 @@ for (const [route, filename] of Object.entries(DODC_FILES)) {
   });
 }
 
+// GET /api/atlas/los-segments
+router.get('/los-segments', (_req, res) => {
+  sendJsonFile(res, '/api/atlas/los-segments', 'los_segments.json', {
+    notFoundMsg: 'Segment file not found — run los_segments_pipeline.py first',
+  })
+})
+
+// GET /api/atlas/do-los-{overall,facility,selfcare,homehealth}
+const DOLOS_FILES = {
+  'do-los-overall':    'do_los_overall_ebm.json',
+  'do-los-facility':   'do_los_facility_ebm.json',
+  'do-los-selfcare':   'do_los_selfcare_ebm.json',
+  'do-los-homehealth': 'do_los_homehealth_ebm.json',
+}
+for (const [route, filename] of Object.entries(DOLOS_FILES)) {
+  router.get(`/${route}`, (_req, res) => {
+    sendJsonFile(res, `/api/atlas/${route}`, filename, {
+      notFoundMsg: 'Model file not found — run do_los_pipeline.py first',
+    })
+  })
+}
+
 // GET /api/atlas/bed-placement-model
 router.get('/bed-placement-model', (_req, res) => {
   sendJsonFile(res, '/api/atlas/bed-placement-model', 'bed_placement_ebm.json', { notFoundMsg: 'Model file not found — run bed_placement_pipeline.py first' });
@@ -151,6 +173,11 @@ router.get('/fcot-combinations', (_req, res) => {
 // GET /api/atlas/performance-briefs-mock
 router.get('/performance-briefs-mock', (_req, res) => {
   sendJsonFile(res, '/api/atlas/performance-briefs-mock', 'performance_briefs_mock.json', { notFoundMsg: 'Mock data file not found' });
+});
+
+// GET /api/atlas/forecast/morning-huddle
+router.get('/forecast/morning-huddle', (_req, res) => {
+  sendJsonFile(res, '/api/atlas/forecast/morning-huddle', 'forecast_mock.json', { notFoundMsg: 'Forecast mock data file not found' });
 });
 
 module.exports = router;
