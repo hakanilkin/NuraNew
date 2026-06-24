@@ -217,12 +217,18 @@ const adminRouter     = require('./routes/admin')(getAuthPool, sql, requireAdmin
 const analyticsRouter = require('./routes/analytics')(getTenantPool, sql, requireTenant);
 const atlasRouter     = require('./routes/atlas');
 const askNuraRouter   = require('./routes/askNura')(getTenantPool, sql, requireTenant);
+const iplosRouter          = require('./routes/iplos')(getTenantPool, sql, requireTenant);
+const ipbedplacementRouter = require('./routes/ipbedplacement')(getTenantPool, sql, requireTenant);
+const ipdischargesRouter   = require('./routes/ipdischarges')(getTenantPool, sql, requireTenant);
 
-app.use('/api/auth',  authRouter);
-app.use('/api/admin', adminRouter);
-app.use('/api/atlas', atlasRouter);
-app.use('/api',       analyticsRouter);
-app.use('/api',       askNuraRouter);
+app.use('/api/auth',           authRouter);
+app.use('/api/admin',          adminRouter);
+app.use('/api/atlas',          atlasRouter);
+app.use('/api/iplos',          iplosRouter);
+app.use('/api/ipbedplacement', ipbedplacementRouter);
+app.use('/api/ipdischarges',   ipdischargesRouter);
+app.use('/api',        analyticsRouter);
+app.use('/api',        askNuraRouter);
 
 // ── API error handler (returns JSON instead of HTML) ───────────────
 // Must be registered after the routes to catch their errors.

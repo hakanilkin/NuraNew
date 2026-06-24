@@ -1,0 +1,128 @@
+{
+  "date": "2026-06-24",
+  "time_block": "8am – 2pm",
+  "data_as_of": "Midnight census",
+  "hospital": "Our Lady of Lourdes Hospital",
+  "units": [
+    {
+      "name": "PCU",
+      "type": "Critical Care",
+      "staffed_beds": 32,
+      "midnight_census": 30,
+      "demand": {
+        "ed": 2, "or": 2, "step_down": 0, "transfer": 1,
+        "detail": {
+          "ed":        { "source": "Historical pattern", "note": "Avg 2.1 ED admits to PCU on Tuesdays 8a–2p" },
+          "or":        { "source": "Scheduled cases", "cases": ["Smith, J — CABG (OR 3, 7:30am)", "Patel, R — Valve replacement (OR 5, 10:00am)"] },
+          "step_down": { "source": "Current ICU/CCU census", "note": "No step-down candidates identified overnight" },
+          "transfer":  { "source": "Pending requests", "cases": ["External transfer from Jefferson — chest pain, ETA 9:30am"] }
+        }
+      }
+    },
+    {
+      "name": "2nd Floor",
+      "type": "Acute",
+      "staffed_beds": 32,
+      "midnight_census": 28,
+      "demand": {
+        "ed": 4, "or": 1, "step_down": 1, "transfer": 0,
+        "detail": {
+          "ed":        { "source": "Historical pattern + overnight census", "note": "5 ED patients currently boarding for acute beds; 4 projected to place by 2pm based on bed-request timing" },
+          "or":        { "source": "Scheduled cases", "cases": ["Garcia, M — Lap chole (OR 2, 8:00am)"] },
+          "step_down": { "source": "Current ICU census", "cases": ["Room 412 — PCU step-down candidate, cardiology team rounding at 9am"] },
+          "transfer":  { "source": "Pending requests", "note": "No pending external transfers" }
+        }
+      }
+    },
+    {
+      "name": "5W",
+      "type": "Acute",
+      "staffed_beds": 28,
+      "midnight_census": 26,
+      "demand": {
+        "ed": 3, "or": 0, "step_down": 1, "transfer": 1,
+        "detail": {
+          "ed":        { "source": "Historical pattern", "note": "Avg 2.8 ED admits to 5W on Tuesdays; 3 currently boarding" },
+          "or":        { "source": "Scheduled cases", "note": "No OR cases scheduled for 5W placement" },
+          "step_down": { "source": "Current PCU census", "cases": ["Room PCU-18 — medical step-down, likely by noon"] },
+          "transfer":  { "source": "Pending requests", "cases": ["Virtua Voorhees floor transfer — GI bleed, ETA 10am"] }
+        }
+      }
+    },
+    {
+      "name": "3rd Floor",
+      "type": "Acute",
+      "staffed_beds": 30,
+      "midnight_census": 27,
+      "demand": {
+        "ed": 3, "or": 1, "step_down": 0, "transfer": 0,
+        "detail": {
+          "ed":        { "source": "Historical pattern", "note": "Avg 3.2 ED admits on Tuesdays 8a–2p" },
+          "or":        { "source": "Scheduled cases", "cases": ["Lee, K — Hernia repair (OR 1, 11:00am)"] },
+          "step_down": { "source": "Current ICU/PCU census", "note": "No candidates identified" },
+          "transfer":  { "source": "Pending requests", "note": "None pending" }
+        }
+      }
+    },
+    {
+      "name": "CDU",
+      "type": "Observation",
+      "staffed_beds": 30,
+      "midnight_census": 28,
+      "demand": {
+        "ed": 3, "or": 0, "step_down": 0, "transfer": 0,
+        "detail": {
+          "ed":        { "source": "Historical pattern + overnight census", "note": "4 ED obs patients boarding; 3 projected to place by 2pm" },
+          "or":        { "source": "N/A", "note": "CDU does not receive OR patients" },
+          "step_down": { "source": "N/A", "note": "CDU does not receive step-downs" },
+          "transfer":  { "source": "N/A", "note": "CDU does not receive external transfers" }
+        }
+      }
+    },
+    {
+      "name": "ICU",
+      "type": "Critical Care",
+      "staffed_beds": 18,
+      "midnight_census": 17,
+      "demand": {
+        "ed": 1, "or": 1, "step_down": 0, "transfer": 0,
+        "detail": {
+          "ed":        { "source": "Historical pattern", "note": "Avg 0.9 ED admits to ICU on Tuesdays" },
+          "or":        { "source": "Scheduled cases", "cases": ["Davis, T — Craniotomy (OR 7, 7:00am) — ICU post-op"] },
+          "step_down": { "source": "N/A", "note": "ICU is the highest acuity — no step-downs into ICU" },
+          "transfer":  { "source": "Pending requests", "note": "None pending" }
+        }
+      }
+    },
+    {
+      "name": "6N",
+      "type": "Acute",
+      "staffed_beds": 24,
+      "midnight_census": 22,
+      "demand": {
+        "ed": 2, "or": 0, "step_down": 0, "transfer": 0,
+        "detail": {
+          "ed":        { "source": "Historical pattern", "note": "Avg 1.7 ED admits to 6N on Tuesdays" },
+          "or":        { "source": "Scheduled cases", "note": "No OR cases scheduled for 6N" },
+          "step_down": { "source": "Current ICU/PCU census", "note": "No candidates identified" },
+          "transfer":  { "source": "Pending requests", "note": "None pending" }
+        }
+      }
+    },
+    {
+      "name": "CCU",
+      "type": "Critical Care",
+      "staffed_beds": 16,
+      "midnight_census": 14,
+      "demand": {
+        "ed": 1, "or": 0, "step_down": 0, "transfer": 0,
+        "detail": {
+          "ed":        { "source": "Historical pattern", "note": "Avg 0.8 ED admits to CCU on Tuesdays" },
+          "or":        { "source": "Scheduled cases", "note": "No OR cases routed to CCU today" },
+          "step_down": { "source": "N/A", "note": "CCU does not typically receive step-downs" },
+          "transfer":  { "source": "Pending requests", "note": "None pending" }
+        }
+      }
+    }
+  ]
+}

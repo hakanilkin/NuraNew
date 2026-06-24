@@ -23,6 +23,11 @@ import AtlasFCOT        from './pages/AtlasFCOT'
 import AtlasTurnover    from './pages/AtlasTurnover'
 import AtlasDODC          from './pages/AtlasDODC'
 import AtlasBedPlacement        from './pages/AtlasBedPlacement'
+import AtlasLOS                from './pages/AtlasLOS'
+import IPLengthOfStay         from './pages/IPLengthOfStay'
+import IPBedPlacement         from './pages/IPBedPlacement'
+import IPDischarges           from './pages/IPDischarges'
+import IPForecast             from './pages/IPForecast'
 import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
@@ -570,6 +575,11 @@ function Shell() {
           <Route path="/atlas/turnover"    element={<AtlasTurnover />} />
           <Route path="/atlas/do-dc"            element={<AtlasDODC />} />
           <Route path="/atlas/bed-placement"    element={<AtlasBedPlacement />} />
+          <Route path="/atlas/los"             element={<AtlasLOS />} />
+          <Route path="/ip/los"               element={<IPLengthOfStay />} />
+          <Route path="/ip/bed-placement"    element={<IPBedPlacement />} />
+          <Route path="/ip/discharges"       element={<IPDischarges />} />
+          <Route path="/ip/forecast"         element={<IPForecast />} />
           <Route path="/ask-nura"          element={<AskNura />} />
           <Route path="/forecasts"         element={<ForecastsPipeline />} />
           <Route path="/admin"             element={<RequireAdmin><Admin /></RequireAdmin>} />
