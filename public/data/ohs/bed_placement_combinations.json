@@ -1,0 +1,367 @@
+{
+  "system_mean": 128.4,
+  "target_minutes": 30,
+  "total_cases": 30133,
+  "combinations": [
+    {
+      "label": "Unknown",
+      "sub": "Overnight \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 234.4,
+      "above_mean": 106.0,
+      "pct_above_target": 88.8,
+      "cnt": 179
+    },
+    {
+      "label": "ED",
+      "sub": "Morning \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 186.5,
+      "above_mean": 58.1,
+      "pct_above_target": 84.3,
+      "cnt": 1661
+    },
+    {
+      "label": "Other",
+      "sub": "Morning \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 164.1,
+      "above_mean": 35.7,
+      "pct_above_target": 74.2,
+      "cnt": 5893
+    },
+    {
+      "label": "ED",
+      "sub": "Afternoon \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 164.0,
+      "above_mean": 35.6,
+      "pct_above_target": 85.3,
+      "cnt": 3341
+    },
+    {
+      "label": "Floor Transfer",
+      "sub": "Morning \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 161.7,
+      "above_mean": 33.3,
+      "pct_above_target": 72.2,
+      "cnt": 2807
+    },
+    {
+      "label": "OR",
+      "sub": "Morning \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 151.9,
+      "above_mean": 23.5,
+      "pct_above_target": 75.4,
+      "cnt": 512
+    },
+    {
+      "label": "ED",
+      "sub": "Tuesday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 151.1,
+      "above_mean": 22.7,
+      "pct_above_target": 81.7,
+      "cnt": 2193
+    },
+    {
+      "label": "ED",
+      "sub": "Monday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 149.3,
+      "above_mean": 20.9,
+      "pct_above_target": 81.7,
+      "cnt": 1964
+    },
+    {
+      "label": "ED",
+      "sub": "Wednesday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 147.3,
+      "above_mean": 18.9,
+      "pct_above_target": 81.8,
+      "cnt": 2112
+    },
+    {
+      "label": "ED",
+      "sub": "Other \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 143.5,
+      "above_mean": 15.1,
+      "pct_above_target": 81.0,
+      "cnt": 14250
+    },
+    {
+      "label": "High",
+      "sub": "ED \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 143.4,
+      "above_mean": 15.0,
+      "pct_above_target": 80.9,
+      "cnt": 14214
+    },
+    {
+      "label": "ED",
+      "sub": "Friday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 143.3,
+      "above_mean": 14.9,
+      "pct_above_target": 81.0,
+      "cnt": 2262
+    },
+    {
+      "label": "ED",
+      "sub": "Thursday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 142.4,
+      "above_mean": 14.0,
+      "pct_above_target": 81.0,
+      "cnt": 2080
+    },
+    {
+      "label": "ED",
+      "sub": "Evening \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 137.3,
+      "above_mean": 8.9,
+      "pct_above_target": 82.0,
+      "cnt": 3546
+    },
+    {
+      "label": "Other",
+      "sub": "Monday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 137.3,
+      "above_mean": 8.9,
+      "pct_above_target": 74.4,
+      "cnt": 4134
+    },
+    {
+      "label": "Low",
+      "sub": "Other \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 137.0,
+      "above_mean": 8.6,
+      "pct_above_target": 72.4,
+      "cnt": 127
+    },
+    {
+      "label": "Other",
+      "sub": "Afternoon \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 135.8,
+      "above_mean": 7.4,
+      "pct_above_target": 75.4,
+      "cnt": 7795
+    },
+    {
+      "label": "ED",
+      "sub": "Saturday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 134.4,
+      "above_mean": 6.0,
+      "pct_above_target": 79.2,
+      "cnt": 1967
+    },
+    {
+      "label": "ED",
+      "sub": "Sunday \u00b7 Source \u00d7 Day of Week",
+      "type": "Source \u00d7 Day of Week",
+      "avg_assignment_min": 133.7,
+      "above_mean": 5.3,
+      "pct_above_target": 80.0,
+      "cnt": 1692
+    },
+    {
+      "label": "Other",
+      "sub": "Tuesday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 133.4,
+      "above_mean": 5.0,
+      "pct_above_target": 73.3,
+      "cnt": 4749
+    },
+    {
+      "label": "Other",
+      "sub": "Wednesday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 131.7,
+      "above_mean": 3.3,
+      "pct_above_target": 73.4,
+      "cnt": 4745
+    },
+    {
+      "label": "ED",
+      "sub": "Overnight \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 130.4,
+      "above_mean": 2.0,
+      "pct_above_target": 76.1,
+      "cnt": 3060
+    },
+    {
+      "label": "High",
+      "sub": "Other \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 129.5,
+      "above_mean": 1.1,
+      "pct_above_target": 72.9,
+      "cnt": 29631
+    },
+    {
+      "label": "Other",
+      "sub": "Friday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 129.0,
+      "above_mean": 0.6,
+      "pct_above_target": 73.0,
+      "cnt": 4813
+    },
+    {
+      "label": "Other",
+      "sub": "Overnight \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 126.2,
+      "above_mean": -2.2,
+      "pct_above_target": 70.3,
+      "cnt": 5159
+    },
+    {
+      "label": "Other",
+      "sub": "Thursday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 126.1,
+      "above_mean": -2.3,
+      "pct_above_target": 71.4,
+      "cnt": 4508
+    },
+    {
+      "label": "Other",
+      "sub": "Saturday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 123.5,
+      "above_mean": -4.9,
+      "pct_above_target": 72.0,
+      "cnt": 3589
+    },
+    {
+      "label": "Other",
+      "sub": "Sunday \u00b7 Destination \u00d7 Day of Week",
+      "type": "Destination \u00d7 Day of Week",
+      "avg_assignment_min": 123.3,
+      "above_mean": -5.1,
+      "pct_above_target": 72.5,
+      "cnt": 3220
+    },
+    {
+      "label": "Unknown",
+      "sub": "Other \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 122.7,
+      "above_mean": -5.7,
+      "pct_above_target": 60.6,
+      "cnt": 1882
+    },
+    {
+      "label": "Floor Transfer",
+      "sub": "Other \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 118.8,
+      "above_mean": -9.6,
+      "pct_above_target": 67.7,
+      "cnt": 11172
+    },
+    {
+      "label": "High",
+      "sub": "Floor Transfer \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 118.5,
+      "above_mean": -9.9,
+      "pct_above_target": 67.6,
+      "cnt": 11144
+    },
+    {
+      "label": "Other",
+      "sub": "Evening \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 113.8,
+      "above_mean": -14.6,
+      "pct_above_target": 72.5,
+      "cnt": 6609
+    },
+    {
+      "label": "High",
+      "sub": "Unknown \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 110.2,
+      "above_mean": -18.2,
+      "pct_above_target": 54.0,
+      "cnt": 2190
+    },
+    {
+      "label": "OR",
+      "sub": "Other \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 105.6,
+      "above_mean": -22.8,
+      "pct_above_target": 60.1,
+      "cnt": 2377
+    },
+    {
+      "label": "High",
+      "sub": "OR \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 105.5,
+      "above_mean": -22.9,
+      "pct_above_target": 60.1,
+      "cnt": 2377
+    },
+    {
+      "label": "Other",
+      "sub": "Night \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 99.3,
+      "above_mean": -29.1,
+      "pct_above_target": 70.3,
+      "cnt": 4302
+    },
+    {
+      "label": "6N/5W",
+      "sub": "Morning \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 43.9,
+      "above_mean": -84.5,
+      "pct_above_target": 17.0,
+      "cnt": 171
+    },
+    {
+      "label": "High",
+      "sub": "6N/5W \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 34.6,
+      "above_mean": -93.8,
+      "pct_above_target": 13.7,
+      "cnt": 307
+    },
+    {
+      "label": "Unknown",
+      "sub": "6N/5W \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 34.5,
+      "above_mean": -93.9,
+      "pct_above_target": 13.6,
+      "cnt": 308
+    },
+    {
+      "label": "6N/5W",
+      "sub": "Afternoon \u00b7 Destination \u00d7 Time of Day",
+      "type": "Destination \u00d7 Time of Day",
+      "avg_assignment_min": 23.8,
+      "above_mean": -104.6,
+      "pct_above_target": 10.0,
+      "cnt": 130
+    }
+  ]
+}

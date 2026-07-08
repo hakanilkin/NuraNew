@@ -16,6 +16,7 @@ Usage:
 
 import os
 import json
+import math
 import datetime
 import time
 
@@ -25,6 +26,14 @@ import pyodbc
 from dotenv import load_dotenv
 
 
+def _sanitize(o):
+    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
+    if isinstance(o, list):  return [_sanitize(v) for v in o]
+    if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
+    return o
+
+
 # ── Step 1: Load credentials & connect ───────────────────────────────────────
 
 print("=" * 60)
@@ -32,14 +41,11 @@ print("Step 1: Loading credentials and connecting to database...")
 print("=" * 60)
 
 load_dotenv()
+from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
 
-server   = os.getenv("DB_SERVER")
-database = os.getenv("DB_DATABASE")
-user     = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
-
-if not all([server, database, user, password]):
-    raise EnvironmentError("Missing one or more DB_* variables in .env")
+args, cfg = parse_tenant_arg('LOS Segments pipeline — excess LOS segment analysis')
+server, database, user, password = get_db_params(cfg)
+hospital_filter = cfg['hospital_filter']
 
 conn_str = (
     f"DRIVER={{ODBC Driver 17 for SQL Server}};"
@@ -94,7 +100,9 @@ print("=" * 60)
 print("Step 2: Pulling excess LOS segment data...")
 print("=" * 60)
 
-QUERY = """
+_enc_hosp_clause = f"\n  AND e.DEP_LASTDEPTHOSPITAL = '{hospital_filter}'" if hospital_filter else ''
+
+QUERY = f"""
 SELECT
   e.ACCOUNT_IPLOS,
   e.DRG_FINALDRGGMLOS,
@@ -117,8 +125,7 @@ SELECT
     ELSE 'Other'
   END AS DEST_CATEGORY
 FROM DS_Encounters e
-WHERE e.DEP_LASTDEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
-  AND e.BEDDED = 'Y'
+WHERE e.BEDDED = 'Y'{_enc_hosp_clause}
   AND e.TIME_HOSPADMISSION >= '2025-01-01'
   AND e.ACCOUNT_IPLOS      IS NOT NULL
   AND e.DRG_FINALDRGGMLOS  IS NOT NULL
@@ -168,10 +175,7 @@ df['ACCOUNT_FINANCIALCLASS'] = (df['ACCOUNT_FINANCIALCLASS']
     .fillna('Unknown').replace({'NULL': 'Unknown', 'None': 'Unknown', '': 'Unknown'}).astype(str))
 
 # Exclusion 1: non-discharge outcomes
-NON_DISCHARGE_TERMS = [
-    'Expired', 'Left AMA', 'Court/Law Enforcement', 'Elopement',
-    'Transfer to Short Term Hospital',
-]
+NON_DISCHARGE_TERMS = cfg['dispo_exclusions_contains']
 non_dc_mask = df['ENC_DISCHDISPO'].str.contains('|'.join(NON_DISCHARGE_TERMS), case=False, na=False)
 print(f"\n  Excluding non-discharge outcomes ({non_dc_mask.sum():,} rows):")
 for term in NON_DISCHARGE_TERMS:
@@ -189,12 +193,15 @@ print(f"  Removed Rehab unit rows: {before:,} → {len(df):,} rows")
 
 print(f"\n  Final dataset: {len(df):,} rows")
 
-# DISPO_GROUP
+# DISPO_GROUP — derived from tenant-specific disposition labels
+_selfcare_exact   = cfg['dispo_selfcare_exact']
+_homehealth_kws   = cfg['dispo_homehealth_contains']
+
 def _dispo_group(val):
     s = str(val)
-    if s == 'Disch to Home or Self Care':
+    if s == _selfcare_exact:
         return 'Self-care Home'
-    if 'Home-Health' in s:
+    if any(kw in s for kw in _homehealth_kws):
         return 'Home Health'
     return 'Facility-bound'
 
@@ -453,8 +460,10 @@ output = {
     'home_segments':     home_segments,
 }
 
-with open(out_path, 'w', encoding='utf-8') as f:
-    json.dump(output, f, indent=2, allow_nan=False)
+_tmp = out_path + '.tmp'
+with open(_tmp, 'w', encoding='utf-8') as f:
+    json.dump(_sanitize(output), f, indent=2, allow_nan=False)
+os.replace(_tmp, out_path)
 
 size_kb = os.path.getsize(out_path) / 1024
 print(f"  Saved: {out_path}  ({size_kb:.1f} KB)")

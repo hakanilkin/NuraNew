@@ -336,6 +336,9 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
         orGroups: groupRes.recordset.map(r => r.ORGroup),
       });
     } catch (err) {
+      if (err.message && (err.message.includes('Invalid object name') || err.message.includes('DS_RR'))) {
+        return res.status(404).json({ error: 'no_rr_data', message: 'Room Running data not available for this organization' });
+      }
       console.error('/api/rr/meta error:', err.message);
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -390,6 +393,9 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
       `);
       res.json(result.recordset);
     } catch (err) {
+      if (err.message && (err.message.includes('Invalid object name') || err.message.includes('DS_RR'))) {
+        return res.status(404).json({ error: 'no_rr_data', message: 'Room Running data not available for this organization' });
+      }
       console.error('/api/rr/data error:', err.message);
       res.status(500).json({ error: 'Internal server error' });
     }

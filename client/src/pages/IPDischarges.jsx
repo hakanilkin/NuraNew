@@ -924,6 +924,14 @@ export default function IPDischarges() {
   // Shared hierarchy data — fetched once, passed to all tabs
   const [hierRows,    setHierRows]    = useState([])
   const [hierLoading, setHierLoading] = useState(false)
+  const [tenantFeatures, setTenantFeatures] = useState({})
+
+  useEffect(() => {
+    fetch('/api/tenant-config', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setTenantFeatures(d.features ?? {}))
+      .catch(() => {})
+  }, [])
 
   const dFrom = useDebounced(from)
   const dTo   = useDebounced(to)
@@ -998,7 +1006,7 @@ export default function IPDischarges() {
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 2, borderBottom: '2px solid var(--surface-border)', marginBottom: 16 }}>
-        {TABS.map(t => (
+        {TABS.filter(t => t.id !== 'tdc' || tenantFeatures.tdc !== false).map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             style={{ padding: '7px 16px', fontSize: 13, fontWeight: 500, border: 'none', background: 'none', cursor: 'pointer', borderBottom: activeTab === t.id ? '2px solid #3E53E3' : '2px solid transparent', color: activeTab === t.id ? '#3E53E3' : 'var(--color-gray-600)', marginBottom: -2 }}>
             {t.label}

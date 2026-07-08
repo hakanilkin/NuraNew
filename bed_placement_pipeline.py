@@ -12,6 +12,7 @@ Usage:
 import os
 import re
 import json
+import math
 import datetime
 
 import pandas as pd
@@ -23,6 +24,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 
 
+def _sanitize(o):
+    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
+    if isinstance(o, list):  return [_sanitize(v) for v in o]
+    if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
+    return o
+
+
 # ── Step 1: Load credentials & connect ───────────────────────────────────────
 
 print("=" * 60)
@@ -30,14 +39,11 @@ print("Step 1: Loading credentials and connecting to database...")
 print("=" * 60)
 
 load_dotenv()
+from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
 
-server   = os.getenv("DB_SERVER")
-database = os.getenv("DB_DATABASE")
-user     = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
-
-if not all([server, database, user, password]):
-    raise EnvironmentError("Missing one or more DB_* variables in .env")
+args, cfg = parse_tenant_arg('Bed Placement EBM pipeline — bed assignment delay model')
+server, database, user, password = get_db_params(cfg)
+hospital_filter = cfg['hospital_filter']
 
 conn_str = (
     f"DRIVER={{ODBC Driver 17 for SQL Server}};"
@@ -58,7 +64,11 @@ print("=" * 60)
 print("Step 2: Pulling bed placement training data...")
 print("=" * 60)
 
-QUERY = """
+_da_hosp_clause  = f"\n    AND DEP_LASTDEPTHOSPITAL = '{hospital_filter}'" if hospital_filter else ''
+_occ_hosp_clause = f"\n    AND DEP_Hospital = '{hospital_filter}'" if hospital_filter else ''
+_main_hosp_clause = f"\n  AND b.DEST_DEPTHOSPITAL = '{hospital_filter}'" if hospital_filter else ''
+
+QUERY = f"""
 SELECT
   b.DUR_Requested_Assigned,
   b.SOURCE_DEPTNAME,
@@ -97,8 +107,7 @@ LEFT JOIN (
       * 1.0 / NULLIF(COUNT(*), 0)
       AS PCT_DC_BY_2PM
   FROM DS_Encounters
-  WHERE BEDDED = 'Y'
-    AND DEP_LASTDEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
+  WHERE BEDDED = 'Y'{_da_hosp_clause}
   GROUP BY DEP_LASTDEPTHOSPITAL, CAST(TIME_HOSPADMISSION AS DATE)
 ) da
   ON  da.DEP_LASTDEPTHOSPITAL = b.DEST_DEPTHOSPITAL
@@ -109,9 +118,8 @@ LEFT JOIN (
     CAST(SUM(Occupancy) AS FLOAT) / NULLIF(SUM(StaffedBeds), 0)  AS HOSPITAL_OCC_7AM,
     SUM(Occupancy)                                                AS HOSPITAL_CENSUS_7AM
   FROM DS_Occupancy
-  WHERE DEP_Hospital = 'Our Lady of Lourdes Hospital'
-    AND DATEPART(HOUR, Datehour) = 7
-    AND StaffedBeds > 0
+  WHERE DATEPART(HOUR, Datehour) = 7
+    AND StaffedBeds > 0{_occ_hosp_clause}
   GROUP BY CAST(Datehour AS DATE)
 ) da2
   ON da2.occ_date = CAST(b.TIME_REQUESTTIME AS DATE)
@@ -119,8 +127,7 @@ WHERE
   b.TIME_REQUESTTIME >= '2025-01-01'
   AND b.EVENT_TYPE_MOD IN ('Transfer', 'OTHER TRANSFER IN')
   AND b.DUR_Requested_Assigned >= 0
-  AND b.DUR_Requested_Assigned <= 480
-  AND b.DEST_DEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
+  AND b.DUR_Requested_Assigned <= 480{_main_hosp_clause}
   AND e.EPICCSN IS NOT NULL
 """
 
@@ -311,7 +318,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"  Train: {len(X_train):,}  |  Test: {len(X_test):,}")
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-out_dir    = os.path.join(script_dir, 'public', 'data')
+out_dir    = os.path.join(script_dir, cfg['output_dir'])
 os.makedirs(out_dir, exist_ok=True)
 
 
@@ -552,7 +559,7 @@ output = {
         'Binary classification — predicts whether bed assignment will exceed '
         'the 30-minute target at Our Lady of Lourdes Hospital'
     ),
-    'hospital':           'Our Lady of Lourdes Hospital',
+    'hospital':           hospital_filter or 'All hospitals',
     'threshold_minutes':  PLACEMENT_THRESHOLD,
     'n_above_threshold':  n_above,
     'n_below_threshold':  n_below,
@@ -572,8 +579,10 @@ output = {
 
 out_path = os.path.join(out_dir, 'bed_placement_ebm.json')
 
-with open(out_path, 'w', encoding='utf-8') as f:
-    json.dump(output, f, indent=2, allow_nan=False)
+_tmp = out_path + '.tmp'
+with open(_tmp, 'w', encoding='utf-8') as f:
+    json.dump(_sanitize(output), f, indent=2, allow_nan=False)
+os.replace(_tmp, out_path)
 
 size_kb = os.path.getsize(out_path) / 1024
 print(f"  Saved: {out_path}")
@@ -662,8 +671,10 @@ combos_output = {
 }
 
 combos_path = os.path.join(out_dir, 'bed_placement_combinations.json')
-with open(combos_path, 'w', encoding='utf-8') as f:
-    json.dump(combos_output, f, indent=2, allow_nan=False)
+_tmp = combos_path + '.tmp'
+with open(_tmp, 'w', encoding='utf-8') as f:
+    json.dump(_sanitize(combos_output), f, indent=2, allow_nan=False)
+os.replace(_tmp, combos_path)
 
 combos_kb = os.path.getsize(combos_path) / 1024
 print(f"  Saved: {combos_path}  ({combos_kb:.1f} KB)")

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { ChevronRight, ChevronDown, AlertCircle } from 'lucide-react'
+import { ChevronRight, ChevronDown, AlertCircle, BarChart3 } from 'lucide-react'
 import { LineChart, Line, ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 /* ─── Constants ─────────────────────────────────────────────────────────────── */
@@ -416,7 +416,7 @@ function PhysicianToggle({ mode, onChange }) {
 
 /* ─── Excess Days Tab ────────────────────────────────────────────────────────── */
 
-function ExcessDaysTab({ summary, sumLoading, sumError, breakdowns, bLoading, bErrors, expandedSL, slDrilldown, onToggleSL, physicianMode, onPhysicianToggle }) {
+function ExcessDaysTab({ summary, sumLoading, sumError, breakdowns, bLoading, bErrors, expandedSL, slDrilldown, onToggleSL, physicianMode, onPhysicianToggle, sl2Enabled = true }) {
   const s = summary
 
   const cards = sumLoading ? null : sumError ? null : [
@@ -429,7 +429,7 @@ function ExcessDaysTab({ summary, sumLoading, sumError, breakdowns, bLoading, bE
   const physicianDim = physicianMode === 'admitting' ? 'admitting_physician' : 'discharging_physician'
 
   const panels = [
-    { dim: 'service_line',  title: 'Service line',     isServiceLine: true },
+    { dim: 'service_line',  title: 'Service line',     isServiceLine: sl2Enabled },
     { dim: 'unit',          title: 'Discharging unit', isServiceLine: false },
     { dim: 'disposition',   title: 'Disposition',      isServiceLine: false },
     { dim: 'payer',         title: 'Payer',             isServiceLine: false },
@@ -481,7 +481,7 @@ function ExcessDaysTab({ summary, sumLoading, sumError, breakdowns, bLoading, bE
 
 /* ─── LOS Tab ────────────────────────────────────────────────────────────────── */
 
-function LOSTab({ summary, sumLoading, sumError, breakdowns, bLoading, bErrors, expandedSL, slDrilldown, onToggleSL, physicianMode, onPhysicianToggle }) {
+function LOSTab({ summary, sumLoading, sumError, breakdowns, bLoading, bErrors, expandedSL, slDrilldown, onToggleSL, physicianMode, onPhysicianToggle, sl2Enabled = true }) {
   const s = summary
 
   const cards = sumLoading ? null : sumError ? null : [
@@ -495,7 +495,7 @@ function LOSTab({ summary, sumLoading, sumError, breakdowns, bLoading, bErrors, 
   const physicianDim = physicianMode === 'admitting' ? 'admitting_physician' : 'discharging_physician'
 
   const panels = [
-    { dim: 'service_line',  title: 'Service line',     isServiceLine: true },
+    { dim: 'service_line',  title: 'Service line',     isServiceLine: sl2Enabled },
     { dim: 'unit',          title: 'Discharging unit', isServiceLine: false },
     { dim: 'disposition',   title: 'Disposition',      isServiceLine: false },
     { dim: 'payer',         title: 'Payer',             isServiceLine: false },
@@ -690,7 +690,9 @@ function TrendTab({ from, to }) {
           Filters
         </div>
         <FilterSelect label="Service line"     value={filterSL}   onChange={setFilterSL}   options={opts.service_line} />
-        <FilterSelect label="Sub-service"      value={filterSL2}  onChange={setFilterSL2}  options={opts.service_line_2} />
+        {opts.service_line_2 !== undefined && (
+          <FilterSelect label="Sub-service"      value={filterSL2}  onChange={setFilterSL2}  options={opts.service_line_2} />
+        )}
         <FilterSelect label="Unit"             value={filterUnit} onChange={setFilterUnit} options={opts.unit} />
         <FilterSelect label="Disposition"      value={filterDisp} onChange={setFilterDisp} options={opts.disposition} />
         <FilterSelect label="Payer"            value={filterPay}  onChange={setFilterPay}  options={opts.payer} />
@@ -915,19 +917,39 @@ function SegmentCard({ title, subtitle, segments, color, keyFn, labelFn, drillFn
 }
 
 function FocusTab() {
-  const [segs,     setSegs]     = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState('')
-  const [expanded, setExpanded] = useState(() => new Set())
+  const [segs,        setSegs]        = useState(null)
+  const [loading,     setLoading]     = useState(true)
+  const [error,       setError]       = useState('')
+  const [noAtlasData, setNoAtlasData] = useState(false)
+  const [expanded,    setExpanded]    = useState(() => new Set())
 
   useEffect(() => {
     apiFetch('/api/atlas/los-segments')
-      .then(d  => { setSegs(d); setError('') })
+      .then(d => {
+        if (d.error === 'no_atlas_data') { setNoAtlasData(true); return; }
+        setSegs(d)
+        setError('')
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
   if (loading) return <Spinner label="Loading segment data…" />
+  if (noAtlasData) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280 }}>
+        <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', maxWidth: 420 }}>
+          <BarChart3 size={36} style={{ margin: '0 auto 12px', opacity: 0.25 }} />
+          <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-gray-600)', marginBottom: 6, fontSize: 'var(--font-size-base)' }}>
+            No Atlas data for this organization
+          </p>
+          <p style={{ fontSize: 'var(--font-size-sm)', lineHeight: 1.6 }}>
+            Atlas model data has not been generated yet. Run the pipeline for this organization to generate insights.
+          </p>
+        </div>
+      </div>
+    )
+  }
   if (error)   return <ErrorMsg message={error} />
   if (!segs)   return null
 
@@ -1078,6 +1100,14 @@ export default function IPLengthOfStay() {
   const [physicianMode,  setPhysicianMode]  = useState('admitting')
   const [expandedSL,     setExpandedSL]     = useState(() => new Set())
   const [slDrilldown,    setSlDrilldown]    = useState({})
+  const [tenantFeatures, setTenantFeatures] = useState({})
+
+  useEffect(() => {
+    fetch('/api/tenant-config', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setTenantFeatures(d.features ?? {}))
+      .catch(() => {})
+  }, [])
 
   // Summary
   const [summary,    setSummary]    = useState(null)
@@ -1136,12 +1166,15 @@ export default function IPLengthOfStay() {
     })
   }
 
+  const sl2Enabled = tenantFeatures.service_line_drill !== false
+
   const sharedProps = {
     summary, sumLoading, sumError,
     breakdowns, bLoading, bErrors,
     expandedSL, slDrilldown,
     onToggleSL: handleToggleSL,
     physicianMode, onPhysicianToggle: setPhysicianMode,
+    sl2Enabled,
   }
 
   return (

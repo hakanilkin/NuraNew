@@ -1,4 +1,5 @@
 const express = require('express')
+const { getFeatures } = require('../utils/tenantColumns')
 
 const LOC_EXPR = `CASE
   WHEN DEP_LASTDEPT LIKE '%EMERGENCY%' THEN 'Emergency'
@@ -54,6 +55,7 @@ module.exports = function ipdischargesRoutes(getTenantPool, sql, requireTenant) 
     const { from, to } = req.query
     if (!isValidDate(from) || !isValidDate(to)) return res.status(400).json({ error: 'from and to must be YYYY-MM-DD' })
     try {
+      console.log('[ipdischarges/summary] tenantName=%s sessionTenantName=%s', req.tenantName, req.session?.tenantName)
       const db    = await getTenantPool(req.session.tenantId)
       const dbReq = db.request()
       dbReq.timeout = 30000
@@ -311,6 +313,8 @@ module.exports = function ipdischargesRoutes(getTenantPool, sql, requireTenant) 
   // ── 5. /tdc ────────────────────────────────────────────────────────────────
 
   router.get('/tdc', async (req, res) => {
+    if (!getFeatures(req.tenantName || 'default').tdc)
+      return res.status(404).json({ error: 'TDC data not available for this tenant' })
     const { from, to, dimension } = req.query
     if (!isValidDate(from) || !isValidDate(to)) return res.status(400).json({ error: 'from and to must be YYYY-MM-DD' })
     if (dimension && !DIM_MAP[dimension]) return res.status(400).json({ error: 'Invalid dimension.' })

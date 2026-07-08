@@ -1,0 +1,1803 @@
+{
+  "period": {
+    "current_quarter": "2026-Q1",
+    "prior_quarter": "2025-Q4"
+  },
+  "groups": [
+    {
+      "caseblock": "*ASLAM, ADNAN",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 21,
+      "deltas": {
+        "volume": 7,
+        "volume_pct": 50.0,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 14 to 21 cases QoQ (+50%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (2,573 min out of 2,573 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*CHHABRA, NIPUN",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 13,
+      "deltas": {
+        "volume": 8,
+        "volume_pct": 160.0,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 5 to 13 cases QoQ (+160%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (2,053 min out of 2,053 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*DOWNES, RACHEL",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 7,
+      "deltas": {
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (1,071 min out of 1,071 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*GOODMAN, MARK",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 14,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (2,142 min out of 2,142 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*HELMAN, JOSEPH",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 10,
+      "deltas": {
+        "volume": 4,
+        "volume_pct": 66.7,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 6 to 10 cases QoQ (+67%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (759 min out of 759 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*HILLERY, TERENCE",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 3,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (412 min out of 412 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*JANGA, BHAVANA",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 1,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*KATUKURI, NEELIMA",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 2,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (294 min out of 294 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*LOPEZ, PEDRO-JOSE",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 1,
+      "deltas": {
+        "volume": -2,
+        "volume_pct": -66.7,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 3 to 1 cases QoQ (-67%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (178 min out of 178 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*MURAM, SANDEEP",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 7,
+      "deltas": {
+        "volume": 5,
+        "volume_pct": 250.0,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 2 to 7 cases QoQ (+250%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (1,675 min out of 1,675 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*SIRAJ, AISHA",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 2,
+      "deltas": {
+        "volume": 1,
+        "volume_pct": 100.0,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 1 to 2 cases QoQ (+100%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (239 min out of 239 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*SISKA, ROBERT",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 3,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (343 min out of 343 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "*VAN VEEN, TARA",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 11,
+      "deltas": {
+        "volume": -4,
+        "volume_pct": -26.7,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 15 to 11 cases QoQ (-27%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (1,630 min out of 1,630 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "ACS - Acute Care Surgery",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [],
+      "allocated_hours": 16.0,
+      "budget": null
+    },
+    {
+      "caseblock": "ARTHROPLASTY",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": 0.0,
+        "primetime_util": 0.0
+      },
+      "findings": [],
+      "allocated_hours": 32.0,
+      "budget": null
+    },
+    {
+      "caseblock": "BAFUS, BLAINE T.",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": 0.0,
+        "primetime_util": 0.0
+      },
+      "findings": [],
+      "allocated_hours": 24.0,
+      "budget": null
+    },
+    {
+      "caseblock": "BARDARO, SERGIO",
+      "status": "over_allocated",
+      "inblock_util": 32.8,
+      "primetime_util": 35.9,
+      "volume": 20,
+      "deltas": {
+        "volume": 10,
+        "volume_pct": 100.0,
+        "inblock_util": -34.7,
+        "primetime_util": -39.6
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 67.5% to 32.8% QoQ (-34.7 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 75.5% to 35.9% QoQ (-39.6 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 10 to 20 cases QoQ (+100%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 230.0,
+      "budget": null
+    },
+    {
+      "caseblock": "BENEDICK, ALEXANDER",
+      "status": "misaligned",
+      "inblock_util": 36.8,
+      "primetime_util": 117.9,
+      "volume": 32,
+      "deltas": {
+        "volume": 13,
+        "volume_pct": 68.4,
+        "inblock_util": -19.1,
+        "primetime_util": -154.1
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 55.9% to 36.8% QoQ (-19.1 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 272.0% to 117.9% QoQ (-154.1 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 19 to 32 cases QoQ (+68%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "69% of OR time was out-of-block this quarter (3,895 min out of 5,660 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 80.0,
+      "budget": null
+    },
+    {
+      "caseblock": "BERRA, ALEXANDRA",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 1,
+      "deltas": {
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (62 min out of 62 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "BEVERLEY, LAUREL",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 27,
+      "deltas": {
+        "volume": 10,
+        "volume_pct": 58.8,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 17 to 27 cases QoQ (+59%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (3,467 min out of 3,467 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "BLUE",
+      "status": "over_allocated",
+      "inblock_util": 45.6,
+      "primetime_util": 52.2,
+      "volume": 66,
+      "deltas": {
+        "volume": 31,
+        "volume_pct": 88.6,
+        "inblock_util": -35.3,
+        "primetime_util": -49.7
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 80.9% to 45.6% QoQ (-35.3 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 101.9% to 52.2% QoQ (-49.7 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 35 to 66 cases QoQ (+89%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 342.0,
+      "budget": null
+    },
+    {
+      "caseblock": "BRANDT, CHRISTOPHER P.",
+      "status": "misaligned",
+      "inblock_util": 35.6,
+      "primetime_util": 78.3,
+      "volume": 38,
+      "deltas": {
+        "volume": 15,
+        "volume_pct": 65.2,
+        "inblock_util": -54.1,
+        "primetime_util": -130.3
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 89.7% to 35.6% QoQ (-54.0 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 208.6% to 78.3% QoQ (-130.3 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 23 to 38 cases QoQ (+65%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "54% of OR time was out-of-block this quarter (2,639 min out of 4,861 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 104.0,
+      "budget": null
+    },
+    {
+      "caseblock": "CARDIOLOGY GROUP",
+      "status": "misaligned",
+      "inblock_util": 28.5,
+      "primetime_util": 126.0,
+      "volume": 24,
+      "deltas": {
+        "volume": 16,
+        "volume_pct": 200.0,
+        "inblock_util": -14.4,
+        "primetime_util": 54.8
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 42.9% to 28.5% QoQ (-14.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 71.2% to 126.0% QoQ (+54.8 pts).",
+          "severity": 2
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 8 to 24 cases QoQ (+200%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "77% of OR time was out-of-block this quarter (5,325 min out of 6,880 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 91.0,
+      "budget": null
+    },
+    {
+      "caseblock": "COLORECTAL",
+      "status": "over_allocated",
+      "inblock_util": 37.6,
+      "primetime_util": 62.4,
+      "volume": 65,
+      "deltas": {
+        "volume": 3,
+        "volume_pct": 4.8,
+        "inblock_util": -39.5,
+        "primetime_util": -126.8
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 77.1% to 37.6% QoQ (-39.5 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 189.2% to 62.4% QoQ (-126.9 pts).",
+          "severity": 3
+        },
+        {
+          "type": "outofblock_high",
+          "text": "36% of OR time was out-of-block this quarter (3,385 min out of 9,275 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 261.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Dental",
+      "status": "over_allocated",
+      "inblock_util": 17.2,
+      "primetime_util": 18.5,
+      "volume": 26,
+      "deltas": {
+        "volume": 2,
+        "volume_pct": 8.3,
+        "inblock_util": -43.2,
+        "primetime_util": -41.9
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 60.4% to 17.2% QoQ (-43.2 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 60.4% to 18.5% QoQ (-41.9 pts).",
+          "severity": 3
+        },
+        {
+          "type": "released_high",
+          "text": "34% of allocated block time was released this quarter (5,880 min of 17,460 min allocated).",
+          "severity": 1
+        }
+      ],
+      "allocated_hours": 291.0,
+      "budget": null
+    },
+    {
+      "caseblock": "DORSEY, AMELIA",
+      "status": "over_allocated",
+      "inblock_util": 42.0,
+      "primetime_util": 60.5,
+      "volume": 34,
+      "deltas": {
+        "volume": 13,
+        "volume_pct": 61.9,
+        "inblock_util": -55.5,
+        "primetime_util": -76.2
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 97.5% to 42.0% QoQ (-55.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 136.7% to 60.5% QoQ (-76.1 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 21 to 34 cases QoQ (+62%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "28% of OR time was out-of-block this quarter (2,054 min out of 7,298 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 208.0,
+      "budget": null
+    },
+    {
+      "caseblock": "EL-HAYEK, KEVIN M.",
+      "status": "watch",
+      "inblock_util": 60.3,
+      "primetime_util": 72.7,
+      "volume": 34,
+      "deltas": {
+        "volume": 18,
+        "volume_pct": 112.5,
+        "inblock_util": -19.9,
+        "primetime_util": -37.2
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 80.2% to 60.3% QoQ (-19.9 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 109.9% to 72.7% QoQ (-37.3 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 16 to 34 cases QoQ (+112%).",
+          "severity": 2
+        },
+        {
+          "type": "released_high",
+          "text": "52% of allocated block time was released this quarter (3,960 min of 7,680 min allocated).",
+          "severity": 1
+        }
+      ],
+      "allocated_hours": 128.0,
+      "budget": null
+    },
+    {
+      "caseblock": "GYN DEPARTMENT",
+      "status": "over_allocated",
+      "inblock_util": 31.1,
+      "primetime_util": 46.1,
+      "volume": 315,
+      "deltas": {
+        "volume": 130,
+        "volume_pct": 70.3,
+        "inblock_util": -32.8,
+        "primetime_util": -39.0
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 63.9% to 31.1% QoQ (-32.8 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 85.1% to 46.1% QoQ (-38.9 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 185 to 315 cases QoQ (+70%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "30% of OR time was out-of-block this quarter (9,446 min out of 31,648 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 1190.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Hand",
+      "status": "misaligned",
+      "inblock_util": 27.7,
+      "primetime_util": 257.5,
+      "volume": 251,
+      "deltas": {
+        "volume": 92,
+        "volume_pct": 57.9,
+        "inblock_util": -25.5,
+        "primetime_util": -341.3
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 53.2% to 27.7% QoQ (-25.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 598.8% to 257.5% QoQ (-341.3 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 159 to 251 cases QoQ (+58%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "89% of OR time was out-of-block this quarter (21,799 min out of 24,446 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 159.0,
+      "budget": null
+    },
+    {
+      "caseblock": "HIRSCHFELD, ADAM",
+      "status": "watch",
+      "inblock_util": 41.2,
+      "primetime_util": 70.0,
+      "volume": 52,
+      "deltas": {
+        "volume": 24,
+        "volume_pct": 85.7,
+        "inblock_util": -31.4,
+        "primetime_util": -64.6
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 72.6% to 41.2% QoQ (-31.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 134.6% to 70.0% QoQ (-64.6 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 28 to 52 cases QoQ (+86%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "37% of OR time was out-of-block this quarter (2,797 min out of 7,546 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 192.0,
+      "budget": null
+    },
+    {
+      "caseblock": "HOYEN, HARRY A.",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": 0.0,
+        "primetime_util": 0.0
+      },
+      "findings": [
+        {
+          "type": "released_high",
+          "text": "18% of allocated block time was released this quarter (840 min of 4,620 min allocated).",
+          "severity": 1
+        }
+      ],
+      "allocated_hours": 77.0,
+      "budget": null
+    },
+    {
+      "caseblock": "KOLACZKO, JENSEN",
+      "status": "misaligned",
+      "inblock_util": 41.9,
+      "primetime_util": 101.7,
+      "volume": 40,
+      "deltas": {
+        "volume": 12,
+        "volume_pct": 42.9,
+        "inblock_util": -48.1,
+        "primetime_util": -163.9
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 90.0% to 41.9% QoQ (-48.1 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 265.6% to 101.7% QoQ (-163.8 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 28 to 40 cases QoQ (+43%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "58% of OR time was out-of-block this quarter (4,424 min out of 7,592 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 126.0,
+      "budget": null
+    },
+    {
+      "caseblock": "LEVINE, ARI D.",
+      "status": "misaligned",
+      "inblock_util": 48.6,
+      "primetime_util": 79.7,
+      "volume": 43,
+      "deltas": {
+        "volume": 10,
+        "volume_pct": 30.3,
+        "inblock_util": -42.3,
+        "primetime_util": -98.1
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 90.9% to 48.6% QoQ (-42.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 177.8% to 79.7% QoQ (-98.1 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 33 to 43 cases QoQ (+30%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "36% of OR time was out-of-block this quarter (2,492 min out of 6,979 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 154.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Life Banc",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 4,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (334 min out of 334 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "MATSON, CHRISTOPHER",
+      "status": "misaligned",
+      "inblock_util": 44.1,
+      "primetime_util": 107.9,
+      "volume": 41,
+      "deltas": {
+        "volume": 15,
+        "volume_pct": 57.7,
+        "inblock_util": -25.3,
+        "primetime_util": -22.4
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 69.4% to 44.1% QoQ (-25.3 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 130.3% to 107.9% QoQ (-22.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 26 to 41 cases QoQ (+58%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "56% of OR time was out-of-block this quarter (4,304 min out of 7,691 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 128.0,
+      "budget": null
+    },
+    {
+      "caseblock": "MCCLINTON, ANEESAH",
+      "status": "misaligned",
+      "inblock_util": 48.9,
+      "primetime_util": 116.2,
+      "volume": 24,
+      "deltas": {
+        "volume": 6,
+        "volume_pct": 33.3,
+        "inblock_util": -44.8,
+        "primetime_util": -103.9
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 93.7% to 48.9% QoQ (-44.8 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 220.1% to 116.2% QoQ (-104.0 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 18 to 24 cases QoQ (+33%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "58% of OR time was out-of-block this quarter (2,502 min out of 4,321 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 62.0,
+      "budget": null
+    },
+    {
+      "caseblock": "MCHENRY, CHRISTOPHER R.",
+      "status": "watch",
+      "inblock_util": 45.4,
+      "primetime_util": 72.2,
+      "volume": 49,
+      "deltas": {
+        "volume": 21,
+        "volume_pct": 75.0,
+        "inblock_util": -51.1,
+        "primetime_util": -76.9
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 96.5% to 45.4% QoQ (-51.2 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 149.1% to 72.2% QoQ (-76.9 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 28 to 49 cases QoQ (+75%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "37% of OR time was out-of-block this quarter (2,749 min out of 7,458 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 173.0,
+      "budget": null
+    },
+    {
+      "caseblock": "MISHRA, KIRTISHRI",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": 0.0,
+        "primetime_util": 0.0
+      },
+      "findings": [],
+      "allocated_hours": 112.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Neurosurgery",
+      "status": "over_allocated",
+      "inblock_util": 31.7,
+      "primetime_util": 34.4,
+      "volume": 99,
+      "deltas": {
+        "volume": 31,
+        "volume_pct": 45.6,
+        "inblock_util": -30.8,
+        "primetime_util": -37.2
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 62.5% to 31.7% QoQ (-30.9 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 71.6% to 34.4% QoQ (-37.2 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 68 to 99 cases QoQ (+46%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 952.0,
+      "budget": null
+    },
+    {
+      "caseblock": "OPEN",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": 0.0,
+        "primetime_util": 0.0
+      },
+      "findings": [],
+      "allocated_hours": 4998.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Ophthalmology",
+      "status": "over_allocated",
+      "inblock_util": 33.4,
+      "primetime_util": 33.7,
+      "volume": 270,
+      "deltas": {
+        "volume": 110,
+        "volume_pct": 68.8,
+        "inblock_util": -25.1,
+        "primetime_util": -26.8
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 58.5% to 33.4% QoQ (-25.1 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 60.5% to 33.7% QoQ (-26.8 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 160 to 270 cases QoQ (+69%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 751.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Oral",
+      "status": "over_allocated",
+      "inblock_util": 23.4,
+      "primetime_util": 23.9,
+      "volume": 23,
+      "deltas": {
+        "volume": 9,
+        "volume_pct": 64.3,
+        "inblock_util": -25.5,
+        "primetime_util": -28.3
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 48.9% to 23.4% QoQ (-25.5 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 52.2% to 23.9% QoQ (-28.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 14 to 23 cases QoQ (+64%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 180.0,
+      "budget": null
+    },
+    {
+      "caseblock": "ORTHO PEDS",
+      "status": "over_allocated",
+      "inblock_util": 21.1,
+      "primetime_util": 27.2,
+      "volume": 9,
+      "deltas": {
+        "volume": -4,
+        "volume_pct": -30.8,
+        "inblock_util": -18.7,
+        "primetime_util": -125.0
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 39.8% to 21.1% QoQ (-18.7 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 152.2% to 27.2% QoQ (-124.9 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 13 to 9 cases QoQ (-31%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 91.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Orthopaedics",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "Otolaryngology",
+      "status": "over_allocated",
+      "inblock_util": 36.1,
+      "primetime_util": 56.9,
+      "volume": 211,
+      "deltas": {
+        "volume": 41,
+        "volume_pct": 24.1,
+        "inblock_util": -45.6,
+        "primetime_util": -88.8
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 81.7% to 36.1% QoQ (-45.6 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 145.7% to 56.9% QoQ (-88.8 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 170 to 211 cases QoQ (+24%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "34% of OR time was out-of-block this quarter (9,226 min out of 27,364 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 837.0,
+      "budget": null
+    },
+    {
+      "caseblock": "OVE, ROGER",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 2,
+      "deltas": {
+        "volume": -3,
+        "volume_pct": -60.0,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 5 to 2 cases QoQ (-60%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (140 min out of 140 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "PAIN",
+      "status": "over_allocated",
+      "inblock_util": 27.2,
+      "primetime_util": 39.9,
+      "volume": 28,
+      "deltas": {
+        "volume": -44,
+        "volume_pct": -61.1,
+        "inblock_util": -54.4,
+        "primetime_util": -137.9
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 81.6% to 27.2% QoQ (-54.5 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 177.8% to 39.9% QoQ (-137.8 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 72 to 28 cases QoQ (-61%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "31% of OR time was out-of-block this quarter (763 min out of 2,458 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 104.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Pediatric Urology",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [],
+      "allocated_hours": 16.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Pediatrics Group",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 31,
+      "deltas": {
+        "volume": 19,
+        "volume_pct": 158.3,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 12 to 31 cases QoQ (+158%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (3,232 min out of 3,232 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "PEDS SURG",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": 0.0,
+        "primetime_util": 0.0
+      },
+      "findings": [],
+      "allocated_hours": 52.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Plastics",
+      "status": "watch",
+      "inblock_util": 31.6,
+      "primetime_util": 69.0,
+      "volume": 168,
+      "deltas": {
+        "volume": 28,
+        "volume_pct": 20.0,
+        "inblock_util": -37.4,
+        "primetime_util": -122.4
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 69.0% to 31.6% QoQ (-37.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 191.4% to 69.0% QoQ (-122.5 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 140 to 168 cases QoQ (+20%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "53% of OR time was out-of-block this quarter (12,732 min out of 23,983 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 594.0,
+      "budget": null
+    },
+    {
+      "caseblock": "PLASTICS/BREAST",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "Podiatry",
+      "status": "misaligned",
+      "inblock_util": 26.2,
+      "primetime_util": 87.5,
+      "volume": 60,
+      "deltas": {
+        "volume": 6,
+        "volume_pct": 11.1,
+        "inblock_util": -58.3,
+        "primetime_util": -145.5
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 84.5% to 26.2% QoQ (-58.3 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 233.0% to 87.5% QoQ (-145.5 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 54 to 60 cases QoQ (+11%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "70% of OR time was out-of-block this quarter (3,302 min out of 4,734 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 91.0,
+      "budget": null
+    },
+    {
+      "caseblock": "REZEK, ISSA",
+      "status": "misaligned",
+      "inblock_util": 0.0,
+      "primetime_util": 405.4,
+      "volume": 7,
+      "deltas": {
+        "volume": -4,
+        "volume_pct": -36.4,
+        "inblock_util": -53.4,
+        "primetime_util": 277.7
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 53.4% to 0.0% QoQ (-53.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 127.7% to 405.4% QoQ (+277.8 pts).",
+          "severity": 2
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 11 to 7 cases QoQ (-36%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (1,946 min out of 1,946 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 8.0,
+      "budget": null
+    },
+    {
+      "caseblock": "ROMEO, NICHOLAS",
+      "status": "watch",
+      "inblock_util": 44.8,
+      "primetime_util": 73.9,
+      "volume": 53,
+      "deltas": {
+        "volume": 14,
+        "volume_pct": 35.9,
+        "inblock_util": -42.3,
+        "primetime_util": -75.0
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 87.1% to 44.8% QoQ (-42.3 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 148.9% to 73.9% QoQ (-75.0 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 39 to 53 cases QoQ (+36%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "36% of OR time was out-of-block this quarter (2,645 min out of 7,322 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 174.0,
+      "budget": null
+    },
+    {
+      "caseblock": "SALEH, ANAS",
+      "status": "over_allocated",
+      "inblock_util": 36.6,
+      "primetime_util": 40.8,
+      "volume": 38,
+      "deltas": {
+        "volume": 11,
+        "volume_pct": 40.7,
+        "inblock_util": -36.0,
+        "primetime_util": -58.4
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 72.6% to 36.6% QoQ (-36.0 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 99.2% to 40.8% QoQ (-58.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 27 to 38 cases QoQ (+41%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 261.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Thoracic",
+      "status": "over_allocated",
+      "inblock_util": 0.0,
+      "primetime_util": 0.0,
+      "volume": 0,
+      "deltas": {
+        "volume": null,
+        "volume_pct": null,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [],
+      "allocated_hours": 88.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Trauma/ACS",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 141,
+      "deltas": {
+        "volume": 33,
+        "volume_pct": 30.6,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 108 to 141 cases QoQ (+31%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (17,264 min out of 17,264 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "Urology",
+      "status": "misaligned",
+      "inblock_util": 43.6,
+      "primetime_util": 117.7,
+      "volume": 224,
+      "deltas": {
+        "volume": 57,
+        "volume_pct": 34.1,
+        "inblock_util": -46.4,
+        "primetime_util": -129.6
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 90.0% to 43.6% QoQ (-46.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 247.3% to 117.7% QoQ (-129.6 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 167 to 224 cases QoQ (+34%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "59% of OR time was out-of-block this quarter (12,408 min out of 21,205 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 336.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Vascular",
+      "status": "over_allocated",
+      "inblock_util": 34.4,
+      "primetime_util": 39.4,
+      "volume": 74,
+      "deltas": {
+        "volume": 31,
+        "volume_pct": 72.1,
+        "inblock_util": -26.5,
+        "primetime_util": -31.7
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 60.9% to 34.4% QoQ (-26.5 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 71.1% to 39.4% QoQ (-31.7 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 43 to 74 cases QoQ (+72%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 533.0,
+      "budget": null
+    },
+    {
+      "caseblock": "WILBER, JOHN H.",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 10,
+      "deltas": {
+        "volume": -2,
+        "volume_pct": -16.7,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 12 to 10 cases QoQ (-17%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (743 min out of 743 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    },
+    {
+      "caseblock": "WILBER, ROGER G.",
+      "status": "over_allocated",
+      "inblock_util": 35.3,
+      "primetime_util": 35.3,
+      "volume": 40,
+      "deltas": {
+        "volume": 24,
+        "volume_pct": 150.0,
+        "inblock_util": -33.6,
+        "primetime_util": -33.8
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 68.9% to 35.3% QoQ (-33.6 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 69.1% to 35.3% QoQ (-33.7 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 16 to 40 cases QoQ (+150%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 299.0,
+      "budget": null
+    },
+    {
+      "caseblock": "WIPER III, DONALD",
+      "status": "watch",
+      "inblock_util": null,
+      "primetime_util": null,
+      "volume": 13,
+      "deltas": {
+        "volume": 7,
+        "volume_pct": 116.7,
+        "inblock_util": null,
+        "primetime_util": null
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 6 to 13 cases QoQ (+117%).",
+          "severity": 2
+        },
+        {
+          "type": "outofblock_high",
+          "text": "100% of OR time was out-of-block this quarter (1,896 min out of 1,896 min total).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": null,
+      "budget": null
+    }
+  ]
+}

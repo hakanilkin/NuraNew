@@ -8,6 +8,7 @@ import {
   MessageSquareText,
   TrendingUp,
   CalendarDays,
+  Target,
   ChevronRight,
   LogOut,
   ShieldCheck,
@@ -30,6 +31,7 @@ import IPBedPlacement         from './pages/IPBedPlacement'
 import IPDischarges           from './pages/IPDischarges'
 import IPForecast             from './pages/IPForecast'
 import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
+import ORServiceLines    from './pages/ORServiceLines'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
 import RoomRunning           from './pages/RoomRunning'
@@ -42,6 +44,7 @@ import ChangePassword     from './pages/ChangePassword'
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
 const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays }
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, Target }
 
 function collectLeafPaths(items) {
   return items.flatMap(item =>
@@ -575,6 +578,8 @@ function Shell() {
           <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
           <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
           <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />
+          <Route path="/room-running"      element={<RoomRunning />} />
+          <Route path="/or/service-lines" element={<ORServiceLines />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
           <Route path="/atlas/performance-briefs" element={<AtlasPerformanceBriefs />} />
