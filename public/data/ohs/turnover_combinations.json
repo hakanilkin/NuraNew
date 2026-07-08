@@ -1,0 +1,318 @@
+{
+  "generated_at": "2026-07-06T22:04:47.361870+00:00",
+  "system_mean": 30.29,
+  "target_minutes": 30,
+  "total_cases": 74723,
+  "combinations": [
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "PERIOPERATIVE SERVICES \u2014 surgeon change",
+      "dim1": "PERIOPERATIVE SERVICES",
+      "dim2": "NO",
+      "cnt": 3858,
+      "avg_turnover": 66.7,
+      "above_mean": 36.4
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Trauma Surgery \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Trauma Surgery",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 1179,
+      "avg_turnover": 66.6,
+      "above_mean": 36.3
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Very Long (>180 min) \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Very Long (>180 min)",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 4522,
+      "avg_turnover": 57.0,
+      "above_mean": 26.7
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Tuesday \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Tuesday",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 2825,
+      "avg_turnover": 54.4,
+      "above_mean": 24.1
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Thursday \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Thursday",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 3728,
+      "avg_turnover": 54.0,
+      "above_mean": 23.7
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Plastic Surgery \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Plastic Surgery",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 1038,
+      "avg_turnover": 53.9,
+      "above_mean": 23.6
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Gastroenterology \u2014 surgeon change",
+      "dim1": "Gastroenterology",
+      "dim2": "NO",
+      "cnt": 1552,
+      "avg_turnover": 53.8,
+      "above_mean": 23.5
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Obstetrics/Gynecology \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Obstetrics/Gynecology",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 1450,
+      "avg_turnover": 53.4,
+      "above_mean": 23.1
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Wednesday \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Wednesday",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 3350,
+      "avg_turnover": 53.0,
+      "above_mean": 22.7
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Orthopaedic Surgery \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Orthopaedic Surgery",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 4731,
+      "avg_turnover": 52.6,
+      "above_mean": 22.3
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Monday \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Monday",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 3054,
+      "avg_turnover": 52.5,
+      "above_mean": 22.2
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Long (121-180 min) \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Long (121-180 min)",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 5851,
+      "avg_turnover": 52.5,
+      "above_mean": 22.2
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "Multi Specialty Endoscopy \u2014 surgeon change",
+      "dim1": "Multi Specialty Endoscopy",
+      "dim2": "NO",
+      "cnt": 1615,
+      "avg_turnover": 52.0,
+      "above_mean": 21.7
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Friday \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Friday",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 3793,
+      "avg_turnover": 52.0,
+      "above_mean": 21.7
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Medium (61-120 min) \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Medium (61-120 min)",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 5045,
+      "avg_turnover": 51.5,
+      "above_mean": 21.2
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Obstetrics/Gynecology \u2014 surgeon change",
+      "dim1": "Obstetrics/Gynecology",
+      "dim2": "NO",
+      "cnt": 1275,
+      "avg_turnover": 50.6,
+      "above_mean": 20.3
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Short (=60 min) \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Short (=60 min)",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 1381,
+      "avg_turnover": 50.2,
+      "above_mean": 19.9
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Urology \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Urology",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 1124,
+      "avg_turnover": 50.0,
+      "above_mean": 19.7
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "PERIOPERATIVE SERVICES \u2014 same surgeon",
+      "dim1": "PERIOPERATIVE SERVICES",
+      "dim2": "YES",
+      "cnt": 12943,
+      "avg_turnover": 49.2,
+      "above_mean": 18.9
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "General Surgery \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "General Surgery",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 1546,
+      "avg_turnover": 48.1,
+      "above_mean": 17.8
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Otolaryngology \u2014 PERIOPERATIVE SERVICES",
+      "dim1": "Otolaryngology",
+      "dim2": "PERIOPERATIVE SERVICES",
+      "cnt": 2078,
+      "avg_turnover": 47.9,
+      "above_mean": 17.6
+    },
+    {
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "WEST 150TH HEALTH AND SURGERY CENTER \u2014 surgeon change",
+      "dim1": "WEST 150TH HEALTH AND SURGERY CENTER",
+      "dim2": "NO",
+      "cnt": 1062,
+      "avg_turnover": 42.3,
+      "above_mean": 12.0
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Orthopaedic Surgery \u2014 same surgeon",
+      "dim1": "Orthopaedic Surgery",
+      "dim2": "YES",
+      "cnt": 6477,
+      "avg_turnover": 41.5,
+      "above_mean": 11.2
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Otolaryngology \u2014 same surgeon",
+      "dim1": "Otolaryngology",
+      "dim2": "YES",
+      "cnt": 3352,
+      "avg_turnover": 36.2,
+      "above_mean": 5.9
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Plastic Surgery \u2014 same surgeon",
+      "dim1": "Plastic Surgery",
+      "dim2": "YES",
+      "cnt": 2347,
+      "avg_turnover": 36.2,
+      "above_mean": 5.9
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Urology \u2014 same surgeon",
+      "dim1": "Urology",
+      "dim2": "YES",
+      "cnt": 2880,
+      "avg_turnover": 34.1,
+      "above_mean": 3.8
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "Obstetrics/Gynecology \u2014 same surgeon",
+      "dim1": "Obstetrics/Gynecology",
+      "dim2": "YES",
+      "cnt": 2688,
+      "avg_turnover": 33.1,
+      "above_mean": 2.8
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Monday \u2014 PHE Surgery Center",
+      "dim1": "Monday",
+      "dim2": "PHE Surgery Center",
+      "cnt": 1477,
+      "avg_turnover": 32.6,
+      "above_mean": 2.3
+    },
+    {
+      "type": "service_surgeon",
+      "sub": "Service line \u00d7 Surgeon",
+      "label": "General Surgery \u2014 same surgeon",
+      "dim1": "General Surgery",
+      "dim2": "YES",
+      "cnt": 3675,
+      "avg_turnover": 31.3,
+      "above_mean": 1.0
+    },
+    {
+      "type": "duration_location",
+      "sub": "Duration \u00d7 Location",
+      "label": "Medium (61-120 min) \u2014 PHE Surgery Center",
+      "dim1": "Medium (61-120 min)",
+      "dim2": "PHE Surgery Center",
+      "cnt": 3407,
+      "avg_turnover": 31.3,
+      "above_mean": 1.0
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "Plastic Surgery \u2014 BV Ambulatory Surgery Center",
+      "dim1": "Plastic Surgery",
+      "dim2": "BV Ambulatory Surgery Center",
+      "cnt": 1647,
+      "avg_turnover": 30.4,
+      "above_mean": 0.1
+    }
+  ]
+}

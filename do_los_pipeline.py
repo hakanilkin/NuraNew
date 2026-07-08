@@ -17,6 +17,7 @@ Usage:
 
 import os
 import json
+import math
 import datetime
 import time
 
@@ -53,6 +54,31 @@ _OVERALL_PAIRS = _SUB_PAIRS + [
     ('ENC_DISCHDISPO', 'DEST_CATEGORY', 'Disposition × Discharging unit'),
 ]
 
+# MODELS is defined after Step 1 so it can reference cfg (tenant disposition config).
+
+
+def _sanitize(o):
+    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
+    if isinstance(o, list):  return [_sanitize(v) for v in o]
+    if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
+    return o
+
+
+# ── Step 1: Load credentials & connect ───────────────────────────────────────
+
+print("=" * 60)
+print("Step 1: Loading credentials and connecting to database...")
+print("=" * 60)
+
+load_dotenv()
+from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
+
+args, cfg = parse_tenant_arg('Excess LOS EBM pipeline — inpatient length-of-stay model')
+server, database, user, password = get_db_params(cfg)
+hospital_filter  = cfg['hospital_filter']
+service_line_col = cfg['service_line_col']
+
 MODELS = [
     {
         'key':            'overall',
@@ -64,7 +90,7 @@ MODELS = [
         'out_file':       'do_los_overall_ebm.json',
         'target_description': (
             'Regression — predicts excess inpatient LOS (actual − geometric mean LOS) '
-            'across all dispositions at OLLH'
+            'across all dispositions'
         ),
         'combo_pairs':    _OVERALL_PAIRS,
     },
@@ -73,14 +99,14 @@ MODELS = [
         'label':           'Facility-bound',
         'filter_type':     'contains',
         'filter_col':      'ENC_DISCHDISPO',
-        'filter_keywords': ['SNF', 'Skilled', 'Rehab', 'LTACH'],
+        'filter_keywords': cfg['dispo_facility_contains'],
         'cat_cols':        [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
         'num_cols':        ALL_NUM_COLS,
         'interactions':    8,
         'out_file':        'do_los_facility_ebm.json',
         'target_description': (
             'Regression — predicts excess inpatient LOS for patients discharged '
-            'to a skilled nursing facility, rehab, or LTACH at OLLH'
+            'to a skilled nursing facility, rehab, or LTACH'
         ),
         'combo_pairs':     _SUB_PAIRS,
     },
@@ -89,14 +115,14 @@ MODELS = [
         'label':           'Self-care Home',
         'filter_type':     'exact',
         'filter_col':      'ENC_DISCHDISPO',
-        'filter_value':    'Disch to Home or Self Care',
+        'filter_value':    cfg['dispo_selfcare_exact'],
         'cat_cols':        [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
         'num_cols':        ALL_NUM_COLS,
         'interactions':    8,
         'out_file':        'do_los_selfcare_ebm.json',
         'target_description': (
             'Regression — predicts excess inpatient LOS for patients discharged '
-            'home (self care, no services) at OLLH'
+            'home (self care, no services)'
         ),
         'combo_pairs':     _SUB_PAIRS,
     },
@@ -105,35 +131,18 @@ MODELS = [
         'label':           'Home Health',
         'filter_type':     'contains',
         'filter_col':      'ENC_DISCHDISPO',
-        'filter_keywords': ['Home-Health Care'],
+        'filter_keywords': cfg['dispo_homehealth_contains'],
         'cat_cols':        [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
         'num_cols':        ALL_NUM_COLS,
         'interactions':    8,
         'out_file':        'do_los_homehealth_ebm.json',
         'target_description': (
             'Regression — predicts excess inpatient LOS for patients discharged '
-            'to home health care (related or unrelated to admission) at OLLH'
+            'to home health care'
         ),
         'combo_pairs':     _SUB_PAIRS,
     },
 ]
-
-
-# ── Step 1: Load credentials & connect ───────────────────────────────────────
-
-print("=" * 60)
-print("Step 1: Loading credentials and connecting to database...")
-print("=" * 60)
-
-load_dotenv()
-
-server   = os.getenv("DB_SERVER")
-database = os.getenv("DB_DATABASE")
-user     = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
-
-if not all([server, database, user, password]):
-    raise EnvironmentError("Missing one or more DB_* variables in .env")
 
 conn_str = (
     f"DRIVER={{ODBC Driver 17 for SQL Server}};"
@@ -188,11 +197,19 @@ print("=" * 60)
 print("Step 2: Pulling excess LOS training data...")
 print("=" * 60)
 
-QUERY = """
+_sl_select = (
+    f"  e.{service_line_col} AS SERVICE_LINE,"
+    if service_line_col != 'SERVICE_LINE'
+    else "  e.SERVICE_LINE,"
+)
+_occ_hosp_clause = f"\n    AND DEP_Hospital = '{hospital_filter}'" if hospital_filter else ''
+_enc_hosp_clause = f"  AND e.DEP_LASTDEPTHOSPITAL = '{hospital_filter}'" if hospital_filter else ''
+
+QUERY = f"""
 SELECT
   e.ACCOUNT_IPLOS,
   e.DRG_FINALDRGGMLOS,
-  e.SERVICE_LINE,
+{_sl_select}
   e.ACCOUNT_FINANCIALCLASS,
   e.ENC_DISCHDISPO,
   e.ENC_ADMISSIONTYPE,
@@ -229,18 +246,17 @@ LEFT JOIN (
     CAST(Datehour AS DATE)  AS occ_date,
     SUM(Occupancy)          AS HOSPITAL_CENSUS_7AM
   FROM DS_Occupancy
-  WHERE DEP_Hospital = 'Our Lady of Lourdes Hospital'
-    AND DATEPART(HOUR, Datehour) = 7
-    AND StaffedBeds > 0
+  WHERE DATEPART(HOUR, Datehour) = 7
+    AND StaffedBeds > 0{_occ_hosp_clause}
   GROUP BY CAST(Datehour AS DATE)
 ) o ON o.occ_date = CAST(e.TIME_HOSPADMISSION AS DATE)
-WHERE e.DEP_LASTDEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
-  AND e.BEDDED = 'Y'
+WHERE e.BEDDED = 'Y'
+{_enc_hosp_clause}
   AND e.TIME_HOSPADMISSION >= '2025-01-01'
   AND e.ACCOUNT_IPLOS IS NOT NULL
   AND e.DRG_FINALDRGGMLOS IS NOT NULL
-  AND e.SERVICE_LINE IS NOT NULL
-  AND e.SERVICE_LINE NOT IN (
+  AND e.{service_line_col} IS NOT NULL
+  AND e.{service_line_col} NOT IN (
     'W&C Obstetrics', 'W&C Neonates', 'W&C Newborns', 'W&C Gynecology',
     'No DRG Match', 'NULL', 'Pediatrics', 'Behavioral Health'
   )
@@ -314,10 +330,7 @@ for col in ['HOSPITAL_CENSUS_7AM']:
 # ── Exclusion 1: Non-discharge outcomes ──────────────────────────────────────
 # These aren't discharge-efficiency opportunities and shouldn't inflate headlines.
 print()
-NON_DISCHARGE_TERMS = [
-    'Expired', 'Left AMA', 'Court/Law Enforcement', 'Elopement',
-    'Transfer to Short Term Hospital',
-]
+NON_DISCHARGE_TERMS = cfg['dispo_exclusions_contains']
 non_dc_pattern = '|'.join(NON_DISCHARGE_TERMS)
 non_dc_mask    = df_raw['ENC_DISCHDISPO'].str.contains(non_dc_pattern, case=False, na=False)
 print(f"  Excluding non-discharge outcomes ({non_dc_mask.sum():,} rows):")
@@ -609,7 +622,7 @@ def compute_combinations(df_filtered, pairs, min_cnt=150, top_per_pair=7):
 # ── Output directory ──────────────────────────────────────────────────────────
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-out_dir    = os.path.join(script_dir, 'public', 'data')
+out_dir    = os.path.join(script_dir, cfg['output_dir'])
 os.makedirs(out_dir, exist_ok=True)
 
 model_summaries = []
@@ -694,7 +707,7 @@ for model_cfg in MODELS:
         'model_name':           'ExplainableBoostingRegressor',
         'trained_at':           datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'target_description':   model_cfg['target_description'],
-        'hospital':             'Our Lady of Lourdes Hospital',
+        'hospital':             hospital_filter or 'All hospitals',
         'disposition':          model_cfg['label'],
         'system_mean':          system_mean,
         'system_median':        system_median,
@@ -713,8 +726,10 @@ for model_cfg in MODELS:
     }
 
     out_path = os.path.join(out_dir, model_cfg['out_file'])
-    with open(out_path, 'w', encoding='utf-8') as f:
-        json.dump(output, f, indent=2, allow_nan=False)
+    _tmp = out_path + '.tmp'
+    with open(_tmp, 'w', encoding='utf-8') as f:
+        json.dump(_sanitize(output), f, indent=2, allow_nan=False)
+    os.replace(_tmp, out_path)
 
     size_kb = os.path.getsize(out_path) / 1024
     print(f"  Saved: {out_path}  ({size_kb:.1f} KB)")
@@ -740,8 +755,10 @@ for model_cfg in MODELS:
     output['combinations'] = combinations
     if model_cfg['key'] == 'overall':
         output['rehab_unit_summary'] = rehab_unit_summary
-    with open(out_path, 'w', encoding='utf-8') as f:
-        json.dump(output, f, indent=2, allow_nan=False)
+    _tmp = out_path + '.tmp'
+    with open(_tmp, 'w', encoding='utf-8') as f:
+        json.dump(_sanitize(output), f, indent=2, allow_nan=False)
+    os.replace(_tmp, out_path)
 
     size_kb = os.path.getsize(out_path) / 1024
     print(f"  Updated JSON: {out_path}  ({size_kb:.1f} KB)")

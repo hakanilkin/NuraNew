@@ -1,54 +1,84 @@
-import React, { useState, useEffect } from 'react'
-import { AlertCircle, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { AlertCircle, X, Search } from 'lucide-react'
 
-/* ─── Hardcoded hospital list ────────────────────────────────────────────── */
-
-const HOSPITALS = [
-  'Our Lady of Lourdes Hospital',
-  'Marlton',
-  'Memorial',
-  'Voorhees',
-]
-
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
+/* ─── Status config — keys match real API values ────────────────────────────── */
 
 function statusConfig(status) {
   switch (status) {
-    case 'misaligned': return { label: 'Misaligned',      bg: 'rgba(234,179,8,0.12)',  color: '#b45309' }
-    case 'under':      return { label: 'Under-allocated', bg: 'rgba(239,68,68,0.12)',  color: '#dc2626' }
-    case 'over':       return { label: 'Over-allocated',  bg: 'rgba(34,197,94,0.12)', color: '#16a34a' }
-    case 'right':      return { label: 'Right-sized',     bg: 'rgba(59,130,246,0.12)', color: '#2563eb' }
-    default:           return { label: status,             bg: 'rgba(148,163,184,0.12)', color: '#64748b' }
+    case 'misaligned':      return { label: 'Misaligned',      bg: 'rgba(234,179,8,0.12)',   color: '#b45309' }
+    case 'under_allocated': return { label: 'Under-allocated', bg: 'rgba(59,130,246,0.12)',  color: '#2563eb' }
+    case 'right_sized':     return { label: 'Right-sized',     bg: 'rgba(34,197,94,0.12)',   color: '#16a34a' }
+    case 'over_allocated':  return { label: 'Over-allocated',  bg: 'rgba(239,68,68,0.12)',   color: '#dc2626' }
+    default:                return { label: 'Watch',           bg: 'rgba(148,163,184,0.12)', color: '#64748b' }
   }
 }
 
-function pctColor(v) {
-  if (v >= 85) return '#2563eb'
-  if (v >= 70) return '#16a34a'
-  if (v >= 55) return '#d97706'
+/* ─── Helpers ────────────────────────────────────────────────────────────────── */
+
+function fmt1(v) { return v == null ? '—' : Number(v).toFixed(1) }
+function fmtPct(v) { return v == null ? '—' : `${Number(v).toFixed(1)}%` }
+
+function utilColor(v) {
+  if (v == null)  return 'var(--color-gray-400)'
+  if (v >= 80)    return '#16a34a'
+  if (v >= 65)    return '#d97706'
   return '#dc2626'
 }
 
-function TrendArrow({ trend, change }) {
-  if (trend === 'up')   return <span style={{ color: '#16a34a', fontWeight: 600, whiteSpace: 'nowrap' }}>▲ {change}</span>
-  if (trend === 'down') return <span style={{ color: '#dc2626', fontWeight: 600, whiteSpace: 'nowrap' }}>▼ {change}</span>
-  return <span style={{ color: '#64748b', whiteSpace: 'nowrap' }}>— {change}</span>
+function deltaSign(v) {
+  if (v == null) return '—'
+  return v > 0 ? `+${Number(v).toFixed(1)}` : Number(v).toFixed(1)
 }
 
-/* ─── Shared sub-components ──────────────────────────────────────────────── */
+function deltaColor(v, invertGood = false) {
+  if (v == null) return 'var(--color-gray-400)'
+  const positive = v > 0
+  const good = invertGood ? !positive : positive
+  return good ? '#16a34a' : '#dc2626'
+}
+
+/* ─── Shared table styles ────────────────────────────────────────────────────── */
+
+const TH = {
+  padding: '8px 12px', fontSize: 12,
+  color: 'var(--color-text-primary)', fontWeight: 600,
+  textAlign: 'left', borderBottom: '1px solid var(--color-border-secondary)',
+  whiteSpace: 'nowrap',
+}
+const TD = {
+  padding: '10px 12px', fontSize: 'var(--font-size-sm)',
+  color: 'var(--color-gray-700)', borderBottom: '1px solid var(--surface-border)',
+  verticalAlign: 'middle',
+}
+
+/* ─── Status badge ───────────────────────────────────────────────────────────── */
+
+function StatusBadge({ status }) {
+  const sc = statusConfig(status)
+  return (
+    <span style={{
+      display: 'inline-block', padding: '2px 9px',
+      borderRadius: 'var(--radius-full)',
+      background: sc.bg, color: sc.color,
+      fontSize: 11, fontWeight: 600,
+    }}>
+      {sc.label}
+    </span>
+  )
+}
+
+/* ─── Stat card ──────────────────────────────────────────────────────────────── */
 
 function StatCard({ label, value, sub, accent }) {
   return (
     <div style={{
-      background: 'var(--surface-card)',
-      border: '1px solid var(--surface-border)',
-      borderRadius: 'var(--radius-lg)',
-      padding: 'var(--space-4)',
+      background: 'var(--surface-card)', border: '1px solid var(--surface-border)',
+      borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)',
     }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'var(--font-weight-medium)' }}>
+      <div style={{ fontSize: 12, color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
         {label}
       </div>
-      <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-semibold)', color: accent || 'var(--color-gray-900)', lineHeight: 1.2 }}>
+      <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: accent || 'var(--color-gray-900)', lineHeight: 1.2 }}>
         {value}
       </div>
       {sub && <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', marginTop: 4 }}>{sub}</div>}
@@ -56,19 +86,157 @@ function StatCard({ label, value, sub, accent }) {
   )
 }
 
-function MiniStat({ label, value, accent }) {
+/* ─── Finding type label ─────────────────────────────────────────────────────── */
+
+const FINDING_LABELS = {
+  inblock_util_qoq:  'In-block util QoQ',
+  primetime_util_qoq: 'Primetime util QoQ',
+  volume_qoq:        'Volume QoQ',
+  outofblock_high:   'Out-of-block',
+  released_high:     'Released time',
+}
+
+function FindingRow({ f }) {
+  const color = f.severity >= 3 ? '#dc2626' : f.severity === 2 ? '#d97706' : '#64748b'
+  return (
+    <div style={{ display: 'flex', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--surface-border)', alignItems: 'flex-start' }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color, flexShrink: 0, marginTop: 3, textTransform: 'uppercase' }}>
+        {FINDING_LABELS[f.type] ?? f.type}
+      </span>
+      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)', lineHeight: 1.5 }}>{f.text}</span>
+    </div>
+  )
+}
+
+/* ─── Slide-over detail panel ────────────────────────────────────────────────── */
+
+function SlideOverPanel({ group, open, period, onClose }) {
+  const pipelineCtx = group?.context?.pipeline ?? null
+  const periodLabel = period
+    ? `${period.current_quarter} vs ${period.prior_quarter}`
+    : ''
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: 'fixed', right: 0, top: 0,
+        height: '100vh', width: 440, maxWidth: '100%',
+        background: '#fff',
+        borderLeft: '1px solid var(--color-border-secondary)',
+        boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
+        zIndex: 300,
+        overflowY: 'auto',
+        padding: '1.25rem 1.5rem',
+        boxSizing: 'border-box',
+        transform: open ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 200ms ease-out',
+      }}
+    >
+      {group && (
+        <>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-gray-900)', lineHeight: 1.3 }}>
+                  {group.caseblock}
+                </span>
+                <StatusBadge status={group.status} />
+              </div>
+              {periodLabel && (
+                <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 5 }}>{periodLabel}</div>
+              )}
+            </div>
+            <button
+              type="button" onClick={onClose}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-gray-400)', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center', marginTop: 2 }}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div style={{ height: 1, background: 'var(--surface-border)', margin: '14px 0 20px' }} />
+
+          {/* Section 1 — Key metrics */}
+          <SectionLabel>Key metrics</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 22 }}>
+            <MetricBlock label="In-block util"   value={fmtPct(group.inblock_util)}   accent={utilColor(group.inblock_util)} />
+            <MetricBlock label="Prime-time util" value={fmtPct(group.primetime_util)} accent={utilColor(group.primetime_util)} />
+            <MetricBlock label="Volume"          value={group.volume ?? '—'} />
+            <MetricBlock
+              label="Vol Δ"
+              value={group.deltas?.volume_pct != null ? `${deltaSign(group.deltas.volume_pct)}%` : '—'}
+              accent={group.deltas?.volume_pct != null ? deltaColor(group.deltas.volume_pct) : undefined}
+            />
+            <MetricBlock label="Allocated hrs" value={group.allocated_hours != null ? `${group.allocated_hours} hrs` : '—'} />
+            <MetricBlock
+              label="In-block Δ"
+              value={group.deltas?.inblock_util != null ? `${deltaSign(group.deltas.inblock_util)} pts` : '—'}
+              accent={group.deltas?.inblock_util != null ? deltaColor(group.deltas.inblock_util) : undefined}
+            />
+          </div>
+
+          {/* Section 2 — Findings */}
+          <SectionLabel>Findings ({group.findings?.length ?? 0})</SectionLabel>
+          <div style={{ marginBottom: 22 }}>
+            {(group.findings?.length ?? 0) === 0
+              ? <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', margin: 0, fontStyle: 'italic' }}>No flagged findings this quarter.</p>
+              : (group.findings ?? []).map((f, i) => <FindingRow key={i} f={f} />)
+            }
+          </div>
+
+          {/* Section 3 — Pipeline */}
+          <SectionLabel>Pipeline</SectionLabel>
+          <div style={{ marginBottom: 22 }}>
+            {pipelineCtx ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {pipelineCtx.scheduled  != null && <MetricBlock label="Scheduled cases" value={pipelineCtx.scheduled} />}
+                {pipelineCtx.forecasted != null && <MetricBlock label="Forecasted 6mo"  value={pipelineCtx.forecasted} accent="var(--color-blue)" />}
+                {pipelineCtx.trend      != null && <MetricBlock label="Trend"           value={pipelineCtx.trend} />}
+                {pipelineCtx.change     != null && <MetricBlock label="Change"          value={pipelineCtx.change} />}
+              </div>
+            ) : (
+              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', margin: 0, fontStyle: 'italic' }}>No pipeline notes yet.</p>
+            )}
+          </div>
+
+          {/* Section 4 — Budget */}
+          <SectionLabel>Relative to budget</SectionLabel>
+          <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', padding: '10px 14px' }}>
+            <KVRow label="Relative to budget" value="— (budget data not loaded)" />
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function SectionLabel({ children }) {
   return (
     <div style={{
-      background: 'var(--surface-bg)',
-      border: '1px solid var(--surface-border)',
-      borderRadius: 'var(--radius-md)',
-      padding: '10px 14px',
-      flex: 1,
+      fontSize: 11, color: 'var(--color-text-primary)', textTransform: 'uppercase',
+      letterSpacing: '0.05em', fontWeight: 700,
+      paddingBottom: 'var(--space-2)', marginBottom: 'var(--space-3)',
+      borderBottom: '1px solid var(--color-border-secondary)',
     }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>
+      {children}
+    </div>
+  )
+}
+
+function MetricBlock({ label, value, accent }) {
+  return (
+    <div style={{
+      background: 'var(--surface-bg)', border: '1px solid var(--surface-border)',
+      borderRadius: 'var(--radius-md)', padding: '10px 14px',
+    }}>
+      <div style={{ fontSize: 11, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>
         {label}
       </div>
-      <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: accent || 'var(--color-gray-900)' }}>
+      <div style={{ fontSize: 'var(--font-size-base)', fontWeight: 700, color: accent || 'var(--color-gray-900)' }}>
         {value}
       </div>
     </div>
@@ -77,334 +245,187 @@ function MiniStat({ label, value, accent }) {
 
 function KVRow({ label, value }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--surface-border)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
       <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)' }}>{label}</span>
-      <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-gray-800)' }}>{value}</span>
+      <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 500, color: 'var(--color-gray-500)', fontStyle: 'italic' }}>{value}</span>
     </div>
   )
 }
 
-const TH_STYLE = {
-  padding: '8px 12px',
-  fontSize: 12,
-  color: 'var(--color-text-primary)',
-  fontWeight: 'var(--font-weight-semibold)',
-  textAlign: 'left',
-  borderBottom: '1px solid var(--color-border-secondary)',
-  whiteSpace: 'nowrap',
-}
-const TD_STYLE = {
-  padding: '10px 12px',
-  fontSize: 'var(--font-size-sm)',
-  color: 'var(--color-gray-700)',
-  borderBottom: '1px solid var(--surface-border)',
-  verticalAlign: 'middle',
-}
+/* ─── Capacity matrix table ──────────────────────────────────────────────────── */
 
-/* ─── Detail Panel ───────────────────────────────────────────────────────── */
+const STATUS_OPTIONS = [
+  { value: '', label: 'All statuses' },
+  { value: 'misaligned',      label: 'Misaligned' },
+  { value: 'under_allocated', label: 'Under-allocated' },
+  { value: 'right_sized',     label: 'Right-sized' },
+  { value: 'over_allocated',  label: 'Over-allocated' },
+  { value: 'watch',           label: 'Watch' },
+]
 
-function DetailPanel({ group, onClose }) {
-  const m = group.metrics
+function CapacityTab({ groups, period }) {
+  const [expanded,     setExpanded]     = useState(null)   // selected caseblock id
+  const [panelGroup,   setPanelGroup]   = useState(null)   // content kept during slide-out
+  const [search,       setSearch]       = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
-  function metricCellStyle(type, value) {
-    if (type === 'inblockUtil') {
-      if (value >= 75) return { background: 'rgba(34,197,94,0.15)',  color: '#15803d', fontWeight: 700 }
-      if (value >= 65) return { background: 'rgba(234,179,8,0.15)',  color: '#b45309', fontWeight: 700 }
-      return                  { background: 'rgba(239,68,68,0.15)',  color: '#dc2626', fontWeight: 700 }
+  function toggleRow(caseblock) {
+    if (expanded === caseblock) {
+      setExpanded(null)                                                   // same row → close
+    } else {
+      setPanelGroup(groups.find(g => g.caseblock === caseblock) ?? null) // swap content immediately
+      setExpanded(caseblock)
     }
-    if (type === 'nonPrimePct') {
-      if (value < 10)  return { background: 'rgba(34,197,94,0.15)',  color: '#15803d', fontWeight: 700 }
-      if (value <= 20) return { background: 'rgba(234,179,8,0.15)',  color: '#b45309', fontWeight: 700 }
-      return                  { background: 'rgba(239,68,68,0.15)',  color: '#dc2626', fontWeight: 700 }
-    }
-    if (type === 'primetimeUtil') {
-      if (value >= 75 && value <= 90) return { background: 'rgba(34,197,94,0.15)',  color: '#15803d', fontWeight: 700 }
-      if (value > 90 || value >= 65)  return { background: 'rgba(234,179,8,0.15)',  color: '#b45309', fontWeight: 700 }
-      return                                  { background: 'rgba(239,68,68,0.15)',  color: '#dc2626', fontWeight: 700 }
-    }
-    return {}
   }
 
-  const sc = statusConfig(group.status)
+  function closePanel() { setExpanded(null) }
 
-  const pipelineSentence = (() => {
-    const { trend } = group.pipeline
-    const pt = m.primetimeUtil
-    if (trend === 'up' && pt > 90)  return 'Pipeline is growing with primetime near capacity — block expansion is likely needed within two quarters.'
-    if (trend === 'up' && pt >= 75) return 'Pipeline is growing with room remaining in primetime — monitor for continued tightening.'
-    if (trend === 'up')             return 'Pipeline is growing — utilization trends should be monitored closely.'
-    if (trend === 'flat')           return 'Pipeline volume is stable — current block allocation can be maintained.'
-    return 'Pipeline is contracting — review block allocation for potential reduction.'
-  })()
+  // Esc key closes the panel
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') closePanel() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
-  const MTH = { padding: '7px 10px', fontSize: 11, color: 'white', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'right', borderRight: '1px solid rgba(255,255,255,0.1)' }
-  const MTD = { padding: '8px 10px', fontSize: 13, textAlign: 'right', borderRight: '1px solid var(--surface-border)', color: 'var(--color-gray-700)' }
+  const counts = {
+    misaligned:      groups.filter(g => g.status === 'misaligned').length,
+    under_allocated: groups.filter(g => g.status === 'under_allocated').length,
+    right_sized:     groups.filter(g => g.status === 'right_sized').length,
+    over_allocated:  groups.filter(g => g.status === 'over_allocated').length,
+    watch:           groups.filter(g => g.status === 'watch').length,
+  }
 
-  return (
-    <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-lg)', background: 'var(--surface-card)', marginTop: 'var(--space-4)', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4)', borderBottom: '1px solid var(--surface-border)' }}>
-        <div>
-          <div style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-gray-900)', fontSize: 'var(--font-size-base)' }}>{group.name}</div>
-          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', marginTop: 2 }}>{group.service}</div>
-        </div>
-        <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-gray-400)', padding: 4, display: 'flex', alignItems: 'center' }}>
-          <X size={16} />
-        </button>
-      </div>
+  const filtered = groups.filter(g => {
+    const matchName   = !search || g.caseblock.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = !statusFilter || g.status === statusFilter
+    return matchName && matchStatus
+  })
 
-      <div style={{ padding: 'var(--space-5)' }}>
+  const periodLabel = period
+    ? `${period.prior_quarter} → ${period.current_quarter}`
+    : ''
 
-        {/* ── Layer 1: Metrics table ── */}
-        <div style={{ fontSize: 12, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, paddingBottom: 'var(--space-2)', marginBottom: 'var(--space-3)', borderBottom: '1px solid var(--color-border-secondary)' }}>
-          Utilization metrics
-        </div>
-        <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', overflow: 'hidden', marginBottom: 'var(--space-3)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#141533' }}>
-                <th style={{ ...MTH, textAlign: 'left' }}>Cases</th>
-                <th style={MTH}>In Block (min)</th>
-                <th style={MTH}>Out of Block (min)</th>
-                <th style={MTH}>Non-Prime (min)</th>
-                <th style={MTH}>Non-Prime %</th>
-                <th style={MTH}>Released (min)</th>
-                <th style={MTH}>Released %</th>
-                <th style={MTH}>Block Time (min)</th>
-                <th style={MTH}>Inblock Util %</th>
-                <th style={{ ...MTH, borderRight: 'none' }}>Primetime Util %</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ ...MTD, textAlign: 'left', fontWeight: 600, color: 'var(--color-gray-800)' }}>{m.cases}</td>
-                <td style={MTD}>{m.inBlockMin.toLocaleString()}</td>
-                <td style={MTD}>{m.outOfBlockMin.toLocaleString()}</td>
-                <td style={MTD}>{m.totalNonPrime.toLocaleString()}</td>
-                <td style={{ ...MTD, ...metricCellStyle('nonPrimePct', m.nonPrimePct) }}>{m.nonPrimePct}%</td>
-                <td style={MTD}>{m.releasedTime.toLocaleString()}</td>
-                <td style={MTD}>{m.releasedTimePct}%</td>
-                <td style={MTD}>{m.blockTime.toLocaleString()}</td>
-                <td style={{ ...MTD, ...metricCellStyle('inblockUtil', m.inblockUtil) }}>{m.inblockUtil}%</td>
-                <td style={{ ...MTD, borderRight: 'none', ...metricCellStyle('primetimeUtil', m.primetimeUtil) }}>{m.primetimeUtil}%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div style={{ background: sc.bg, borderRadius: 'var(--radius-md)', padding: '8px 12px', marginBottom: 'var(--space-5)' }}>
-          <span style={{ fontWeight: 700, color: sc.color, fontSize: 13 }}>{sc.label}: </span>
-          <span style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>{group.finding}</span>
-        </div>
-
-        {/* ── Layer 2: Week × Day table ── */}
-        <div style={{ fontSize: 12, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, paddingBottom: 'var(--space-2)', marginBottom: 'var(--space-3)', borderBottom: '1px solid var(--color-border-secondary)' }}>
-          Day of week utilization
-        </div>
-        {group.dowTable && (() => {
-          const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-          const DTH  = { padding: '4px 6px', fontSize: 11, fontWeight: 600, textAlign: 'center', background: '#141533', color: 'white', borderRight: '1px solid rgba(255,255,255,0.12)', whiteSpace: 'nowrap' }
-          const DSTH = { padding: '4px 6px', fontSize: 10, fontWeight: 600, textAlign: 'center', background: '#f8fafc', color: 'var(--color-gray-500)', borderRight: '1px solid var(--surface-border)', borderBottom: '2px solid var(--surface-border)', whiteSpace: 'nowrap' }
-          const DTC  = { padding: '4px 6px', fontSize: 11, textAlign: 'center', borderRight: '1px solid var(--surface-border)', borderBottom: '1px solid var(--surface-border)' }
-
-          function ptStyle(ptUtil, hasBlock) {
-            if (!hasBlock) return { background: 'rgba(59,130,246,0.10)', color: '#2563eb' }
-            if (ptUtil < 70)  return { background: 'rgba(239,68,68,0.12)',  color: '#dc2626' }
-            if (ptUtil <= 90) return { background: 'rgba(34,197,94,0.12)',  color: '#15803d' }
-            return { background: 'rgba(234,179,8,0.15)', color: '#b45309' }
-          }
-          function npStyle(np) {
-            if (np > 50) return { background: 'rgba(239,68,68,0.12)', color: '#dc2626' }
-            if (np > 30) return { background: 'rgba(234,179,8,0.15)', color: '#b45309' }
-            return { color: 'var(--color-gray-700)' }
-          }
-
-          const bullets = []
-          for (const row of group.dowTable) {
-            for (const d of DAYS) {
-              const c = row.days[d]
-              if (!c) continue
-              if (c.hasBlock && c.ptUtil < 70)
-                bullets.push(`${d} week ${row.week} utilization at ${c.ptUtil}% — below target`)
-              if (c.ptUtil > 100)
-                bullets.push(`${d} week ${row.week} primetime utilization at ${c.ptUtil}% — cases performed outside allocated block time`)
-              if (!c.hasBlock && c.cases > 0)
-                bullets.push(`${d} week ${row.week} — ${c.cases} cases performed despite no block allocation, with ${c.nonPrime}% non-primetime`)
-              if (c.nonPrime > 30)
-                bullets.push(`${d} week ${row.week} — ${c.nonPrime}% non-primetime spillover`)
-            }
-          }
-
-          return (
-            <>
-              <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', overflow: 'hidden', marginBottom: 'var(--space-3)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#141533' }}>
-                      <th style={{ ...DTH, textAlign: 'left', borderRight: '1px solid rgba(255,255,255,0.12)' }}>Week</th>
-                      {DAYS.map(d => (
-                        <th key={d} colSpan={3} style={{ ...DTH, borderRight: '1px solid rgba(255,255,255,0.25)' }}>{d}</th>
-                      ))}
-                    </tr>
-                    <tr>
-                      <th style={{ ...DSTH, textAlign: 'left' }}> </th>
-                      {DAYS.map(d => (
-                        ['Cases', 'NP%', 'PT%'].map(sub => (
-                          <th key={`${d}-${sub}`} style={{ ...DSTH, borderRight: sub === 'PT%' ? '2px solid var(--surface-border)' : '1px solid var(--surface-border)' }}>{sub}</th>
-                        ))
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.dowTable.map(row => (
-                      <tr key={row.week}>
-                        <td style={{ ...DTC, fontWeight: 600, color: 'var(--color-gray-600)', textAlign: 'left', background: '#f8fafc', borderRight: '2px solid var(--surface-border)' }}>
-                          W{row.week}
-                        </td>
-                        {DAYS.map(d => {
-                          const c = row.days[d] ?? { cases: 0, nonPrime: 0, ptUtil: 0, hasBlock: false }
-                          return (
-                            <React.Fragment key={d}>
-                              <td style={{ ...DTC, color: 'var(--color-gray-700)' }}>{c.cases}</td>
-                              <td style={{ ...DTC, ...npStyle(c.nonPrime) }}>{c.nonPrime}%</td>
-                              <td style={{ ...DTC, borderRight: '2px solid var(--surface-border)', ...ptStyle(c.ptUtil, c.hasBlock) }}>
-                                {c.hasBlock ? `${c.ptUtil}%` : '—'}
-                              </td>
-                            </React.Fragment>
-                          )
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {bullets.length > 0 && (
-                <div style={{ marginBottom: 'var(--space-5)' }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-primary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                    Interpretation — Feb to Apr 2026
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: 18 }}>
-                    {bullets.map((b, i) => (
-                      <li key={i} style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>{b}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )
-        })()}
-
-        {/* ── Layer 3: Pipeline ── */}
-        <div style={{ fontSize: 12, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, paddingBottom: 'var(--space-2)', marginBottom: 'var(--space-3)', borderBottom: '1px solid var(--color-border-secondary)' }}>
-          Pipeline context
-        </div>
-        <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-          <div style={{ flex: 1, background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', padding: '10px 14px' }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Scheduled Cases</div>
-            <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--color-gray-900)' }}>{group.pipeline.scheduled}</div>
-          </div>
-          <div style={{ flex: 1, background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', padding: '10px 14px' }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Forecasted 6mo</div>
-            <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, color: 'var(--color-blue)' }}>{group.pipeline.forecasted}</div>
-          </div>
-          <div style={{ flex: 1, background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', padding: '10px 14px' }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4 }}>Pipeline Trend</div>
-            <div style={{ fontSize: 'var(--font-size-sm)' }}>
-              <TrendArrow trend={group.pipeline.trend} change={group.pipeline.change} />
-            </div>
-          </div>
-        </div>
-        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)', lineHeight: 1.6, margin: 0 }}>
-          {pipelineSentence}
-        </p>
-
-      </div>
-    </div>
-  )
-}
-
-/* ─── Capacity Alignment tab ─────────────────────────────────────────────── */
-
-function CapacityTab({ groups }) {
-  const [expanded, setExpanded] = useState(null)
-
-  const misaligned    = groups.filter(g => g.status === 'misaligned').length
-  const underAlloc    = groups.filter(g => g.status === 'under').length
-  const overAlloc     = groups.filter(g => g.status === 'over').length
-  const rightSized    = groups.filter(g => g.status === 'right').length
-  const expandedGroup = groups.find(g => g.name === expanded) ?? null
-
-  function toggleRow(name) {
-    setExpanded(prev => prev === name ? null : name)
+  const inputStyle = {
+    padding: '7px 12px', borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--surface-border)',
+    background: 'var(--surface-card)', color: 'var(--color-gray-700)',
+    fontSize: 'var(--font-size-sm)', outline: 'none',
   }
 
   return (
     <>
-      {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-        <StatCard label="Misaligned"      value={misaligned} sub="Block days vs. actual volume" accent="#b45309" />
-        <StatCard label="Under-allocated" value={underAlloc} sub="Insufficient block time"      accent="#dc2626" />
-        <StatCard label="Over-allocated"  value={overAlloc}  sub="Excess block time"            accent="#16a34a" />
-        <StatCard label="Right-sized"     value={rightSized} sub="Block matches demand"         accent="#2563eb" />
+      {/* Backdrop — captures outside clicks to close the panel */}
+      {expanded && (
+        <div
+          onClick={closePanel}
+          style={{ position: 'fixed', inset: 0, zIndex: 299, background: 'transparent' }}
+        />
+      )}
+
+      {/* Slide-over detail panel — always rendered, transitions in/out */}
+      <SlideOverPanel
+        open={expanded !== null}
+        group={panelGroup}
+        period={period}
+        onClose={closePanel}
+      />
+
+      {/* Five status summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
+        <StatCard label="Misaligned"      value={counts.misaligned}      sub="Block vs. volume mismatch" accent="#b45309" />
+        <StatCard label="Under-allocated" value={counts.under_allocated} sub="Insufficient block time"   accent="#2563eb" />
+        <StatCard label="Right-sized"     value={counts.right_sized}     sub="Block matches demand"      accent="#16a34a" />
+        <StatCard label="Over-allocated"  value={counts.over_allocated}  sub="Excess block time"         accent="#dc2626" />
+        <StatCard label="Watch"           value={counts.watch}           sub="Monitor for changes"       accent="#64748b" />
       </div>
 
-      {/* Groups table */}
+      {/* Filter bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <div style={{ position: 'relative', flex: '0 0 280px' }}>
+          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-gray-400)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            placeholder="Search block / surgeon…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ ...inputStyle, paddingLeft: 30, width: '100%', boxSizing: 'border-box' }}
+          />
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={inputStyle}>
+          {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <span style={{ marginLeft: 'auto', fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)' }}>
+          {filtered.length} of {groups.length} groups
+        </span>
+      </div>
+
+      {/* Matrix table */}
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="card-title">Demand-capacity alignment — Feb to Apr 2026</div>
-            <div className="card-subtitle">Click any row to see utilization brief and pipeline context.</div>
+            <div className="card-title">Demand-capacity alignment{periodLabel ? ` — ${periodLabel}` : ''}</div>
+            <div className="card-subtitle">Click any row to see the full utilization brief and findings.</div>
           </div>
         </div>
-
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={TH_STYLE}>Group</th>
-                <th style={TH_STYLE}>Status</th>
-                <th style={{ ...TH_STYLE, textAlign: 'center' }}>Inblock</th>
-                <th style={{ ...TH_STYLE, textAlign: 'center' }}>Primetime</th>
-                <th style={{ ...TH_STYLE, textAlign: 'center' }}>Pipeline</th>
-                <th style={TH_STYLE}>Key finding</th>
+                <th style={TH}>Block / Surgeon</th>
+                <th style={TH}>Status</th>
+                <th style={{ ...TH, textAlign: 'right' }}>In-block</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Primetime</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Volume</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Vol Δ</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Alloc hrs</th>
+                <th style={{ ...TH, textAlign: 'center' }}>Findings</th>
               </tr>
             </thead>
             <tbody>
-              {groups.map(g => {
-                const sc = statusConfig(g.status)
-                const isSelected = expanded === g.name
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={8} style={{ ...TD, textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8)' }}>
+                    No groups match the current filter.
+                  </td>
+                </tr>
+              )}
+              {filtered.map(g => {
+                const isSelected = expanded === g.caseblock
                 return (
                   <tr
-                    key={g.name}
-                    onClick={() => toggleRow(g.name)}
-                    style={{
-                      cursor: 'pointer',
-                      background: isSelected ? 'rgba(59,130,246,0.04)' : 'transparent',
-                      transition: 'background 120ms',
-                    }}
+                    key={g.caseblock}
+                    onClick={() => toggleRow(g.caseblock)}
+                    style={{ cursor: 'pointer', background: isSelected ? '#EEF0FD' : 'transparent', transition: 'background 120ms' }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--color-gray-50)' }}
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
                   >
-                    <td style={TD_STYLE}>
-                      <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-gray-900)' }}>{g.name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 2 }}>{g.service}</div>
+                    <td style={TD}>
+                      <div style={{ fontWeight: 500, color: 'var(--color-gray-900)', fontSize: 'var(--font-size-sm)' }}>{g.caseblock}</div>
                     </td>
-                    <td style={TD_STYLE}>
-                      <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 'var(--radius-full)', background: sc.bg, color: sc.color, fontSize: 11, fontWeight: 600 }}>
-                        {sc.label}
-                      </span>
+                    <td style={TD}><StatusBadge status={g.status} /></td>
+                    <td style={{ ...TD, textAlign: 'right' }}>
+                      <span style={{ fontWeight: 600, color: utilColor(g.inblock_util) }}>{fmtPct(g.inblock_util)}</span>
                     </td>
-                    <td style={{ ...TD_STYLE, textAlign: 'center' }}>
-                      <span style={{ fontWeight: 600, color: pctColor(g.inblock) }}>{g.inblock}%</span>
+                    <td style={{ ...TD, textAlign: 'right' }}>
+                      <span style={{ fontWeight: 600, color: utilColor(g.primetime_util) }}>{fmtPct(g.primetime_util)}</span>
                     </td>
-                    <td style={{ ...TD_STYLE, textAlign: 'center' }}>
-                      <span style={{ fontWeight: 600, color: pctColor(g.primetime) }}>{g.primetime}%</span>
+                    <td style={{ ...TD, textAlign: 'right', fontWeight: 500 }}>{g.volume}</td>
+                    <td style={{ ...TD, textAlign: 'right' }}>
+                      {g.deltas.volume_pct != null
+                        ? <span style={{ fontWeight: 500, color: deltaColor(g.deltas.volume_pct) }}>{deltaSign(g.deltas.volume_pct)}%</span>
+                        : <span style={{ color: 'var(--color-gray-400)' }}>—</span>
+                      }
                     </td>
-                    <td style={{ ...TD_STYLE, textAlign: 'center' }}>
-                      <TrendArrow trend={g.pipeline.trend} change={g.pipeline.change} />
+                    <td style={{ ...TD, textAlign: 'right', color: 'var(--color-gray-500)' }}>
+                      {g.allocated_hours != null ? g.allocated_hours : '—'}
                     </td>
-                    <td style={{ ...TD_STYLE, maxWidth: 300, fontSize: 12, color: 'var(--color-gray-500)' }}>
-                      {g.finding}
+                    <td style={{ ...TD, textAlign: 'center' }}>
+                      {g.findings.length > 0
+                        ? <span style={{ display: 'inline-block', minWidth: 20, padding: '1px 7px', borderRadius: 'var(--radius-full)', background: 'rgba(234,179,8,0.15)', color: '#b45309', fontSize: 11, fontWeight: 700 }}>
+                            {g.findings.length}
+                          </span>
+                        : <span style={{ color: 'var(--color-gray-300)' }}>—</span>
+                      }
                     </td>
                   </tr>
                 )
@@ -414,28 +435,30 @@ function CapacityTab({ groups }) {
         </div>
       </div>
 
-      {expandedGroup && (
-        <DetailPanel group={expandedGroup} onClose={() => setExpanded(null)} />
-      )}
     </>
   )
 }
 
-/* ─── Page ───────────────────────────────────────────────────────────────── */
+/* ─── Page ───────────────────────────────────────────────────────────────────── */
 
 export default function AtlasPerformanceBriefs() {
-  const [data,     setData]     = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState('')
-  const [hospital, setHospital] = useState(HOSPITALS[0])
+  const [data,    setData]    = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState('')
 
   useEffect(() => {
-    fetch('/api/atlas/performance-briefs-mock')
+    fetch('/api/atlas/performance-briefs')
       .then(r => {
         if (!r.ok) return r.json().then(d => Promise.reject(new Error(d.error || `HTTP ${r.status}`)))
         return r.json()
       })
-      .then(setData)
+      .then(d => {
+        if (d?.error === 'no_atlas_data') {
+          setData({ noData: true, message: d.message })
+        } else {
+          setData(d)
+        }
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
@@ -452,46 +475,42 @@ export default function AtlasPerformanceBriefs() {
     )
   }
 
-  if (error || !data) {
+  if (error) {
     return (
       <div className="page">
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', padding: 'var(--space-5)', background: 'var(--color-danger-light)', border: '1px solid #fecaca', borderRadius: 'var(--radius-lg)', color: '#b91c1c', fontSize: 'var(--font-size-sm)' }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', padding: 'var(--space-5)', background: 'rgba(239,68,68,0.06)', border: '1px solid #fecaca', borderRadius: 'var(--radius-lg)', color: '#b91c1c', fontSize: 'var(--font-size-sm)' }}>
           <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
-            <div style={{ fontWeight: 'var(--font-weight-semibold)', marginBottom: 2 }}>Could not load performance briefs</div>
-            <div>{error || 'Unknown error'}</div>
+            <div style={{ fontWeight: 600, marginBottom: 2 }}>Could not load performance briefs</div>
+            <div>{error}</div>
           </div>
         </div>
       </div>
     )
   }
 
-  const selectStyle = {
-    padding: '7px 12px',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--surface-border)',
-    background: 'var(--surface-card)',
-    color: 'var(--color-gray-700)',
-    fontSize: 'var(--font-size-sm)',
-    cursor: 'pointer',
-    minWidth: 220,
+  if (!data || data.noData) {
+    return (
+      <div className="page">
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 280, textAlign: 'center', color: 'var(--color-gray-400)' }}>
+          <div style={{ fontSize: 40, marginBottom: 'var(--space-4)' }}>📊</div>
+          <div style={{ fontWeight: 600, fontSize: 'var(--font-size-base)', color: 'var(--color-gray-600)', marginBottom: 'var(--space-2)' }}>
+            No performance briefs yet
+          </div>
+          <div style={{ fontSize: 'var(--font-size-sm)', maxWidth: 420 }}>
+            {data?.message ?? 'Atlas data has not been generated for this organization yet. Run the performance_briefs_pipeline.py to populate this view.'}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
-        <label style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)', fontWeight: 500 }}>Hospital</label>
-        <select value={hospital} onChange={e => setHospital(e.target.value)} style={selectStyle}>
-          {HOSPITALS.map(h => <option key={h} value={h}>{h}</option>)}
-        </select>
-        <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-400)' }}>
-          {hospital} · Feb–Apr 2026
-        </span>
-      </div>
-
-      <CapacityTab groups={data.groups} />
+      <CapacityTab groups={data.groups ?? []} period={data.period ?? null} />
     </div>
   )
 }

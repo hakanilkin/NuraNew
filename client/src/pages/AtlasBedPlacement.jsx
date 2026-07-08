@@ -599,6 +599,7 @@ export default function AtlasBedPlacement() {
   const [model,         setModel]         = useState(null)
   const [loading,       setLoading]       = useState(true)
   const [error,         setError]         = useState('')
+  const [noAtlasData,   setNoAtlasData]   = useState(false)
   const [selectedFeat,  setSelectedFeat]  = useState(null)
   const [activeTab,     setActiveTab]     = useState('drivers')
   const [combos,        setCombos]        = useState([])
@@ -618,6 +619,7 @@ export default function AtlasBedPlacement() {
         return r.json()
       })
       .then(data => {
+        if (data.error === 'no_atlas_data') { setNoAtlasData(true); return; }
         setModel(data)
         const firstMain = data.feature_importance?.find(f => !f.feature.includes(' & '))
         if (firstMain) setSelectedFeat(firstMain.feature)
@@ -688,6 +690,22 @@ export default function AtlasBedPlacement() {
   )
 
   /* ── Loading / Error states ── */
+  if (noAtlasData) {
+    return (
+      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
+        <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', maxWidth: 420 }}>
+          <BarChart3 size={40} style={{ margin: '0 auto var(--space-4)', opacity: 0.25 }} />
+          <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-gray-600)', marginBottom: 8, fontSize: 'var(--font-size-base)' }}>
+            No Atlas data for this organization
+          </p>
+          <p style={{ fontSize: 'var(--font-size-sm)', lineHeight: 1.6 }}>
+            Atlas model data has not been generated yet. Run the pipeline for this organization to generate insights.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>

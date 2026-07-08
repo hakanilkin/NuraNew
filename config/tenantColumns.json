@@ -1,0 +1,32 @@
+{
+  "default": {
+    "columns": {
+      "SERVICE_LINE":   "SERVICE_LINE",
+      "SERVICE_LINE_2": "SERVICE_LINE_2",
+      "SERVICE_LINE_3": "SERVICE_LINE_3"
+    },
+    "params": {
+      "hospital_filter": "Our Lady of Lourdes Hospital",
+      "case_posted_value": "Posted"
+    },
+    "features": {
+      "tdc": true,
+      "service_line_drill": true
+    }
+  },
+  "OHS": {
+    "columns": {
+      "SERVICE_LINE":   "ENC_HOSPITALSERVICE",
+      "SERVICE_LINE_2": null,
+      "SERVICE_LINE_3": null
+    },
+    "params": {
+      "hospital_filter": null,
+      "case_posted_value": "2"
+    },
+    "features": {
+      "tdc": false,
+      "service_line_drill": false
+    }
+  }
+}

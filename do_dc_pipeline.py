@@ -17,6 +17,7 @@ Usage:
 
 import os
 import json
+import math
 import datetime
 
 import pandas as pd
@@ -53,76 +54,15 @@ _OVERALL_PAIRS = [
     ('ENC_DISCHDISPO', 'DAY_OF_WEEK',            'Disposition × Day of week'),
 ]
 
-MODELS = [
-    {
-        'key':            'overall',
-        'disposition':    'All',
-        'filter_dispo':   None,
-        'max_target':     4320,
-        'cat_cols':       ALL_CAT_COLS,
-        'num_cols':       ALL_NUM_COLS,
-        'interactions':   10,
-        'out_file':       'do_dc_overall_ebm.json',
-        'target_description': (
-            'Regression — predicts minutes from discharge order to patient departure '
-            'across all dispositions at OLLH'
-        ),
-        'benchmarks':     {'home': 180, 'hh': 240, 'snf': 400},
-        'combo_pairs':    _OVERALL_PAIRS,
-        'combo_benchmark': 400,
-    },
-    {
-        'key':            'home',
-        'disposition':    'Home',
-        'filter_dispo':   'Disch to Home or Self Care',
-        'max_target':     720,
-        'cat_cols':       [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
-        'num_cols':       ALL_NUM_COLS,
-        'interactions':   8,
-        'out_file':       'do_dc_home_ebm.json',
-        'target_description': (
-            'Regression — predicts minutes from discharge order to departure '
-            'for home-bound patients at OLLH'
-        ),
-        'benchmarks':     None,
-        'combo_pairs':    _SUB_PAIRS,
-        'combo_benchmark': 180,
-    },
-    {
-        'key':            'snf',
-        'disposition':    'SNF',
-        'filter_dispo':   'Disch/Trans to Skilled Nursing Facility (Sub-acute Rehab)',
-        'max_target':     4320,
-        'cat_cols':       [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
-        'num_cols':       ALL_NUM_COLS,
-        'interactions':   8,
-        'out_file':       'do_dc_snf_ebm.json',
-        'target_description': (
-            'Regression — predicts minutes from discharge order to departure '
-            'for SNF-bound patients at OLLH'
-        ),
-        'benchmarks':     None,
-        'combo_pairs':    _SUB_PAIRS,
-        'combo_benchmark': 400,
-    },
-    {
-        'key':            'hh',
-        'disposition':    'HomeHealth',
-        'filter_dispo':   'Home-Health Care (Related to admission)',
-        'max_target':     720,
-        'cat_cols':       [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
-        'num_cols':       ALL_NUM_COLS,
-        'interactions':   8,
-        'out_file':       'do_dc_hh_ebm.json',
-        'target_description': (
-            'Regression — predicts minutes from discharge order to departure '
-            'for home health patients at OLLH'
-        ),
-        'benchmarks':     None,
-        'combo_pairs':    _SUB_PAIRS,
-        'combo_benchmark': 240,
-    },
-]
+# MODELS is defined after Step 1 so it can reference cfg (tenant disposition config).
+
+
+def _sanitize(o):
+    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
+    if isinstance(o, list):  return [_sanitize(v) for v in o]
+    if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
+    return o
 
 
 # ── Step 1: Load credentials & connect ───────────────────────────────────────
@@ -132,14 +72,85 @@ print("Step 1: Loading credentials and connecting to database...")
 print("=" * 60)
 
 load_dotenv()
+from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
 
-server   = os.getenv("DB_SERVER")
-database = os.getenv("DB_DATABASE")
-user     = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
+args, cfg = parse_tenant_arg('DO→DC EBM pipeline — discharge order to departure time model')
+server, database, user, password = get_db_params(cfg)
+hospital_filter = cfg['hospital_filter']
 
-if not all([server, database, user, password]):
-    raise EnvironmentError("Missing one or more DB_* variables in .env")
+MODELS = [
+    {
+        'key':            'overall',
+        'disposition':    'All',
+        'filter_type':    None,
+        'max_target':     4320,
+        'cat_cols':       ALL_CAT_COLS,
+        'num_cols':       ALL_NUM_COLS,
+        'interactions':   10,
+        'out_file':       'do_dc_overall_ebm.json',
+        'target_description': (
+            'Regression — predicts minutes from discharge order to patient departure '
+            'across all dispositions'
+        ),
+        'benchmarks':     {'home': 180, 'hh': 240, 'snf': 400},
+        'combo_pairs':    _OVERALL_PAIRS,
+        'combo_benchmark': 400,
+    },
+    {
+        'key':            'home',
+        'disposition':    'Home',
+        'filter_type':    'exact',
+        'filter_value':   cfg['dispo_selfcare_exact'],
+        'max_target':     720,
+        'cat_cols':       [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
+        'num_cols':       ALL_NUM_COLS,
+        'interactions':   8,
+        'out_file':       'do_dc_home_ebm.json',
+        'target_description': (
+            'Regression — predicts minutes from discharge order to departure '
+            'for home-bound patients'
+        ),
+        'benchmarks':     None,
+        'combo_pairs':    _SUB_PAIRS,
+        'combo_benchmark': 180,
+    },
+    {
+        'key':             'snf',
+        'disposition':     'SNF',
+        'filter_type':     'contains',
+        'filter_keywords': cfg['dispo_facility_contains'],
+        'max_target':      4320,
+        'cat_cols':        [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
+        'num_cols':        ALL_NUM_COLS,
+        'interactions':    8,
+        'out_file':        'do_dc_snf_ebm.json',
+        'target_description': (
+            'Regression — predicts minutes from discharge order to departure '
+            'for facility-bound patients (SNF, rehab, LTACH)'
+        ),
+        'benchmarks':     None,
+        'combo_pairs':    _SUB_PAIRS,
+        'combo_benchmark': 400,
+    },
+    {
+        'key':             'hh',
+        'disposition':     'HomeHealth',
+        'filter_type':     'contains',
+        'filter_keywords': cfg['dispo_homehealth_contains'],
+        'max_target':      720,
+        'cat_cols':        [c for c in ALL_CAT_COLS if c != 'ENC_DISCHDISPO'],
+        'num_cols':        ALL_NUM_COLS,
+        'interactions':    8,
+        'out_file':        'do_dc_hh_ebm.json',
+        'target_description': (
+            'Regression — predicts minutes from discharge order to departure '
+            'for home health patients'
+        ),
+        'benchmarks':     None,
+        'combo_pairs':    _SUB_PAIRS,
+        'combo_benchmark': 240,
+    },
+]
 
 conn_str = (
     f"DRIVER={{ODBC Driver 17 for SQL Server}};"
@@ -160,7 +171,18 @@ print("=" * 60)
 print("Step 2: Pulling DO→DC training data...")
 print("=" * 60)
 
-QUERY = """
+_occ_hosp_clause = f"\n    AND DEP_Hospital = '{hospital_filter}'" if hospital_filter else ''
+_enc_hosp_clause = f"\n  AND e.DEP_LASTDEPTHOSPITAL = '{hospital_filter}'" if hospital_filter else ''
+
+# Build disposition SQL pre-filter from tenant config (server-side config, not user input)
+_dispo_parts = (
+    [f"e.ENC_DISCHDISPO = '{cfg['dispo_selfcare_exact']}'"]
+    + [f"e.ENC_DISCHDISPO LIKE '%{kw}%'" for kw in cfg['dispo_homehealth_contains']]
+    + [f"e.ENC_DISCHDISPO LIKE '%{kw}%'" for kw in cfg['dispo_facility_contains']]
+)
+_dispo_where = '  AND (\n    ' + '\n    OR '.join(_dispo_parts) + '\n  )'
+
+QUERY = f"""
 SELECT
   e.EPICCSN,
   e.ENC_DISCHDISPO,
@@ -195,21 +217,15 @@ LEFT JOIN (
     CAST(Datehour AS DATE)  AS occ_date,
     SUM(Occupancy)          AS HOSPITAL_CENSUS_7AM
   FROM DS_Occupancy
-  WHERE DEP_Hospital = 'Our Lady of Lourdes Hospital'
-    AND DATEPART(HOUR, Datehour) = 7
-    AND StaffedBeds > 0
+  WHERE DATEPART(HOUR, Datehour) = 7
+    AND StaffedBeds > 0{_occ_hosp_clause}
   GROUP BY CAST(Datehour AS DATE)
 ) o ON o.occ_date = CAST(e.DISCHORDER_ORDERTIME AS DATE)
 WHERE e.TIME_HOSPADMISSION >= '2025-01-01'
-  AND e.DEP_LASTDEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
-  AND e.BEDDED = 'Y'
+  AND e.BEDDED = 'Y'{_enc_hosp_clause}
   AND e.DISCHORDER_DISCHARGE IS NOT NULL
   AND e.DISCHORDER_DISCHARGE >= 0
-  AND e.ENC_DISCHDISPO IN (
-    'Disch to Home or Self Care',
-    'Home-Health Care (Related to admission)',
-    'Disch/Trans to Skilled Nursing Facility (Sub-acute Rehab)'
-  )
+{_dispo_where}
 """
 
 df_raw = pd.read_sql(QUERY, conn)
@@ -301,10 +317,20 @@ def build_Xy(df_in, model_cfg):
     num_cols  = model_cfg['num_cols']
 
     # Filter to disposition subset if needed
-    if model_cfg['filter_dispo'] is not None:
+    if model_cfg['filter_type'] == 'exact':
+        val    = model_cfg['filter_value']
         before = len(df)
-        df = df[df['ENC_DISCHDISPO'] == model_cfg['filter_dispo']].reset_index(drop=True)
-        print(f"  Filtered to '{model_cfg['filter_dispo']}': {before:,} → {len(df):,} rows")
+        df     = df[df['ENC_DISCHDISPO'] == val].reset_index(drop=True)
+        print(f"  Filtered ENC_DISCHDISPO == '{val}': {before:,} → {len(df):,} rows")
+    elif model_cfg['filter_type'] == 'contains':
+        pattern = '|'.join(model_cfg['filter_keywords'])
+        before  = len(df)
+        mask    = df['ENC_DISCHDISPO'].str.contains(pattern, case=False, na=False)
+        df      = df[mask].reset_index(drop=True)
+        print(f"  Filtered ENC_DISCHDISPO contains {model_cfg['filter_keywords']}: "
+              f"{before:,} → {len(df):,} rows")
+        for val, cnt in df['ENC_DISCHDISPO'].value_counts().items():
+            print(f"    {cnt:>6,}  {val}")
 
     # Filter target ceiling
     before = len(df)
@@ -497,7 +523,7 @@ def compute_combinations(df_filtered, pairs, benchmark, top_n=7, min_cnt=250):
 # ── Output directory ──────────────────────────────────────────────────────────
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-out_dir    = os.path.join(script_dir, 'public', 'data')
+out_dir    = os.path.join(script_dir, cfg['output_dir'])
 os.makedirs(out_dir, exist_ok=True)
 
 model_summaries = []
@@ -565,7 +591,7 @@ for model_cfg in MODELS:
         'model_name':         'ExplainableBoostingRegressor',
         'trained_at':         datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'target_description': model_cfg['target_description'],
-        'hospital':           'Our Lady of Lourdes Hospital',
+        'hospital':           hospital_filter or 'All hospitals',
         'disposition':        model_cfg['disposition'],
         'system_mean':        system_mean,
         'system_median':      system_median,
@@ -583,8 +609,10 @@ for model_cfg in MODELS:
         output['benchmarks'] = model_cfg['benchmarks']
 
     out_path = os.path.join(out_dir, model_cfg['out_file'])
-    with open(out_path, 'w', encoding='utf-8') as f:
-        json.dump(output, f, indent=2, allow_nan=False)
+    _tmp = out_path + '.tmp'
+    with open(_tmp, 'w', encoding='utf-8') as f:
+        json.dump(_sanitize(output), f, indent=2, allow_nan=False)
+    os.replace(_tmp, out_path)
 
     size_kb = os.path.getsize(out_path) / 1024
     print(f"  Saved: {out_path}  ({size_kb:.1f} KB)")
@@ -605,8 +633,10 @@ for model_cfg in MODELS:
               f"above_benchmark={row['pct_above_benchmark']:.0f}%  n={row['cnt']:,}")
 
     output['combinations'] = combinations
-    with open(out_path, 'w', encoding='utf-8') as f:
-        json.dump(output, f, indent=2, allow_nan=False)
+    _tmp = out_path + '.tmp'
+    with open(_tmp, 'w', encoding='utf-8') as f:
+        json.dump(_sanitize(output), f, indent=2, allow_nan=False)
+    os.replace(_tmp, out_path)
 
     size_kb = os.path.getsize(out_path) / 1024
     print(f"  Updated JSON: {out_path}  ({size_kb:.1f} KB)")

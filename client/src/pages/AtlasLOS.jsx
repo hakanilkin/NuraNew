@@ -957,6 +957,7 @@ export default function AtlasLOS() {
   const [models,       setModels]       = useState({ overall: null, facility: null, selfcare: null, homehealth: null })
   const [loadings,     setLoadings]     = useState({ overall: true,  facility: true,  selfcare: true,  homehealth: true })
   const [errors,       setErrors]       = useState({ overall: '',    facility: '',    selfcare: '',    homehealth: '' })
+  const [noAtlasData,  setNoAtlasData]  = useState(false)
   const [activeTab,    setActiveTab]    = useState('overall')
   const [selectedFeats, setSelectedFeats] = useState({ overall: null, facility: null, selfcare: null, homehealth: null })
 
@@ -965,6 +966,7 @@ export default function AtlasLOS() {
       fetch(ENDPOINTS[key])
         .then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(new Error(d.error || `HTTP ${r.status}`))))
         .then(data => {
+          if (data.error === 'no_atlas_data') { setNoAtlasData(true); return; }
           setModels(prev => ({ ...prev, [key]: data }))
           const first = data.feature_importance?.[0]?.feature
           if (first) setSelectedFeats(prev => ({ ...prev, [key]: first }))
@@ -973,6 +975,22 @@ export default function AtlasLOS() {
         .finally(() => setLoadings(prev => ({ ...prev, [key]: false })))
     })
   }, [])
+
+  if (noAtlasData) {
+    return (
+      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
+        <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', maxWidth: 420 }}>
+          <BarChart3 size={40} style={{ margin: '0 auto var(--space-4)', opacity: 0.25 }} />
+          <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-gray-600)', marginBottom: 8, fontSize: 'var(--font-size-base)' }}>
+            No Atlas data for this organization
+          </p>
+          <p style={{ fontSize: 'var(--font-size-sm)', lineHeight: 1.6 }}>
+            Atlas model data has not been generated yet. Run the pipeline for this organization to generate insights.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page">

@@ -384,6 +384,15 @@ module.exports = function ipbedplacementRoutes(getTenantPool, sql, requireTenant
     const { from, to } = req.query
     if (!isValidDate(from) || !isValidDate(to))
       return res.status(400).json({ error: 'from and to must be YYYY-MM-DD' })
+
+    const rawTarget = parseInt(req.query.evs_target, 10)
+    const evsTarget = Number.isFinite(rawTarget) && rawTarget >= 1 && rawTarget <= 480
+      ? rawTarget : 60
+
+    const rawThreshold = parseInt(req.query.evs_threshold, 10)
+    const evsThreshold = Number.isFinite(rawThreshold) && rawThreshold >= 1 && rawThreshold <= 480
+      ? rawThreshold : 15
+
     try {
       const db = await getTenantPool(req.session.tenantId)
 
@@ -392,15 +401,16 @@ module.exports = function ipbedplacementRoutes(getTenantPool, sql, requireTenant
         (() => {
           const r = db.request()
           const w = buildWhere(req.query, r)
+          r.input('evs_target', sql.Int, evsTarget)
           return r.query(`
             SELECT
               ISNULL(DEST_DEPTHOSPITAL, 'Unknown')                          AS dest_hospital,
               ${DST_LOC}                                                     AS dest_loc,
               ISNULL(DEST_DEPTNAME, 'Unknown')                              AS dest_dept,
               COUNT(*)                                                        AS evs_requests,
-              SUM(CASE WHEN DUR_EVSRequested_Completed <= 60 THEN 1 ELSE 0 END)
+              SUM(CASE WHEN DUR_EVSRequested_Completed <= @evs_target THEN 1 ELSE 0 END)
                                                                              AS evs_within_target,
-              SUM(CASE WHEN DUR_EVSRequested_Completed <= 60 THEN 1.0 ELSE 0 END) * 100.0
+              SUM(CASE WHEN DUR_EVSRequested_Completed <= @evs_target THEN 1.0 ELSE 0 END) * 100.0
                 / NULLIF(COUNT(*), 0)                                         AS pct_within_target,
               AVG(CAST(DUR_EVSRequested_Completed  AS FLOAT))                AS avg_evs_req_to_complete,
               AVG(CAST(DUR_EVSRequested_Assigned   AS FLOAT))                AS avg_evs_req_to_assigned,
@@ -416,6 +426,8 @@ module.exports = function ipbedplacementRoutes(getTenantPool, sql, requireTenant
         (() => {
           const r = db.request()
           const w = buildWhere(req.query, r)
+          r.input('evs_target',    sql.Int, evsTarget)
+          r.input('evs_threshold', sql.Int, evsThreshold)
           return r.query(`
             WITH evs_data AS (
               SELECT DUR_EVSRequested_Completed
@@ -425,8 +437,11 @@ module.exports = function ipbedplacementRoutes(getTenantPool, sql, requireTenant
             agg AS (
               SELECT
                 COUNT(*)                                                     AS total_evs_requests,
-                SUM(CASE WHEN DUR_EVSRequested_Completed <= 60 THEN 1.0 ELSE 0 END) * 100.0
-                  / NULLIF(COUNT(*), 0)                                      AS pct_within_target_evs
+                AVG(CAST(DUR_EVSRequested_Completed AS FLOAT))               AS avg_evs,
+                SUM(CASE WHEN DUR_EVSRequested_Completed <= @evs_target THEN 1.0 ELSE 0 END) * 100.0
+                  / NULLIF(COUNT(*), 0)                                      AS pct_within_target_evs,
+                SUM(CASE WHEN DUR_EVSRequested_Completed <= @evs_threshold THEN 1.0 ELSE 0 END) * 100.0
+                  / NULLIF(COUNT(*), 0)                                      AS pct_under_threshold
               FROM evs_data
             ),
             pctls AS (
@@ -442,11 +457,12 @@ module.exports = function ipbedplacementRoutes(getTenantPool, sql, requireTenant
         (() => {
           const r = db.request()
           const w = buildWhere(req.query, r)
+          r.input('evs_target', sql.Int, evsTarget)
           return r.query(`
             SELECT
               DATEPART(HOUR, TIME_EVSREQUESTED)                             AS hour,
               COUNT(*)                                                        AS n,
-              SUM(CASE WHEN DUR_EVSRequested_Completed <= 60 THEN 1.0 ELSE 0 END) * 100.0
+              SUM(CASE WHEN DUR_EVSRequested_Completed <= @evs_target THEN 1.0 ELSE 0 END) * 100.0
                 / NULLIF(COUNT(*), 0)                                         AS pct_within_target
             FROM DS_Bedplacement
             WHERE ${w}
@@ -458,10 +474,15 @@ module.exports = function ipbedplacementRoutes(getTenantPool, sql, requireTenant
         })(),
       ])
 
+      const system = systemRes.recordset[0] ?? {}
       res.json({
         by_dest: byDestRes.recordset,
-        system:  systemRes.recordset[0] ?? {},
+        system,
         hourly:  hourlyRes.recordset,
+        // top-level KPIs so metric registry lookups (value_field) resolve directly
+        ...system,
+        evs_target:    evsTarget,
+        evs_threshold: evsThreshold,
       })
     } catch (err) {
       console.error('/api/ipbedplacement/evs error:', err.message)
