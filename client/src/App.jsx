@@ -7,6 +7,7 @@ import {
   Map,
   MessageSquareText,
   TrendingUp,
+  CalendarDays,
   ChevronRight,
   LogOut,
   ShieldCheck,
@@ -31,13 +32,16 @@ import IPForecast             from './pages/IPForecast'
 import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
-import RoomRunning        from './pages/RoomRunning'
-import ForecastsPipeline  from './pages/ForecastsPipeline'
+import RoomRunning           from './pages/RoomRunning'
+import SchedForecastCases   from './pages/SchedForecastCases'
+import SchedForecastDaily   from './pages/SchedForecastDaily'
+import DailyDetail          from './pages/DailyDetail'
+import ForecastsPipeline    from './pages/ForecastsPipeline'
 import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
-const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp }
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays }
 
 function collectLeafPaths(items) {
   return items.flatMap(item =>
@@ -567,7 +571,10 @@ function Shell() {
           <Route path="/"                  element={<ORPerformance />} />
           <Route path="/capacity"          element={<Capacity />} />
           <Route path="/block-utilization" element={<BlockUtilization />} />
-          <Route path="/room-running"     element={<RoomRunning />} />
+          <Route path="/room-running"                  element={<RoomRunning />} />
+          <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
+          <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
+          <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
           <Route path="/atlas/performance-briefs" element={<AtlasPerformanceBriefs />} />

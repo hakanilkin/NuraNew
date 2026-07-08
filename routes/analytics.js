@@ -395,6 +395,215 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     }
   });
 
+  // ── GET /api/sf/meta ───────────────────────────────────────────────────────
+  // Returns distinct ORGRP2 sites and SurgeonService values from V4_FORECAST_COMPILE
+
+  router.get('/sf/meta', async (req, res) => {
+    try {
+      const db = await getTenantPool(req.session.tenantId);
+      const [siteRes, svcRes] = await Promise.all([
+        db.request().query(`SELECT DISTINCT ISNULL(ORGRP2, 'Unknown') AS Site FROM V4_FORECAST_COMPILE ORDER BY Site`),
+        db.request().query(`SELECT DISTINCT ISNULL(SurgeonService, 'Unknown') AS Service FROM V4_FORECAST_COMPILE ORDER BY Service`),
+      ]);
+      res.json({
+        sites:    siteRes.recordset.map(r => r.Site),
+        services: svcRes.recordset.map(r => r.Service),
+      });
+    } catch (err) {
+      console.error('/api/sf/meta error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ── GET /api/sf/cases ──────────────────────────────────────────────────────
+  // Cases vs Budget summary grouped by Site + SurgeonService
+
+  router.get('/sf/cases', async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      if (!isValidDate(startDate) || !isValidDate(endDate)) {
+        return res.status(400).json({ error: 'startDate and endDate are required (YYYY-MM-DD)' });
+      }
+      const db      = await getTenantPool(req.session.tenantId);
+      const request = db.request();
+      request.input('startDate', sql.Date, startDate);
+      request.input('endDate',   sql.Date, endDate);
+
+      let siteFilter = '';
+      if (req.query.sites) {
+        const sites = req.query.sites.split(',').map(s => s.trim()).filter(Boolean);
+        if (sites.length) {
+          const ph = sites.map((s, i) => { request.input(`site${i}`, sql.NVarChar, s); return `@site${i}`; });
+          siteFilter = ` AND ISNULL(ORGRP2, 'Unknown') IN (${ph.join(', ')})`;
+        }
+      }
+
+      let svcFilter = '';
+      if (req.query.services) {
+        const svcs = req.query.services.split(',').map(s => s.trim()).filter(Boolean);
+        if (svcs.length) {
+          const ph = svcs.map((s, i) => { request.input(`svc${i}`, sql.NVarChar, s); return `@svc${i}`; });
+          svcFilter = ` AND ISNULL(SurgeonService, 'Unknown') IN (${ph.join(', ')})`;
+        }
+      }
+
+      const result = await request.query(`
+        SELECT
+          ISNULL(ORGRP2, 'Unknown')             AS Site,
+          ISNULL(SurgeonService, 'Unknown')     AS Service,
+          SUM(ISNULL(ACTUAL_INPATIENT, 0))      AS ActualInpatient,
+          SUM(ISNULL(BUDGET_INPATIENT, 0))      AS BudgetInpatient,
+          SUM(ISNULL(ACTUAL_OUTPATIENT, 0))     AS ActualOutpatient,
+          SUM(ISNULL(BUDGET_OUTPATIENT, 0))     AS BudgetOutpatient,
+          SUM(ISNULL(ACTUAL, 0))                AS TotalActual,
+          SUM(ISNULL(BUDGET, 0))                AS TotalBudget
+        FROM V4_FORECAST_COMPILE
+        WHERE Date >= @startDate
+          AND Date <= @endDate
+          ${siteFilter}
+          ${svcFilter}
+        GROUP BY ORGRP2, SurgeonService
+        ORDER BY ORGRP2, SurgeonService
+      `);
+      res.json(result.recordset);
+    } catch (err) {
+      console.error('/api/sf/cases error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ── GET /api/sf/daily ──────────────────────────────────────────────────────
+  // Daily site summary: cases + duration grouped by Date × ORGRP2
+
+  router.get('/sf/daily', async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      if (!isValidDate(startDate) || !isValidDate(endDate)) {
+        return res.status(400).json({ error: 'startDate and endDate are required (YYYY-MM-DD)' });
+      }
+      const db      = await getTenantPool(req.session.tenantId);
+      const request = db.request();
+      request.input('startDate', sql.Date, startDate);
+      request.input('endDate',   sql.Date, endDate);
+
+      let siteFilter = '';
+      if (req.query.sites) {
+        const sites = req.query.sites.split(',').map(s => s.trim()).filter(Boolean);
+        if (sites.length) {
+          const ph = sites.map((s, i) => { request.input(`site${i}`, sql.NVarChar, s); return `@site${i}`; });
+          siteFilter = ` AND ISNULL(ORGRP2, 'Unknown') IN (${ph.join(', ')})`;
+        }
+      }
+
+      const result = await request.query(`
+        SELECT
+          CONVERT(VARCHAR(10), Date, 23)    AS Date,
+          MAX(DOW_LONG)                     AS DayOfWeek,
+          ISNULL(ORGRP2, 'Unknown')         AS Site,
+          SUM(ISNULL(SCHEDULED_INPATIENT, 0) + ISNULL(SCHEDULED_OUTPATIENT, 0))               AS ScheduledTotal,
+          SUM(ISNULL(FORECAST_OUTPATIENT, 0) + ISNULL(FORECAST_INPATIENT, 0))                 AS ForecastedAddition,
+          SUM(ISNULL(SCHEDULED_INPATIENT, 0) + ISNULL(SCHEDULED_OUTPATIENT, 0)
+            + ISNULL(FORECAST_OUTPATIENT, 0) + ISNULL(FORECAST_INPATIENT, 0))                 AS TotalForecasted,
+          SUM(ISNULL(BUDGET, 0))            AS TotalBudget,
+          SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)) AS SchedDurwTurn,
+          SUM(ISNULL(FORECAST_INPATIENT_DURwTurn, 0) + ISNULL(FORECAST_OUTPATIENT_DURwTurn, 0))   AS FcstDurwTurn,
+          SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)
+            + ISNULL(FORECAST_INPATIENT_DURwTurn, 0) + ISNULL(FORECAST_OUTPATIENT_DURwTurn, 0))   AS TotalDurwTurn,
+          SUM(ISNULL(BLOCKTIME, 0))         AS BlockTime
+        FROM V4_FORECAST_COMPILE
+        WHERE Date >= @startDate
+          AND Date <= @endDate
+          ${siteFilter}
+        GROUP BY Date, ORGRP2
+        ORDER BY Date, ORGRP2
+      `);
+      res.json(result.recordset);
+    } catch (err) {
+      console.error('/api/sf/daily error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ── GET /api/sf/detail/calendar ─────────────────────────────────────────────
+  // Per-day % Filled for one site, future days only (DaysAhead >= 0).
+  // Used to color the day picker calendar.
+
+  router.get('/sf/detail/calendar', async (req, res) => {
+    try {
+      const site = req.query.site;
+      if (!site) return res.status(400).json({ error: 'site is required' });
+      const db      = await getTenantPool(req.session.tenantId);
+      const request = db.request();
+      request.input('site', sql.NVarChar, site);
+
+      const result = await request.query(`
+        SELECT
+          CONVERT(VARCHAR(10), CAST(Date AS DATE), 23) AS Date,
+          SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)
+            + ISNULL(FORECAST_INPATIENT_DURwTurn, 0) + ISNULL(FORECAST_OUTPATIENT_DURwTurn, 0)) AS TotalDurwTurn,
+          SUM(ISNULL(BLOCKTIME, 0)) AS BlockTime
+        FROM V4_FORECAST_COMPILE
+        WHERE DaysAhead >= 0
+          AND ISNULL(ORGRP2, 'Unknown') = @site
+        GROUP BY CAST(Date AS DATE)
+        ORDER BY CAST(Date AS DATE)
+      `);
+
+      const days = result.recordset.map(r => ({
+        date: r.Date,
+        pct:  r.BlockTime > 0 ? (r.TotalDurwTurn / r.BlockTime * 100) : null,
+      }));
+      res.json({ days });
+    } catch (err) {
+      console.error('/api/sf/detail/calendar error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ── GET /api/sf/detail ──────────────────────────────────────────────────────
+  // CaseBlock-level detail for one site on one day. Drops case blocks with
+  // no forecast and no block time.
+
+  router.get('/sf/detail', async (req, res) => {
+    try {
+      const { date, site } = req.query;
+      if (!isValidDate(date)) return res.status(400).json({ error: 'date is required (YYYY-MM-DD)' });
+      if (!site)             return res.status(400).json({ error: 'site is required' });
+      const db      = await getTenantPool(req.session.tenantId);
+      const request = db.request();
+      request.input('date', sql.Date, date);
+      request.input('site', sql.NVarChar, site);
+
+      const result = await request.query(`
+        SELECT
+          ISNULL(Caseblock, 'Unknown') AS CaseBlock,
+          SUM(ISNULL(SCHEDULED_INPATIENT, 0) + ISNULL(SCHEDULED_OUTPATIENT, 0))               AS ScheduledTotal,
+          SUM(ISNULL(FORECAST_INPATIENT, 0) + ISNULL(FORECAST_OUTPATIENT, 0))                 AS ForecastedAddition,
+          SUM(ISNULL(SCHEDULED_INPATIENT, 0) + ISNULL(SCHEDULED_OUTPATIENT, 0)
+            + ISNULL(FORECAST_INPATIENT, 0) + ISNULL(FORECAST_OUTPATIENT, 0))                 AS TotalForecasted,
+          SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)) AS SchedDurwTurn,
+          SUM(ISNULL(FORECAST_INPATIENT_DURwTurn, 0) + ISNULL(FORECAST_OUTPATIENT_DURwTurn, 0))   AS FcstDurwTurn,
+          SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)
+            + ISNULL(FORECAST_INPATIENT_DURwTurn, 0) + ISNULL(FORECAST_OUTPATIENT_DURwTurn, 0))   AS TotalDurwTurn,
+          SUM(ISNULL(BLOCKTIME, 0))    AS BlockTime
+        FROM V4_FORECAST_COMPILE
+        WHERE CAST(Date AS DATE) = @date
+          AND ISNULL(ORGRP2, 'Unknown') = @site
+        GROUP BY Caseblock
+        HAVING NOT (
+          SUM(ISNULL(SCHEDULED_INPATIENT, 0) + ISNULL(SCHEDULED_OUTPATIENT, 0)
+            + ISNULL(FORECAST_INPATIENT, 0) + ISNULL(FORECAST_OUTPATIENT, 0)) = 0
+          AND SUM(ISNULL(BLOCKTIME, 0)) = 0
+        )
+        ORDER BY Caseblock
+      `);
+      res.json(result.recordset);
+    } catch (err) {
+      console.error('/api/sf/detail error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // ── GET /api/blazesql/url ───────────────────────────────────────────────────
 
   router.get('/blazesql/url', async (req, res) => {
