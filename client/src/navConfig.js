@@ -6,7 +6,14 @@ export const OR_NAV = [
       { id: 'capacity',          label: 'Prime Time Utilization', pageTitle: 'Prime Time Utilization', type: 'link', path: '/capacity' },
       { id: 'block-utilization', label: 'Block Utilization',      type: 'link', path: '/block-utilization' },
       { id: 'room-running',      label: 'Room Running',            type: 'link', path: '/room-running' },
-      { id: 'or-service-lines', label: 'Service Lines',           type: 'link', path: '/or/service-lines' },
+      { id: 'sf-cases',          label: 'Actual vs Budget',       type: 'link', path: '/schedule-forecast/cases' },
+    ],
+  },
+  {
+    id: 'schedule-forecast', label: 'Schedule Forecasts', icon: 'CalendarDays', type: 'expander',
+    children: [
+      { id: 'sf-daily',  label: 'Daily Summary', type: 'link', path: '/schedule-forecast/daily' },
+      { id: 'sf-detail', label: 'Daily Detail',  type: 'link', path: '/schedule-forecast/detail' },
     ],
   },
   {
@@ -49,8 +56,12 @@ const navConfig = [
     children: [...OR_NAV[0].children, ...IP_NAV[0].children],
   },
   {
+    id: 'schedule-forecast', type: 'expander',
+    children: OR_NAV[1].children,
+  },
+  {
     id: 'atlas', type: 'expander',
-    children: [...OR_NAV[1].children, ...IP_NAV[1].children],
+    children: [...OR_NAV[2].children, ...IP_NAV[1].children],
   },
   { id: 'ask-nura',    type: 'link', path: '/ask-nura' },
   { id: 'forecasts',   type: 'link', path: '/forecasts' },

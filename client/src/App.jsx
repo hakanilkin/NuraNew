@@ -7,6 +7,7 @@ import {
   Map,
   MessageSquareText,
   TrendingUp,
+  CalendarDays,
   Target,
   ChevronRight,
   LogOut,
@@ -33,12 +34,16 @@ import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
 import ORServiceLines    from './pages/ORServiceLines'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
-import RoomRunning        from './pages/RoomRunning'
-import ForecastsPipeline  from './pages/ForecastsPipeline'
+import RoomRunning           from './pages/RoomRunning'
+import SchedForecastCases   from './pages/SchedForecastCases'
+import SchedForecastDaily   from './pages/SchedForecastDaily'
+import DailyDetail          from './pages/DailyDetail'
+import ForecastsPipeline    from './pages/ForecastsPipeline'
 import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays }
 const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, Target }
 
 function collectLeafPaths(items) {
@@ -569,6 +574,10 @@ function Shell() {
           <Route path="/"                  element={<ORPerformance />} />
           <Route path="/capacity"          element={<Capacity />} />
           <Route path="/block-utilization" element={<BlockUtilization />} />
+          <Route path="/room-running"                  element={<RoomRunning />} />
+          <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
+          <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
+          <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />
           <Route path="/room-running"      element={<RoomRunning />} />
           <Route path="/or/service-lines" element={<ORServiceLines />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
