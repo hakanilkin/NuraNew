@@ -1,4 +1,5 @@
 const express = require('express')
+const { resolveColumn, getParam } = require('../utils/tenantColumns')
 
 module.exports = function iplosRoutes(getTenantPool, sql, requireTenant) {
   const router = express.Router()
@@ -26,14 +27,27 @@ module.exports = function iplosRoutes(getTenantPool, sql, requireTenant) {
     return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
   }
 
-  function buildBaseCTE(dbReq, from, to) {
+  // All column/param values here come from server-side config — safe to interpolate
+  function buildBaseCTE(dbReq, from, to, tenant = 'default') {
     dbReq.input('from', sql.Date, from)
     dbReq.input('to',   sql.Date, to)
+
+    const slCol  = resolveColumn(tenant, 'SERVICE_LINE')   // actual source column
+    const sl2Col = resolveColumn(tenant, 'SERVICE_LINE_2') // null if not available
+    // Never interpolate a JS null directly — replace with SQL NULL literal
+    const sl2Sql = (sl2Col !== null && sl2Col !== undefined) ? sl2Col : 'NULL'
+
+    // hospital_filter: null means omit the filter (all hospitals), otherwise restrict
+    const hospitalFilter = getParam(tenant, 'hospital_filter')
+    const hospitalWhere  = hospitalFilter
+      ? `AND DEP_LASTDEPTHOSPITAL = '${hospitalFilter}'`
+      : ''
+
     return `
 WITH base AS (
   SELECT
-    SERVICE_LINE,
-    SERVICE_LINE_2,
+    ${slCol} AS SERVICE_LINE,
+    ${sl2Sql} AS SERVICE_LINE_2,
     ENC_DISCHDISPO,
     ACCOUNT_FINANCIALCLASS,
     PROV_ADMPROV,
@@ -62,12 +76,12 @@ WITH base AS (
          ELSE 0
     END AS POS_EXCESS
   FROM DS_Encounters
-  WHERE DEP_LASTDEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
-    AND BEDDED = 'Y'
+  WHERE BEDDED = 'Y'
+    ${hospitalWhere}
     AND ACCOUNT_IPLOS IS NOT NULL
     AND DRG_FINALDRGGMLOS IS NOT NULL
     AND TIME_HOSPDISCHARGE BETWEEN @from AND @to
-    AND ISNULL(SERVICE_LINE, 'NULL') NOT IN (
+    AND ISNULL(${slCol}, 'NULL') NOT IN (
       'W&C Obstetrics','W&C Neonates','W&C Newborns','W&C Gynecology',
       'No DRG Match','NULL','Pediatrics','Behavioral Health'
     )
@@ -94,9 +108,11 @@ WITH base AS (
     if (!isValidDate(from) || !isValidDate(to))
       return res.status(400).json({ error: 'from and to must be YYYY-MM-DD' })
     try {
+      const tenant = req.tenantName || 'default'
+      console.log('[iplos/summary] tenantName=%s sessionTenantName=%s', tenant, req.session?.tenantName)
       const db    = await getTenantPool(req.session.tenantId)
       const dbReq = db.request()
-      const cte   = buildBaseCTE(dbReq, from, to)
+      const cte   = buildBaseCTE(dbReq, from, to, tenant)
       const result = await dbReq.query(`
         ${cte}
         SELECT
@@ -131,9 +147,13 @@ WITH base AS (
     const minCount = PHYSICIAN_DIMS.has(dim) ? 20 : 10
 
     try {
+      const tenant = req.tenantName || 'default'
+      console.log('[iplos/breakdown] tenantName=%s dim=%s', tenant, dim)
+      if (dim === 'service_line_2' && resolveColumn(tenant, 'SERVICE_LINE_2') === null)
+        return res.status(400).json({ error: 'service_line_2 dimension not available for this tenant' })
       const db    = await getTenantPool(req.session.tenantId)
       const dbReq = db.request()
-      const cte   = buildBaseCTE(dbReq, from, to)
+      const cte   = buildBaseCTE(dbReq, from, to, tenant)
 
       let parentFilter = ''
       if (dim === 'service_line_2' && parent) {
@@ -166,16 +186,19 @@ WITH base AS (
     if (!isValidDate(from) || !isValidDate(to))
       return res.status(400).json({ error: 'from and to must be YYYY-MM-DD' })
 
-    const OPTION_DIMS = [
-      'service_line', 'service_line_2', 'unit', 'disposition',
-      'payer', 'admitting_physician', 'discharging_physician',
-    ]
-
     try {
+      const tenant      = req.tenantName || 'default'
+      console.log('[iplos/filter-options] tenantName=%s', tenant)
+      const sl2Available = resolveColumn(tenant, 'SERVICE_LINE_2') !== null
+      const OPTION_DIMS = [
+        'service_line',
+        ...(sl2Available ? ['service_line_2'] : []),
+        'unit', 'disposition', 'payer', 'admitting_physician', 'discharging_physician',
+      ]
       const db      = await getTenantPool(req.session.tenantId)
       const results = await Promise.all(OPTION_DIMS.map(async dim => {
         const dbReq    = db.request()
-        const cte      = buildBaseCTE(dbReq, from, to)
+        const cte      = buildBaseCTE(dbReq, from, to, tenant)
         const col      = DIM_MAP[dim]
         const minCount = PHYSICIAN_DIMS.has(dim) ? 20 : 10
         const result   = await dbReq.query(`
@@ -209,20 +232,29 @@ WITH base AS (
       return res.status(400).json({ error: 'from and to must be YYYY-MM-DD' })
 
     try {
+      const tenant = req.tenantName || 'default'
+      console.log('[iplos/trend] tenantName=%s', tenant)
       const db = await getTenantPool(req.session.tenantId)
+      // All column/param values come from server-side config — safe to interpolate
+      const slCol          = resolveColumn(tenant, 'SERVICE_LINE')
+      const sl2Col         = resolveColumn(tenant, 'SERVICE_LINE_2')
+      const hospitalFilter = getParam(tenant, 'hospital_filter')
+      const hospitalWhere  = hospitalFilter
+        ? `AND DEP_LASTDEPTHOSPITAL = '${hospitalFilter}'`
+        : ''
 
       function buildTrendRequest(fromDate, toDate) {
         const r = db.request()
         r.input('from', sql.Date, fromDate)
         r.input('to',   sql.Date, toDate)
         let fc = ''
-        if (filter_service_line)          { r.input('fsl',        sql.NVarChar, filter_service_line);          fc += ' AND SERVICE_LINE = @fsl' }
-        if (filter_service_line_2)        { r.input('fsl2',       sql.NVarChar, filter_service_line_2);        fc += ' AND SERVICE_LINE_2 = @fsl2' }
-        if (filter_disposition)           { r.input('fdispo',     sql.NVarChar, filter_disposition);           fc += ' AND ENC_DISCHDISPO = @fdispo' }
-        if (filter_payer)                 { r.input('fpayer',     sql.NVarChar, filter_payer);                 fc += ' AND ACCOUNT_FINANCIALCLASS = @fpayer' }
-        if (filter_admitting_physician)   { r.input('fadmprov',   sql.NVarChar, filter_admitting_physician);   fc += ' AND PROV_ADMPROV = @fadmprov' }
-        if (filter_discharging_physician) { r.input('fdischprov', sql.NVarChar, filter_discharging_physician); fc += ' AND PROV_LASTPROV = @fdischprov' }
-        if (filter_unit)                  { r.input('funit',      sql.NVarChar, filter_unit) }
+        if (filter_service_line)                        { r.input('fsl',        sql.NVarChar, filter_service_line);          fc += ` AND ${slCol} = @fsl` }
+        if (filter_service_line_2 && sl2Col !== null)   { r.input('fsl2',       sql.NVarChar, filter_service_line_2);        fc += ` AND ${sl2Col} = @fsl2` }
+        if (filter_disposition)                         { r.input('fdispo',     sql.NVarChar, filter_disposition);           fc += ' AND ENC_DISCHDISPO = @fdispo' }
+        if (filter_payer)                               { r.input('fpayer',     sql.NVarChar, filter_payer);                 fc += ' AND ACCOUNT_FINANCIALCLASS = @fpayer' }
+        if (filter_admitting_physician)                 { r.input('fadmprov',   sql.NVarChar, filter_admitting_physician);   fc += ' AND PROV_ADMPROV = @fadmprov' }
+        if (filter_discharging_physician)               { r.input('fdischprov', sql.NVarChar, filter_discharging_physician); fc += ' AND PROV_LASTPROV = @fdischprov' }
+        if (filter_unit)                                { r.input('funit',      sql.NVarChar, filter_unit) }
         const cte = `
 WITH base AS (
   SELECT
@@ -248,12 +280,12 @@ WITH base AS (
          ELSE 0
     END AS POS_EXCESS
   FROM DS_Encounters
-  WHERE DEP_LASTDEPTHOSPITAL = 'Our Lady of Lourdes Hospital'
-    AND BEDDED = 'Y'
+  WHERE BEDDED = 'Y'
+    ${hospitalWhere}
     AND ACCOUNT_IPLOS IS NOT NULL
     AND DRG_FINALDRGGMLOS IS NOT NULL
     AND TIME_HOSPDISCHARGE BETWEEN @from AND @to
-    AND ISNULL(SERVICE_LINE, 'NULL') NOT IN (
+    AND ISNULL(${slCol}, 'NULL') NOT IN (
       'W&C Obstetrics','W&C Neonates','W&C Newborns','W&C Gynecology',
       'No DRG Match','NULL','Pediatrics','Behavioral Health'
     )
@@ -336,9 +368,11 @@ WITH base AS (
 
     const col = DIM_MAP[dim]
     try {
+      const tenant = req.tenantName || 'default'
+      console.log('[iplos/explorer] tenantName=%s dim=%s', tenant, dim)
       const db    = await getTenantPool(req.session.tenantId)
       const dbReq = db.request()
-      const cte   = buildBaseCTE(dbReq, from, to)
+      const cte   = buildBaseCTE(dbReq, from, to, tenant)
 
       let filters = ''
       if (filter_service_line) {
@@ -357,7 +391,7 @@ WITH base AS (
         dbReq.input('fpayer', sql.NVarChar, filter_payer)
         filters += ' AND ACCOUNT_FINANCIALCLASS = @fpayer'
       }
-      if (filter_service_line_2) {
+      if (filter_service_line_2 && resolveColumn(tenant, 'SERVICE_LINE_2') !== null) {
         dbReq.input('fsl2', sql.NVarChar, filter_service_line_2)
         filters += ' AND SERVICE_LINE_2 = @fsl2'
       }

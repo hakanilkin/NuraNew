@@ -104,6 +104,14 @@ const TD_TOTAL = {
 function SystemView({ data }) {
   const [period, setPeriod] = useState('past')
 
+  if (!data || !data.past || !data.next || !data.forecast) {
+    return (
+      <div style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--color-gray-400)', fontSize: 'var(--font-size-sm)' }}>
+        Room Running forecasts are not available for this organization yet.
+      </div>
+    )
+  }
+
   const PERIODS = [
     { value: 'past',     label: 'Past 4 weeks' },
     { value: 'next',     label: 'Next 4 weeks' },
@@ -259,6 +267,14 @@ function SystemView({ data }) {
 /* ─── Surgeon View ───────────────────────────────────────────────────────── */
 
 function SurgeonView({ surgeons }) {
+  if (!surgeons) {
+    return (
+      <div style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--color-gray-400)', fontSize: 'var(--font-size-sm)' }}>
+        Room Running forecasts are not available for this organization yet.
+      </div>
+    )
+  }
+
   const serviceLines = Object.keys(surgeons)
   const [sl, setSl]  = useState(serviceLines[0] ?? '')
   const surgeonList  = surgeons[sl] ?? []

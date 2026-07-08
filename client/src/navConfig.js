@@ -6,6 +6,7 @@ export const OR_NAV = [
       { id: 'capacity',          label: 'Prime Time Utilization', pageTitle: 'Prime Time Utilization', type: 'link', path: '/capacity' },
       { id: 'block-utilization', label: 'Block Utilization',      type: 'link', path: '/block-utilization' },
       { id: 'room-running',      label: 'Room Running',            type: 'link', path: '/room-running' },
+      { id: 'or-service-lines', label: 'Service Lines',           type: 'link', path: '/or/service-lines' },
     ],
   },
   {
@@ -16,8 +17,8 @@ export const OR_NAV = [
       { id: 'atlas-performance-briefs', label: 'Performance Briefs', type: 'link', path: '/atlas/performance-briefs' },
     ],
   },
-  { id: 'ask-nura',  label: 'Ask Nura',  icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
-  { id: 'forecasts', label: 'Forecasts', icon: 'TrendingUp',        type: 'link', path: '/forecasts' },
+  { id: 'ask-nura',    label: 'Ask Nura',    icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
+  { id: 'forecasts',   label: 'Forecasts',   icon: 'TrendingUp',        type: 'link', path: '/forecasts' },
 ]
 
 export const IP_NAV = [
@@ -37,8 +38,8 @@ export const IP_NAV = [
       { id: 'atlas-los',           label: 'Excess LOS',    type: 'link', path: '/atlas/los' },
     ],
   },
-  { id: 'ask-nura',  label: 'Ask Nura',  icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
-  { id: 'forecasts', label: 'Forecasts', icon: 'TrendingUp',        type: 'link', path: '/ip/forecast' },
+  { id: 'ask-nura',    label: 'Ask Nura',    icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
+  { id: 'forecasts',   label: 'Forecasts',   icon: 'TrendingUp',        type: 'link', path: '/ip/forecast' },
 ]
 
 // Combined for CHILD_PATHS / PAGE_TITLES — union of both domain trees
@@ -53,7 +54,7 @@ const navConfig = [
   },
   { id: 'ask-nura',    type: 'link', path: '/ask-nura' },
   { id: 'forecasts',   type: 'link', path: '/forecasts' },
-  { id: 'ip-forecast', type: 'link', path: '/ip/forecast', label: 'Forecasts' },
+  { id: 'ip-forecast', type: 'link', path: '/ip/forecast',  label: 'Forecasts' },
 ]
 
 export default navConfig

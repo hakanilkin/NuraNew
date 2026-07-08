@@ -11,6 +11,7 @@ Usage:
 
 import os
 import json
+import math
 import datetime
 
 import pandas as pd
@@ -21,6 +22,14 @@ from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 
 
+def _sanitize(o):
+    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
+    if isinstance(o, list):  return [_sanitize(v) for v in o]
+    if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
+    return o
+
+
 # ── Step 1: Load credentials & connect ───────────────────────────────────────
 
 print("=" * 60)
@@ -28,14 +37,13 @@ print("Step 1: Loading credentials and connecting to database...")
 print("=" * 60)
 
 load_dotenv()
+from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
 
-server   = os.getenv("DB_SERVER")
-database = os.getenv("DB_DATABASE")
-user     = os.getenv("DB_USER")
-password = os.getenv("DB_PASSWORD")
-
-if not all([server, database, user, password]):
-    raise EnvironmentError("Missing one or more DB_* variables in .env")
+args, cfg = parse_tenant_arg('FCOT EBM pipeline — first-case on-time start model')
+server, database, user, password = get_db_params(cfg)
+date_from, date_to   = cfg['fcot_date_range']
+first_case_strategy  = cfg['first_case_strategy']
+case_posted          = cfg['case_posted_value']
 
 conn_str = (
     f"DRIVER={{ODBC Driver 17 for SQL Server}};"
@@ -56,8 +64,7 @@ print("=" * 60)
 print("Step 2: Pulling FCOT training data...")
 print("=" * 60)
 
-QUERY = """
-SELECT
+_FCOT_COLS = """
     Dur_Act_vs_SchedStart,
     Case_SurgeonService,
     Case_CaseType,
@@ -70,12 +77,32 @@ SELECT
     Sched_SchedDur,
     DD_Holiday,
     DD_WeekOfMonth,
-    DD_Month_Int
+    DD_Month_Int"""
+
+if first_case_strategy == 'derived':
+    # Turnover_Orderofcaseinroom is NULL for this tenant — derive first case via window function
+    QUERY = f"""
+WITH ranked AS (
+  SELECT *, ROW_NUMBER() OVER (
+    PARTITION BY Loc_ORLoc, Date_Scheddate
+    ORDER BY Time_ORin
+  ) AS case_order
+  FROM DS_CASES
+  WHERE CaseLogStatus = '{case_posted}'
+    AND Date_Scheddate BETWEEN '{date_from}' AND '{date_to}'
+)
+SELECT{_FCOT_COLS}
+FROM ranked
+WHERE case_order = 1
+  AND Dur_Act_vs_SchedStart IS NOT NULL
+"""
+else:
+    QUERY = f"""
+SELECT{_FCOT_COLS}
 FROM DS_CASES
-WHERE CaseLogStatus = 'Posted'
+WHERE CaseLogStatus = '{case_posted}'
   AND Turnover_Orderofcaseinroom = 1
-  AND Date_Scheddate >= '2023-01-01'
-  AND Date_Scheddate <= '2025-12-31'
+  AND Date_Scheddate BETWEEN '{date_from}' AND '{date_to}'
   AND Dur_Act_vs_SchedStart IS NOT NULL
 """
 
@@ -436,13 +463,15 @@ output = {
 
 # Resolve path relative to this script's directory so it works from any cwd
 script_dir = os.path.dirname(os.path.abspath(__file__))
-out_dir    = os.path.join(script_dir, "public", "data")
+out_dir    = os.path.join(script_dir, cfg['output_dir'])
 out_path   = os.path.join(out_dir, "fcot_ebm.json")
 
 os.makedirs(out_dir, exist_ok=True)
 
-with open(out_path, "w", encoding="utf-8") as f:
-    json.dump(output, f, indent=2, allow_nan=False)
+_tmp = out_path + '.tmp'
+with open(_tmp, "w", encoding="utf-8") as f:
+    json.dump(_sanitize(output), f, indent=2, allow_nan=False)
+os.replace(_tmp, out_path)
 
 size_kb = os.path.getsize(out_path) / 1024
 print(f"  Saved: {out_path}")

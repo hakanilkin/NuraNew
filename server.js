@@ -7,6 +7,7 @@ const session    = require('express-session');
 const MSSQLStore = require('connect-mssql-v2');
 
 const { decryptSecret } = require('./lib/secrets');
+const { getTenantConfig } = require('./utils/tenantColumns');
 
 const app = express();
 app.use(express.json());
@@ -43,26 +44,55 @@ async function getAuthPool() {
 }
 
 // ── Per-tenant connection pools ────────────────────────────────────
-const tenantPools = {};
+const tenantPools   = {};  // tenantId → resolved ConnectionPool
+const _poolPromises = {};  // tenantId → in-flight connect promise (self-clearing)
 
 async function getTenantPool(tenantId) {
-  if (tenantPools[tenantId]) return tenantPools[tenantId];
-  const authDb = await getAuthPool();
-  const result = await authDb.request()
-    .input('tid', sql.Int, tenantId)
-    .query(`SELECT DBServer, DBName, DBUser, DBPassword FROM Tenants WHERE TenantID = @tid AND IsActive = 1`);
-  const t = result.recordset[0];
-  if (!t) throw new Error(`Tenant ${tenantId} not found or inactive`);
-  const pool = await new sql.ConnectionPool({
-    server:   t.DBServer,
-    database: t.DBName,
-    user:     t.DBUser,
-    password: decryptSecret(t.DBPassword),
-    port:     parseInt(process.env.DB_PORT) || 1433,
-    options:  { encrypt: true, trustServerCertificate, enableArithAbort: true },
-  }).connect();
-  tenantPools[tenantId] = pool;
-  return pool;
+  // Fast path: return cached pool if still connected.
+  // Retry-once: if the pool lost its connection (Azure failover / idle eviction),
+  // evict it and fall through so a fresh pool is opened.
+  const existing = tenantPools[tenantId];
+  if (existing) {
+    if (existing.connected) return existing;
+    console.error('Tenant pool disconnected, evicting and reconnecting:', tenantId);
+    delete tenantPools[tenantId];
+  }
+
+  // Coalesce concurrent first-requests onto one promise so we never open
+  // duplicate pools for the same tenant in parallel.
+  if (_poolPromises[tenantId]) return _poolPromises[tenantId];
+
+  const promise = (async () => {
+    const authDb = await getAuthPool();
+    const result = await authDb.request()
+      .input('tid', sql.Int, tenantId)
+      .query(`SELECT DBServer, DBName, DBUser, DBPassword FROM Tenants WHERE TenantID = @tid AND IsActive = 1`);
+    const t = result.recordset[0];
+    if (!t) throw new Error(`Tenant ${tenantId} not found or inactive`);
+    const pool = await new sql.ConnectionPool({
+      server:   t.DBServer,
+      database: t.DBName,
+      user:     t.DBUser,
+      password: decryptSecret(t.DBPassword),
+      port:     parseInt(process.env.DB_PORT) || 1433,
+      options:  { encrypt: true, trustServerCertificate, enableArithAbort: true },
+    }).connect();
+    // Self-evict on pool-level errors (Azure transient outages, idle-connection
+    // resets, etc.) so the next request opens a fresh pool instead of hanging.
+    pool.on('error', err => {
+      console.error('Tenant pool error, evicting:', tenantId, err.message);
+      delete tenantPools[tenantId];
+    });
+    tenantPools[tenantId] = pool;
+    return pool;
+  })();
+
+  _poolPromises[tenantId] = promise;
+  // Always clear the in-flight slot when done (success or failure) so a failed
+  // connect doesn't permanently block future attempts for this tenant.
+  promise.finally(() => { delete _poolPromises[tenantId]; });
+
+  return promise;
 }
 
 // Drop a cached pool when a tenant's connection details change or the
@@ -192,6 +222,13 @@ function requireTenant(req, res, next) {
 
 app.use(requireAuth);
 
+// Expose tenant name on req so route handlers can do column resolution
+// without reaching back into the session object.
+app.use((req, res, next) => {
+  req.tenantName = req.session?.tenantName || 'default';
+  next();
+});
+
 // ── Static files ───────────────────────────────────────────────────
 // Model/data JSON only, mounted at /data — nothing else in public/ is
 // reachable, so leftover files from old deployments can't shadow the app
@@ -211,6 +248,15 @@ if (isProd) {
   }));
 }
 
+// ── Tenant config ───────────────────────────────────────────────────
+// Returns the current tenant's column map and feature flags.
+// Used by the frontend to adapt UI (hide TDC tab, service-line drill, etc.)
+app.get('/api/tenant-config', requireAuth, (req, res) => {
+  if (!req.session?.tenantId) return res.json({ columns: {}, features: {} });
+  const cfg = getTenantConfig(req.tenantName);
+  res.json({ tenantName: req.tenantName, columns: cfg.columns, features: cfg.features ?? {} });
+});
+
 // ── Route modules ──────────────────────────────────────────────────
 const authRouter      = require('./routes/auth')(getAuthPool, sql);
 const adminRouter     = require('./routes/admin')(getAuthPool, sql, requireAdmin, invalidateTenantPool);
@@ -220,6 +266,7 @@ const askNuraRouter   = require('./routes/askNura')(getTenantPool, sql, requireT
 const iplosRouter          = require('./routes/iplos')(getTenantPool, sql, requireTenant);
 const ipbedplacementRouter = require('./routes/ipbedplacement')(getTenantPool, sql, requireTenant);
 const ipdischargesRouter   = require('./routes/ipdischarges')(getTenantPool, sql, requireTenant);
+const orservicelineRouter  = require('./routes/orserviceline')(getTenantPool, sql, requireTenant);
 
 app.use('/api/auth',           authRouter);
 app.use('/api/admin',          adminRouter);
@@ -227,6 +274,7 @@ app.use('/api/atlas',          atlasRouter);
 app.use('/api/iplos',          iplosRouter);
 app.use('/api/ipbedplacement', ipbedplacementRouter);
 app.use('/api/ipdischarges',   ipdischargesRouter);
+app.use('/api/orserviceline',  orservicelineRouter);
 app.use('/api',        analyticsRouter);
 app.use('/api',        askNuraRouter);
 

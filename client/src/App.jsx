@@ -7,6 +7,7 @@ import {
   Map,
   MessageSquareText,
   TrendingUp,
+  Target,
   ChevronRight,
   LogOut,
   ShieldCheck,
@@ -29,6 +30,7 @@ import IPBedPlacement         from './pages/IPBedPlacement'
 import IPDischarges           from './pages/IPDischarges'
 import IPForecast             from './pages/IPForecast'
 import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
+import ORServiceLines    from './pages/ORServiceLines'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
 import RoomRunning        from './pages/RoomRunning'
@@ -37,7 +39,7 @@ import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
-const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp }
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, Target }
 
 function collectLeafPaths(items) {
   return items.flatMap(item =>
@@ -567,7 +569,8 @@ function Shell() {
           <Route path="/"                  element={<ORPerformance />} />
           <Route path="/capacity"          element={<Capacity />} />
           <Route path="/block-utilization" element={<BlockUtilization />} />
-          <Route path="/room-running"     element={<RoomRunning />} />
+          <Route path="/room-running"      element={<RoomRunning />} />
+          <Route path="/or/service-lines" element={<ORServiceLines />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
           <Route path="/atlas/performance-briefs" element={<AtlasPerformanceBriefs />} />

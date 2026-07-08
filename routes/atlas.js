@@ -4,11 +4,18 @@ const fs      = require('fs');
 
 const router = express.Router();
 
-// Resolve public/data from the project root (one level above routes/)
+// Root of all tenant data directories
 const DATA_DIR = path.join(__dirname, '..', 'public', 'data');
 
-function readJsonFile(filename) {
-  const filePath = path.join(DATA_DIR, filename);
+// Resolve a per-tenant data directory, sanitizing the tenant name to prevent
+// path traversal.  Only lowercase alphanumeric chars are kept.
+function tenantDataDir(tenantName) {
+  const safe = (tenantName || 'virtua').toLowerCase().replace(/[^a-z0-9]/g, '') || 'virtua';
+  return path.join(DATA_DIR, safe);
+}
+
+// Read a JSON file at an absolute filePath.
+function readJsonFile(filePath) {
   let raw;
   try {
     raw = fs.readFileSync(filePath, 'utf8');
@@ -23,13 +30,23 @@ function readJsonFile(filename) {
   return JSON.parse(raw);
 }
 
-// Standard JSON-file responder: 404 (or an empty fallback) when the file is
-// missing, 500 with a clean message when it's unreadable or corrupted.
-function sendJsonFile(res, route, filename, { notFoundMsg, emptyFallback } = {}) {
+// Respond with JSON from filePath.
+// opts.noAtlasData  — when file missing, return 200 { error: 'no_atlas_data' }
+//                     instead of 404.  Use for model files — gives the frontend
+//                     a clean "not generated yet" signal without a scary error.
+// opts.emptyFallback — return this value on 404 (lower priority than noAtlasData)
+// opts.notFoundMsg   — 404 error message (used when neither opt above is set)
+function sendJsonFile(res, route, filePath, { notFoundMsg, emptyFallback, noAtlasData } = {}) {
   try {
-    res.json(readJsonFile(filename));
+    res.json(readJsonFile(filePath));
   } catch (err) {
     if (err.message === 'not_found') {
+      if (noAtlasData) {
+        return res.json({
+          error:   'no_atlas_data',
+          message: 'Atlas data has not been generated for this organization yet.',
+        });
+      }
       if (emptyFallback) return res.json(emptyFallback);
       return res.status(404).json({ error: notFoundMsg ?? 'Data file not found' });
     }
@@ -43,13 +60,15 @@ function sendJsonFile(res, route, filename, { notFoundMsg, emptyFallback } = {})
 }
 
 // GET /api/atlas/fcot-model
-router.get('/fcot-model', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/fcot-model', 'fcot_ebm.json', { notFoundMsg: 'Model file not found — run ebm_pipeline.py first' });
+router.get('/fcot-model', (req, res) => {
+  const filePath = path.join(tenantDataDir(req.tenantName), 'fcot_ebm.json');
+  sendJsonFile(res, '/api/atlas/fcot-model', filePath, { noAtlasData: true });
 });
 
 // GET /api/atlas/turnover-model
-router.get('/turnover-model', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/turnover-model', 'turnover_ebm.json', { notFoundMsg: 'Model file not found — run turnover_ebm_pipeline.py first' });
+router.get('/turnover-model', (req, res) => {
+  const filePath = path.join(tenantDataDir(req.tenantName), 'turnover_ebm.json');
+  sendJsonFile(res, '/api/atlas/turnover-model', filePath, { noAtlasData: true });
 });
 
 // POST /api/atlas/explain-interaction
@@ -121,19 +140,17 @@ const DODC_FILES = {
   'do-dc-hh':      'do_dc_hh_ebm.json',
 };
 for (const [route, filename] of Object.entries(DODC_FILES)) {
-  router.get(`/${route}`, (_req, res) => {
-    sendJsonFile(res, `/api/atlas/${route}`, filename, {
-      notFoundMsg: 'Model file not found — run do_dc_pipeline.py first',
-    });
+  router.get(`/${route}`, (req, res) => {
+    const filePath = path.join(tenantDataDir(req.tenantName), filename);
+    sendJsonFile(res, `/api/atlas/${route}`, filePath, { noAtlasData: true });
   });
 }
 
 // GET /api/atlas/los-segments
-router.get('/los-segments', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/los-segments', 'los_segments.json', {
-    notFoundMsg: 'Segment file not found — run los_segments_pipeline.py first',
-  })
-})
+router.get('/los-segments', (req, res) => {
+  const filePath = path.join(tenantDataDir(req.tenantName), 'los_segments.json');
+  sendJsonFile(res, '/api/atlas/los-segments', filePath, { noAtlasData: true });
+});
 
 // GET /api/atlas/do-los-{overall,facility,selfcare,homehealth}
 const DOLOS_FILES = {
@@ -141,43 +158,84 @@ const DOLOS_FILES = {
   'do-los-facility':   'do_los_facility_ebm.json',
   'do-los-selfcare':   'do_los_selfcare_ebm.json',
   'do-los-homehealth': 'do_los_homehealth_ebm.json',
-}
+};
 for (const [route, filename] of Object.entries(DOLOS_FILES)) {
-  router.get(`/${route}`, (_req, res) => {
-    sendJsonFile(res, `/api/atlas/${route}`, filename, {
-      notFoundMsg: 'Model file not found — run do_los_pipeline.py first',
-    })
-  })
+  router.get(`/${route}`, (req, res) => {
+    const filePath = path.join(tenantDataDir(req.tenantName), filename);
+    sendJsonFile(res, `/api/atlas/${route}`, filePath, { noAtlasData: true });
+  });
 }
 
 // GET /api/atlas/bed-placement-model
-router.get('/bed-placement-model', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/bed-placement-model', 'bed_placement_ebm.json', { notFoundMsg: 'Model file not found — run bed_placement_pipeline.py first' });
+router.get('/bed-placement-model', (req, res) => {
+  const filePath = path.join(tenantDataDir(req.tenantName), 'bed_placement_ebm.json');
+  sendJsonFile(res, '/api/atlas/bed-placement-model', filePath, { noAtlasData: true });
 });
 
 // GET /api/atlas/bed-placement-combinations
-router.get('/bed-placement-combinations', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/bed-placement-combinations', 'bed_placement_combinations.json', { emptyFallback: { combinations: [], system_mean: 0 } });
+router.get('/bed-placement-combinations', (req, res) => {
+  const filePath = path.join(tenantDataDir(req.tenantName), 'bed_placement_combinations.json');
+  sendJsonFile(res, '/api/atlas/bed-placement-combinations', filePath, {
+    emptyFallback: { combinations: [], system_mean: 0 },
+  });
 });
 
 // GET /api/atlas/turnover-combinations
-router.get('/turnover-combinations', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/turnover-combinations', 'turnover_combinations.json', { notFoundMsg: 'Combinations file not found — run turnover_ebm_pipeline.py first' });
+router.get('/turnover-combinations', (req, res) => {
+  const filePath = path.join(tenantDataDir(req.tenantName), 'turnover_combinations.json');
+  sendJsonFile(res, '/api/atlas/turnover-combinations', filePath, {
+    emptyFallback: { combinations: [], system_mean: 0 },
+  });
 });
 
 // GET /api/atlas/fcot-combinations
-router.get('/fcot-combinations', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/fcot-combinations', 'fcot_combinations.json', { emptyFallback: { combinations: [], system_mean: 0 } });
+router.get('/fcot-combinations', (req, res) => {
+  const filePath = path.join(tenantDataDir(req.tenantName), 'fcot_combinations.json');
+  sendJsonFile(res, '/api/atlas/fcot-combinations', filePath, {
+    emptyFallback: { combinations: [], system_mean: 0 },
+  });
 });
 
-// GET /api/atlas/performance-briefs-mock
-router.get('/performance-briefs-mock', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/performance-briefs-mock', 'performance_briefs_mock.json', { notFoundMsg: 'Mock data file not found' });
-});
+// GET /api/atlas/performance-briefs — tenant-aware; alias kept for backward compat
+function servePerformanceBriefs(req, res) {
+  const tDir      = tenantDataDir(req.tenantName);
+  const briefPath = path.join(tDir, 'performance_briefs.json');
+  const ctxPath   = path.join(tDir, 'performance_briefs_context.json');
 
-// GET /api/atlas/forecast/morning-huddle
+  let briefs;
+  try {
+    briefs = readJsonFile(briefPath);
+  } catch (err) {
+    if (err.message === 'not_found') {
+      return res.json({
+        error:   'no_atlas_data',
+        message: 'Performance briefs have not been generated for this organization yet.',
+      });
+    }
+    console.error('/api/atlas/performance-briefs read error:', err.message);
+    return res.status(500).json({ error: 'Could not read performance briefs' });
+  }
+
+  // Merge per-group context by caseblock (best-effort; missing file is fine)
+  let ctx = {};
+  try { ctx = readJsonFile(ctxPath); } catch (_) { /* no context file */ }
+
+  if (ctx && typeof ctx === 'object' && Array.isArray(briefs.groups)) {
+    briefs.groups = briefs.groups.map(g => {
+      const entry = ctx[g.caseblock];
+      return entry ? { ...g, context: entry } : g;
+    });
+  }
+
+  res.json(briefs);
+}
+
+router.get('/performance-briefs',      servePerformanceBriefs);
+router.get('/performance-briefs-mock', servePerformanceBriefs); // backward-compat alias
+
 router.get('/forecast/morning-huddle', (_req, res) => {
-  sendJsonFile(res, '/api/atlas/forecast/morning-huddle', 'forecast_mock.json', { notFoundMsg: 'Forecast mock data file not found' });
+  const filePath = path.join(DATA_DIR, 'forecast_mock.json');
+  sendJsonFile(res, '/api/atlas/forecast/morning-huddle', filePath, { notFoundMsg: 'Forecast mock data file not found' });
 });
 
 module.exports = router;
