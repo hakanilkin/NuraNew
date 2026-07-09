@@ -24,18 +24,8 @@
 -- ⚠ COLUMN NAMES TO CONFIRM before running:
 --   ER_ARRIVAL          ED-arrival flag ('Y'). Other tenants use
 --                       EDENCOUNTER = 'Y' — swap in the view if needed.
---   DEP_EDDEPARTMENT    source ED department name  ← confirm
---   DEP_FIRSTBEDDEDDEPT first bedded department    ← confirm
 --   ADMORDER_ORDERINST  admission order time (used elsewhere in Nura)
---
--- Run this to discover the actual names in OHS:
---   SELECT COLUMN_NAME, DATA_TYPE
---   FROM INFORMATION_SCHEMA.COLUMNS
---   WHERE TABLE_NAME = 'DS_Encounters'
---     AND (COLUMN_NAME LIKE '%ED%' OR COLUMN_NAME LIKE '%ER%'
---          OR COLUMN_NAME LIKE 'DEP%' OR COLUMN_NAME LIKE '%ADMORDER%'
---          OR COLUMN_NAME LIKE '%BEDDED%')
---   ORDER BY COLUMN_NAME;
+-- Confirmed: DEP_EDDEPT (source ED), DEP_FIRSTBEDDEDDEPT (destination)
 -- ================================================================
 
 -- ----------------------------------------------------------------
@@ -45,8 +35,8 @@
 CREATE OR ALTER VIEW dbo.vw_ED_Admission_Source
 AS
 SELECT
-  e.DEP_EDDEPARTMENT     AS SourceEDDept,        -- ⚠ confirm column name
-  e.DEP_FIRSTBEDDEDDEPT  AS DestinationDept,     -- ⚠ confirm column name
+  e.DEP_EDDEPT           AS SourceEDDept,
+  e.DEP_FIRSTBEDDEDDEPT  AS DestinationDept,
   e.ADMORDER_ORDERINST   AS AdmissionOrderTime
 FROM dbo.DS_Encounters e
 WHERE e.BEDDED     = 'Y'
