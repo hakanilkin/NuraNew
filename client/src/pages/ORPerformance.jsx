@@ -27,7 +27,10 @@ import { TODAY, subtractMonths, fetchDateMeta } from '../lib/dates'
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 // Fallbacks until /api/meta/dates resolves (or if it fails)
 const DEFAULT_END   = TODAY
-const DEFAULT_START = subtractMonths(DEFAULT_END, 12)
+const DEFAULT_START = subtractMonths(DEFAULT_END, 6)
+
+// A site is an Endoscopy site when its name contains "endoscop"
+const isEndoscopy = site => /endoscop/i.test(site || '')
 
 /* ─── Formatters ─────────────────────────────────────────────────────────── */
 
@@ -46,14 +49,22 @@ function buildQS({ startDate, endDate, sites }) {
   return p.toString()
 }
 
-/* ── Year-over-year: YTD of the end date's year vs the full previous year ── */
+/* ── Year-over-year: same-date periods (Jan 1 → end date, both years) ────── */
 async function loadYoy(endDateStr, sites) {
   const endYear  = parseInt(endDateStr.slice(0, 4))
   const endMonth = parseInt(endDateStr.slice(5, 7))
-  const qs  = buildQS({ startDate: `${endYear - 1}-01-01`, endDate: endDateStr, sites })
-  const res = await fetch(`/api/monthly-trend?${qs}`)
-  if (!res.ok) throw new Error(`YoY trend failed: ${res.status}`)
-  const rows  = await res.json()
+  const monthDay = endDateStr.slice(5)                             // 'MM-DD'
+  const prevEnd  = `${endYear - 1}-${monthDay === '02-29' ? '02-28' : monthDay}`
+
+  const getJson = url => fetch(url).then(r => r.ok ? r.json() : Promise.reject(new Error(`YoY failed: ${r.status}`)))
+  const [rows, currSum, prevSum] = await Promise.all([
+    // Monthly buckets for the bar chart (both years)
+    getJson(`/api/monthly-trend?${buildQS({ startDate: `${endYear - 1}-01-01`, endDate: endDateStr, sites })}`),
+    // Exact same-date-period counts for the summary metrics
+    getJson(`/api/summary?${buildQS({ startDate: `${endYear}-01-01`,     endDate: endDateStr, sites })}`),
+    getJson(`/api/summary?${buildQS({ startDate: `${endYear - 1}-01-01`, endDate: prevEnd,    sites })}`),
+  ])
+
   const byKey = new Map((Array.isArray(rows) ? rows : []).map(r => [`${r.Year}-${r.Month}`, r.TotalCases]))
   const data  = MONTHS.map((m, i) => ({
     month: m,
@@ -61,10 +72,12 @@ async function loadYoy(endDateStr, sites) {
     // Months after the end date have no "current year" bar (YTD cut-off)
     curr:  i + 1 <= endMonth ? (byKey.get(`${endYear}-${i + 1}`) ?? 0) : null,
   }))
-  const currYTD = data.reduce((s, r) => s + (r.curr ?? 0), 0)
-  const prevYTD = data.slice(0, endMonth).reduce((s, r) => s + r.prev, 0)
+
+  // Same-period totals from the exact date ranges (not whole months)
+  const currYTD      = (Array.isArray(currSum) ? currSum : []).reduce((s, r) => s + (r.TotalCases ?? 0), 0)
+  const prevYTD      = (Array.isArray(prevSum) ? prevSum : []).reduce((s, r) => s + (r.TotalCases ?? 0), 0)
   const prevFullYear = data.reduce((s, r) => s + r.prev, 0)
-  return { data, currYear: endYear, prevYear: endYear - 1, endMonth, currYTD, prevYTD, prevFullYear }
+  return { data, currYear: endYear, prevYear: endYear - 1, endMonth, currYTD, prevYTD, prevFullYear, endDateStr, prevEnd }
 }
 
 /* ─── Sites multi-select dropdown ────────────────────────────────────────── */
@@ -217,28 +230,6 @@ function SitesDropdown({ sites, selected, onChange, loading }) {
   )
 }
 
-/* ─── Chart tooltip ──────────────────────────────────────────────────────── */
-
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null
-  return (
-    <div style={{
-      background: 'var(--color-white)',
-      border: '1px solid var(--surface-border)',
-      borderRadius: 'var(--radius-md)',
-      padding: 'var(--space-3) var(--space-4)',
-      boxShadow: 'var(--shadow-lg)',
-    }}>
-      <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-gray-900)', marginBottom: 4 }}>
-        {label}
-      </p>
-      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-blue)', fontWeight: 'var(--font-weight-medium)' }}>
-        {payload[0].value.toLocaleString()} cases
-      </p>
-    </div>
-  )
-}
-
 /* ─── YoY chart tooltip — one line per year ──────────────────────────────── */
 
 function YoyTooltip({ active, payload, label }) {
@@ -290,89 +281,86 @@ export default function ORPerformance() {
   const [selectedSites,  setSelectedSites]  = useState([])
   const [sitesLoading,   setSitesLoading]   = useState(true)
   const [summary,        setSummary]        = useState([])
-  const [trend,          setTrend]          = useState([])
   const [loading,        setLoading]        = useState(true)
   const [error,          setError]          = useState(null)
   const [chartSite,      setChartSite]      = useState(null)   // site clicked in table
-  const [chartTrend,     setChartTrend]     = useState([])     // trend for clicked site
   const [chartLoading,   setChartLoading]   = useState(false)
   const [yoy,            setYoy]            = useState(null)   // YoY for the filtered sites
   const [chartYoy,       setChartYoy]       = useState(null)   // YoY for clicked site
   const [activeDates,    setActiveDates]    = useState({ startDate: DEFAULT_START, endDate: DEFAULT_END })
+  const [tab,            setTab]            = useState('surgical')  // 'surgical' | 'endoscopy'
+
+  /* ── Tab site groups ── */
+  const surgicalSites  = availableSites.filter(s => !isEndoscopy(s))
+  const endoscopySites = availableSites.filter(s =>  isEndoscopy(s))
+  const sitesForTab    = tab === 'endoscopy' ? endoscopySites : surgicalSites
 
   /* ── Derived KPIs ── */
   const totalCases   = summary.reduce((s, r) => s + (r.TotalCases       ?? 0), 0)
   const totalMinutes = summary.reduce((s, r) => s + (r.TotalORDuration   ?? 0), 0)
   const avgMinutes   = totalCases > 0 ? totalMinutes / totalCases : 0
 
-  /* ── Chart data — use site-specific trend when a row is clicked ── */
+  /* ── Chart data — use site-specific YoY when a row is clicked ── */
   const activeYoy   = chartSite ? chartYoy : yoy
   const yoyDeltaPct = activeYoy && activeYoy.prevYTD > 0
     ? ((activeYoy.currYTD - activeYoy.prevYTD) / activeYoy.prevYTD) * 100
     : null
-  const activeTrend = chartSite ? chartTrend : trend
-  const multiYear   = new Set(activeTrend.map(r => r.Year)).size > 1
-  const chartData   = activeTrend.map(r => ({
-    label: MONTHS[r.Month - 1] + (multiYear ? ` '${String(r.Year).slice(2)}` : ''),
-    cases: r.TotalCases,
-  }))
 
-  /* ── Click a site row → fetch its trend ── */
+  /* ── Click a site row → fetch its YoY ── */
   async function handleSiteClick(site) {
     if (chartSite === site) {
       setChartSite(null)
-      setChartTrend([])
       setChartYoy(null)
       return
     }
     setChartSite(site)
     setChartLoading(true)
     try {
-      const qs = buildQS({ startDate: activeDates.startDate, endDate: activeDates.endDate, sites: [site] })
-      const [res, yoyResult] = await Promise.all([
-        fetch(`/api/monthly-trend?${qs}`),
-        loadYoy(activeDates.endDate, [site]).catch(() => null),
-      ])
-      const data = await res.json()
-      setChartTrend(Array.isArray(data) ? data : [])
+      const yoyResult = await loadYoy(activeDates.endDate, [site]).catch(() => null)
       setChartYoy(yoyResult)
     } catch (_) {
-      setChartTrend([])
       setChartYoy(null)
     } finally {
       setChartLoading(false)
     }
   }
 
-  /* ── Fetch sites (once on mount) ── */
+  /* ── Fetch sites + date meta (once on mount), then load the surgical tab ── */
   useEffect(() => {
-    fetch('/api/sites')
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => setAvailableSites(Array.isArray(data) ? data : []))
-      .catch(() => {})
-      .finally(() => setSitesLoading(false))
-  }, [])
+    Promise.all([
+      fetch('/api/sites').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetchDateMeta(),
+    ]).then(([sitesData, meta]) => {
+      const sites = Array.isArray(sitesData) ? sitesData : []
+      setAvailableSites(sites)
+      setSitesLoading(false)
+      const end   = meta.maxCaseDate ? String(meta.maxCaseDate).slice(0, 10) : DEFAULT_END
+      const start = subtractMonths(end, 6)
+      setStartDate(start)
+      setEndDate(end)
+      // Scope the initial load to the default (surgical) tab; if the sites
+      // list failed to load, fall back to all sites.
+      const surgical = sites.filter(s => !isEndoscopy(s))
+      fetchData({ startDate: start, endDate: end, sites: surgical })
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- fetchData is a stable useCallback declared below; naming it in deps would hit the TDZ during render
 
-  /* ── Fetch summary + trend ── */
+  /* ── Fetch summary + YoY ── */
   const fetchData = useCallback(async (filters) => {
     setLoading(true)
     setError(null)
     setChartSite(null)
-    setChartTrend([])
     setChartYoy(null)
     setActiveDates({ startDate: filters.startDate, endDate: filters.endDate })
     const qs = buildQS(filters)
     try {
-      const [sumRes, trendRes, yoyResult] = await Promise.all([
+      const [sumRes, yoyResult] = await Promise.all([
         fetch(`/api/summary?${qs}`),
-        fetch(`/api/monthly-trend?${qs}`),
         loadYoy(filters.endDate, filters.sites).catch(() => null),
       ])
-      if (!sumRes.ok)   throw new Error(`Summary failed: ${sumRes.status}`)
-      if (!trendRes.ok) throw new Error(`Trend failed: ${trendRes.status}`)
-      const [sumData, trendData] = await Promise.all([sumRes.json(), trendRes.json()])
-      setSummary(Array.isArray(sumData)   ? sumData   : [])
-      setTrend(Array.isArray(trendData)   ? trendData : [])
+      if (!sumRes.ok) throw new Error(`Summary failed: ${sumRes.status}`)
+      const sumData = await sumRes.json()
+      setSummary(Array.isArray(sumData) ? sumData : [])
       setYoy(yoyResult)
     } catch (e) {
       setError(e.message || 'Failed to load data. Check your connection and try again.')
@@ -381,18 +369,23 @@ export default function ORPerformance() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchDateMeta().then(({ maxCaseDate }) => {
-      const end   = maxCaseDate ? String(maxCaseDate).slice(0, 10) : DEFAULT_END
-      const start = subtractMonths(end, 12)
-      setStartDate(start)
-      setEndDate(end)
-      fetchData({ startDate: start, endDate: end, sites: [] })
-    })
-  }, [fetchData])
-
   function handleApply() {
-    fetchData({ startDate, endDate, sites: selectedSites })
+    // No explicit selection = all sites in the active tab
+    fetchData({ startDate, endDate, sites: selectedSites.length ? selectedSites : sitesForTab })
+  }
+
+  function handleTabChange(t) {
+    if (t === tab) return
+    setTab(t)
+    setSelectedSites([])
+    const list = t === 'endoscopy' ? endoscopySites : surgicalSites
+    if (!list.length) {
+      // No sites in this tab — clear the page rather than fetching everything
+      setSummary([]); setYoy(null)
+      setChartSite(null); setChartYoy(null)
+      return
+    }
+    fetchData({ startDate, endDate, sites: list })
   }
 
   /* ─────────────────────────────────────────────────────────────── */
@@ -410,6 +403,33 @@ export default function ORPerformance() {
       <div className="page-header">
         <h1 className="page-title">OR Performance</h1>
         <p className="page-subtitle">Operating room case volume and duration analytics</p>
+      </div>
+
+      {/* ── Tab bar ──────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '2px solid var(--surface-border)' }}>
+        {[
+          { id: 'surgical',  label: 'Surgical Sites',  count: surgicalSites.length },
+          { id: 'endoscopy', label: 'Endoscopy Sites', count: endoscopySites.length },
+        ].map(t => {
+          const active = tab === t.id
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => handleTabChange(t.id)}
+              style={{
+                padding: '9px 18px', border: 'none', background: 'none', cursor: 'pointer',
+                fontSize: 14, fontWeight: active ? 700 : 500,
+                color: active ? 'var(--color-blue)' : 'var(--color-gray-500)',
+                borderBottom: active ? '2px solid var(--color-blue)' : '2px solid transparent',
+                marginBottom: -2,
+              }}
+            >
+              {t.label}
+              <span style={{ marginLeft: 7, fontSize: 12, fontWeight: 600, color: 'var(--color-gray-400)' }}>{t.count}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* ── Filter Bar ───────────────────────────────────────────── */}
@@ -438,7 +458,7 @@ export default function ORPerformance() {
           <div className="form-group" style={{ flex: '2 1 220px', minWidth: 200 }}>
             <label className="form-label">Sites</label>
             <SitesDropdown
-              sites={availableSites}
+              sites={sitesForTab}
               selected={selectedSites}
               onChange={setSelectedSites}
               loading={sitesLoading}
@@ -647,84 +667,6 @@ export default function ORPerformance() {
         </div>
       </div>
 
-      {/* ── Monthly Case Volume Chart ─────────────────────────────── */}
-      <div className="card mb-6">
-        <div className="card-header">
-          <div>
-            <div className="card-title">
-              Monthly Case Volume{chartSite ? ` — ${chartSite}` : ''}
-            </div>
-            <div className="card-subtitle">
-              {chartSite ? `Click the row again to deselect` : 'Click a site row to filter the chart'}
-            </div>
-          </div>
-          {!loading && chartData.length > 0 && (
-            <div className="badge badge-blue">
-              <TrendingUp size={11} />
-              {chartData.length} months
-            </div>
-          )}
-        </div>
-
-        <div className="card-body">
-          {loading || chartLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              <Skeleton height={200} />
-            </div>
-          ) : chartData.length === 0 ? (
-            <div style={{
-              height: 220,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--color-gray-400)',
-            }}>
-              <TrendingUp size={36} strokeWidth={1.25} style={{ marginBottom: 'var(--space-3)' }} />
-              <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-gray-500)' }}>
-                No trend data available
-              </p>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="4 4"
-                  stroke="var(--color-gray-200)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 12, fill: 'var(--color-gray-500)', fontFamily: 'var(--font-family)' }}
-                  axisLine={false}
-                  tickLine={false}
-                  dy={8}
-                />
-                <YAxis
-                  tick={{ fontSize: 12, fill: 'var(--color-gray-500)', fontFamily: 'var(--font-family)' }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
-                  width={48}
-                />
-                <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--color-gray-200)', strokeWidth: 1 }} />
-                <Line
-                  type="monotone"
-                  dataKey="cases"
-                  stroke="var(--color-blue)"
-                  strokeWidth={2.5}
-                  dot={{ r: 4, fill: 'var(--color-blue)', strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: 'var(--color-blue)', stroke: 'var(--color-white)', strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
       {/* ── Year-over-Year Case Volume Chart ──────────────────────── */}
       <div className="card">
         <div className="card-header">
@@ -734,14 +676,14 @@ export default function ORPerformance() {
             </div>
             <div className="card-subtitle">
               {activeYoy
-                ? `${activeYoy.prevYear} full year vs ${activeYoy.currYear} through ${MONTHS[activeYoy.endMonth - 1]}`
-                : 'Current year-to-date vs previous full year'}
+                ? `Same period comparison: Jan 1 – ${activeYoy.endDateStr.slice(5).replace('-', '/')} · ${activeYoy.prevYear} vs ${activeYoy.currYear}`
+                : 'Same date period, current year vs prior year'}
             </div>
           </div>
           {!loading && !chartLoading && yoyDeltaPct != null && (
             <div className={`badge ${yoyDeltaPct >= 0 ? 'badge-green' : 'badge-red'}`}>
               <TrendingUp size={11} />
-              {yoyDeltaPct >= 0 ? '+' : ''}{yoyDeltaPct.toFixed(1)}% YTD vs same period {activeYoy.prevYear}
+              {yoyDeltaPct >= 0 ? '+' : ''}{yoyDeltaPct.toFixed(1)}% vs same period {activeYoy.prevYear}
             </div>
           )}
         </div>
@@ -766,11 +708,31 @@ export default function ORPerformance() {
               </p>
             </div>
           ) : (
+            <>
+            {/* Same-period summary metrics */}
+            {(() => {
+              const diff = activeYoy.currYTD - activeYoy.prevYTD
+              const pct  = activeYoy.prevYTD > 0 ? (diff / activeYoy.prevYTD) * 100 : null
+              const deltaColor = diff >= 0 ? '#15803d' : '#b91c1c'
+              const metric = (label, value, color) => (
+                <div style={{ flex: 1, minWidth: 120, padding: '10px 16px', borderRight: '1px solid var(--color-gray-100)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-gray-500)', marginBottom: 3, whiteSpace: 'nowrap' }}>{label}</div>
+                  <div style={{ fontSize: 19, fontWeight: 700, color: color || 'var(--color-gray-900)', lineHeight: 1.1 }}>{value}</div>
+                </div>
+              )
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', border: '1px solid var(--color-gray-100)', borderRadius: 'var(--radius-lg)', marginBottom: 16, background: '#fafbfc' }}>
+                  {metric(`${activeYoy.currYear} (Jan 1 – ${activeYoy.endDateStr.slice(5).replace('-', '/')})`, activeYoy.currYTD.toLocaleString())}
+                  {metric(`${activeYoy.prevYear} (Jan 1 – ${activeYoy.prevEnd.slice(5).replace('-', '/')})`, activeYoy.prevYTD.toLocaleString())}
+                  {metric('Difference', (diff >= 0 ? '+' : '') + diff.toLocaleString(), deltaColor)}
+                  {metric('% Change', pct == null ? '—' : (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%', deltaColor)}
+                </div>
+              )
+            })()}
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart
+              <LineChart
                 data={activeYoy.data}
                 margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
-                barGap={2}
               >
                 <CartesianGrid
                   strokeDasharray="4 4"
@@ -791,16 +753,16 @@ export default function ORPerformance() {
                   tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
                   width={48}
                 />
-                <Tooltip content={<YoyTooltip />} cursor={{ fill: 'var(--color-gray-100)' }} />
+                <Tooltip content={<YoyTooltip />} cursor={{ stroke: 'var(--color-gray-300)', strokeDasharray: '4 4' }} />
                 <Legend
                   wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-family)' }}
-                  iconType="circle"
-                  iconSize={9}
+                  iconType="line"
                 />
-                <Bar dataKey="prev" name={String(activeYoy.prevYear)}        fill="#CBD5E1"          radius={[3, 3, 0, 0]} />
-                <Bar dataKey="curr" name={`${activeYoy.currYear} YTD`}       fill="var(--color-blue)" radius={[3, 3, 0, 0]} />
-              </BarChart>
+                <Line type="monotone" dataKey="prev" name={String(activeYoy.prevYear)}  stroke="#f59e0b"          strokeWidth={2}   dot={{ r: 2.5 }} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="curr" name={`${activeYoy.currYear} YTD`} stroke="var(--color-blue)" strokeWidth={2.5} dot={{ r: 2.5 }} activeDot={{ r: 4 }} />
+              </LineChart>
             </ResponsiveContainer>
+            </>
           )}
         </div>
       </div>

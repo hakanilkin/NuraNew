@@ -38,7 +38,6 @@ import RoomRunning           from './pages/RoomRunning'
 import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
-import ForecastsPipeline    from './pages/ForecastsPipeline'
 import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
@@ -592,7 +591,7 @@ function Shell() {
           <Route path="/ip/discharges"       element={<IPDischarges />} />
           <Route path="/ip/forecast"         element={<IPForecast />} />
           <Route path="/ask-nura"          element={<AskNura />} />
-          <Route path="/forecasts"         element={<ForecastsPipeline />} />
+          <Route path="/forecasts"         element={<Navigate to="/schedule-forecast/daily" replace />} />
           <Route path="/admin"             element={<RequireAdmin><Admin /></RequireAdmin>} />
         </Routes>
       </div>

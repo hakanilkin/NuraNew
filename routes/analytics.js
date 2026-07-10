@@ -48,7 +48,16 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     try {
       const db = await getTenantPool(req.session.tenantId);
       const [caseRes, blockRes] = await Promise.all([
-        db.request().query(`SELECT MAX(Date_SchedDate) AS MaxDate FROM DS_CASES`),
+        // Last actual date: posted, non-cancelled cases. Falls back to the
+        // latest non-future date for tenants whose CaseLogStatus values
+        // don't include 'Posted' (e.g. numeric status codes).
+        db.request().query(`
+          SELECT COALESCE(
+            MAX(CASE WHEN CaseLogStatus = 'Posted' AND Case_CanCode IS NULL THEN Date_SchedDate END),
+            MAX(CASE WHEN Date_SchedDate <= CAST(GETDATE() AS DATE) THEN Date_SchedDate END)
+          ) AS MaxDate
+          FROM DS_CASES
+        `),
         db.request().query(`SELECT MAX(BlockDate) AS MaxDate FROM V4_BlockResultsView`),
       ]);
       res.json({
@@ -80,6 +89,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
         FROM DS_CASES
         WHERE Date_SchedDate >= @startDate
           AND Date_SchedDate <= @endDate
+          AND Case_CanCode IS NULL
           ${siteFilter}
         GROUP BY Loc_ORGrp2
         ORDER BY Loc_ORGrp2
@@ -110,6 +120,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
         FROM DS_CASES
         WHERE Date_SchedDate >= @startDate
           AND Date_SchedDate <= @endDate
+          AND Case_CanCode IS NULL
           ${siteFilter}
         GROUP BY YEAR(Date_SchedDate), MONTH(Date_SchedDate)
         ORDER BY Year, Month
