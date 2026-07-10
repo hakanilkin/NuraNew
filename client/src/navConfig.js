@@ -10,13 +10,6 @@ export const OR_NAV = [
     ],
   },
   {
-    id: 'schedule-forecast', label: 'Schedule Forecasts', icon: 'CalendarDays', type: 'expander',
-    children: [
-      { id: 'sf-daily',  label: 'Daily Summary', type: 'link', path: '/schedule-forecast/daily' },
-      { id: 'sf-detail', label: 'Daily Detail',  type: 'link', path: '/schedule-forecast/detail' },
-    ],
-  },
-  {
     id: 'atlas', label: 'Atlas', icon: 'Map', type: 'expander',
     children: [
       { id: 'atlas-fcot',               label: 'FCOT Drivers',       type: 'link', path: '/atlas/fcot' },
@@ -25,7 +18,13 @@ export const OR_NAV = [
     ],
   },
   { id: 'ask-nura',    label: 'Ask Nura',    icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
-  { id: 'forecasts',   label: 'Forecasts',   icon: 'TrendingUp',        type: 'link', path: '/forecasts' },
+  {
+    id: 'forecasts', label: 'Forecasts', icon: 'TrendingUp', type: 'expander',
+    children: [
+      { id: 'sf-daily',  label: 'Daily Summary', type: 'link', path: '/schedule-forecast/daily' },
+      { id: 'sf-detail', label: 'Daily Detail',  type: 'link', path: '/schedule-forecast/detail' },
+    ],
+  },
 ]
 
 export const IP_NAV = [
@@ -56,16 +55,15 @@ const navConfig = [
     children: [...OR_NAV[0].children, ...IP_NAV[0].children],
   },
   {
-    id: 'schedule-forecast', type: 'expander',
-    children: OR_NAV[1].children,
-  },
-  {
     id: 'atlas', type: 'expander',
-    children: [...OR_NAV[2].children, ...IP_NAV[1].children],
+    children: [...OR_NAV[1].children, ...IP_NAV[1].children],
   },
-  { id: 'ask-nura',    type: 'link', path: '/ask-nura' },
-  { id: 'forecasts',   type: 'link', path: '/forecasts' },
-  { id: 'ip-forecast', type: 'link', path: '/ip/forecast',  label: 'Forecasts' },
+  { id: 'ask-nura', type: 'link', path: '/ask-nura' },
+  {
+    id: 'forecasts', type: 'expander',
+    children: OR_NAV[3].children,
+  },
+  { id: 'ip-forecast', type: 'link', path: '/ip/forecast', label: 'Forecasts' },
 ]
 
 export default navConfig

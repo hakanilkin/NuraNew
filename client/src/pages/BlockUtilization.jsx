@@ -6,7 +6,7 @@ import { TODAY, subtractMonths, fetchDateMeta } from '../lib/dates'
 
 // Fallbacks until /api/meta/dates resolves (or if it fails)
 const DEFAULT_END   = TODAY
-const DEFAULT_START = subtractMonths(DEFAULT_END, 12)
+const DEFAULT_START = subtractMonths(DEFAULT_END, 6)
 const MONTHS_SHORT  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const WEEKS    = [1, 2, 3, 4, 5]
@@ -474,8 +474,8 @@ export default function BlockUtilization() {
       fetch('/api/capacity/location-groups').then(r => r.ok ? r.json() : []).catch(() => []),
     ])
       .then(([meta, d]) => {
-        const end   = meta.maxBlockDate ? String(meta.maxBlockDate).slice(0, 10) : DEFAULT_END
-        const start = subtractMonths(end, 12)
+        const end   = meta.maxCaseDate ? String(meta.maxCaseDate).slice(0, 10) : DEFAULT_END
+        const start = subtractMonths(end, 6)
         setStartDate(start)
         setEndDate(end)
         const groups = Array.isArray(d) ? d : []

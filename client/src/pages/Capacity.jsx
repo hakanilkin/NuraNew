@@ -18,7 +18,7 @@ import { TODAY, subtractMonths, fetchDateMeta } from '../lib/dates'
 
 // Fallbacks until /api/meta/dates resolves (or if it fails)
 const DEFAULT_END      = TODAY
-const DEFAULT_START    = subtractMonths(DEFAULT_END, 12)
+const DEFAULT_START    = subtractMonths(DEFAULT_END, 6)
 const PRIME_TARGET     = 80
 const NON_PRIME_TARGET = 15
 
@@ -509,9 +509,9 @@ export default function Capacity() {
   }, [])
 
   useEffect(() => {
-    fetchDateMeta().then(({ maxBlockDate }) => {
-      const end   = maxBlockDate ? String(maxBlockDate).slice(0, 10) : DEFAULT_END
-      const start = subtractMonths(end, 12)
+    fetchDateMeta().then(({ maxCaseDate }) => {
+      const end   = maxCaseDate ? String(maxCaseDate).slice(0, 10) : DEFAULT_END
+      const start = subtractMonths(end, 6)
       setStartDate(start)
       setEndDate(end)
       fetchData({ startDate: start, endDate: end, locations: [], dow: '' })
