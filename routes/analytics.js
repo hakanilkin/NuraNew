@@ -621,6 +621,47 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
     }
   });
 
+  // ── GET /api/ip/forecast/units ──────────────────────────────────────────────
+  // Inpatient forecast by unit from V4_Inpatient_Forecast_Compile.
+  // Rows without a level of care are non-inpatient departments — excluded.
+
+  router.get('/ip/forecast/units', async (req, res) => {
+    try {
+      const db = await getTenantPool(req.session.tenantId);
+      const result = await db.request().query(`
+        SELECT
+          DEP_LevelofCare                                   AS LevelOfCare,
+          DEP_NAME                                          AS Unit,
+          SUM(ISNULL(CENSUS, 0))                            AS Census,
+          SUM(ISNULL(StaffedBeds, 0))                       AS StaffedBeds,
+          SUM(ISNULL(EDAdmission_OrderAvailable, 0))        AS EDOrderAvailable,
+          SUM(ISNULL(EDAdmissions_DispoSet, 0))             AS EDDispoSet,
+          SUM(ISNULL(EDAdmissions_Forecast_00_06, 0))       AS EDFcst0006,
+          SUM(ISNULL(EDAdmissions_Forecast_06_12, 0))       AS EDFcst0612,
+          SUM(ISNULL(EDAdmissions_Forecast_12_18, 0))       AS EDFcst1218,
+          SUM(ISNULL(EDAdmissions_Forecast_18_23, 0))       AS EDFcst1823,
+          SUM(ISNULL(ORAdmissions_Forecast_00_06, 0))       AS ORFcst0006,
+          SUM(ISNULL(ORAdmissions_Forecast_06_12, 0))       AS ORFcst0612,
+          SUM(ISNULL(ORAdmissions_Forecast_12_18, 0))       AS ORFcst1218,
+          SUM(ISNULL(ORAdmissions_Forecast_18_23, 0))       AS ORFcst1823,
+          SUM(ISNULL(TransferCenter_Forecast, 0))           AS TransferCenter,
+          SUM(ISNULL(OtherTransferIn_Forecast, 0))          AS OtherTransferIn,
+          SUM(ISNULL(TransferOutofUnit_Forecast, 0))        AS TransferOut,
+          SUM(ISNULL(TransferIntoUnit_Forecast, 0))         AS TransferIn
+        FROM V4_Inpatient_Forecast_Compile
+        WHERE DEP_LevelofCare IS NOT NULL
+          AND DEP_LevelofCare <> 'Emergency Medicine'
+        GROUP BY DEP_LevelofCare, DEP_NAME
+        HAVING SUM(ISNULL(CENSUS, 0)) <> 0 OR SUM(ISNULL(StaffedBeds, 0)) <> 0
+        ORDER BY DEP_LevelofCare, DEP_NAME
+      `);
+      res.json(result.recordset);
+    } catch (err) {
+      console.error('/api/ip/forecast/units error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // ── GET /api/blazesql/url ───────────────────────────────────────────────────
 
   router.get('/blazesql/url', async (req, res) => {
