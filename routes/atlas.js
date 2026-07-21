@@ -10,7 +10,7 @@ const DATA_DIR = path.join(__dirname, '..', 'public', 'data');
 // Resolve a per-tenant data directory, sanitizing the tenant name to prevent
 // path traversal.  Only lowercase alphanumeric chars are kept.
 function tenantDataDir(tenantName) {
-  const safe = (tenantName || 'virtua').toLowerCase().replace(/[^a-z0-9]/g, '') || 'virtua';
+  const safe = (tenantName || 'nhs').toLowerCase().replace(/[^a-z0-9]/g, '') || 'nhs';
   return path.join(DATA_DIR, safe);
 }
 

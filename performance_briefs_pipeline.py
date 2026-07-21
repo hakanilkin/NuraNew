@@ -8,7 +8,7 @@ every CaseBlock over the two most recent complete quarters, then writes:
 
 Usage:
     pip install python-dotenv pyodbc pandas
-    python performance_briefs_pipeline.py --tenant virtua
+    python performance_briefs_pipeline.py --tenant nhs
     python performance_briefs_pipeline.py --tenant ohs
 """
 
@@ -422,7 +422,7 @@ ctx_path = os.path.join(out_dir, 'performance_briefs_context.json')
 if os.path.exists(ctx_path):
     print(f"  Context file already exists — not overwriting: {ctx_path}")
 else:
-    # For virtua: seed from mock data where group name matches a real caseblock
+    # For nhs: seed from mock data where group name matches a real caseblock
     ctx = {}
 
     mock_path = os.path.join(script_dir, 'public', 'data', 'performance_briefs_mock.json')

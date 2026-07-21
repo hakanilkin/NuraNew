@@ -24,11 +24,15 @@ CREATE TABLE UserTenants (
 -- ----------------------------------------------------------------
 -- Seed: existing clients
 -- Update DBUser / DBPassword to match your Azure SQL credentials
+--
+-- NOTE: the NHS tenant's DBName is still 'Virtua' — the client was renamed
+-- but the underlying Azure SQL database was not.  TenantName drives the UI
+-- label and the public/data/<name> Atlas folder; DBName drives the connection.
 -- ----------------------------------------------------------------
 INSERT INTO Tenants (TenantName, DBServer, DBName, DBUser, DBPassword)
 VALUES
-  ('Virtua', 'brighthospital.database.windows.net', 'Virtua', 'hakantest@brighthospital', 'YOUR_PASSWORD'),
-  ('OHS',    'brighthospital.database.windows.net', 'OHS',    'hakantest@brighthospital', 'YOUR_PASSWORD');
+  ('NHS', 'brighthospital.database.windows.net', 'Virtua', 'hakantest@brighthospital', 'YOUR_PASSWORD'),
+  ('OHS', 'brighthospital.database.windows.net', 'OHS',    'hakantest@brighthospital', 'YOUR_PASSWORD');
 
 -- ----------------------------------------------------------------
 -- Assign admin user to all tenants (run after seeding)
