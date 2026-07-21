@@ -11,7 +11,7 @@ Usage in a pipeline:
     from pipeline_config import parse_tenant_arg, get_db_params
     args, cfg = parse_tenant_arg('My pipeline description')
     server, database, user, password = get_db_params(cfg)
-    # cfg['output_dir']      → relative path, e.g. 'public/data/virtua'
+    # cfg['output_dir']      → relative path, e.g. 'public/data/nhs'
     # cfg['hospital_filter'] → WHERE value, or None to omit the filter
     # cfg['service_line_col'] → actual DB column name for SERVICE_LINE
     # cfg['or_combo_locs']   → tuple of OR locations, or None = no filter
@@ -25,12 +25,14 @@ import argparse
 # ── Tenant definitions ────────────────────────────────────────────────────────
 
 TENANTS = {
-    'virtua': {
+    'nhs': {
         # database: the analytics DB name on the Azure SQL server (not a secret).
+        # Still 'Virtua' — the tenant was renamed to NHS but the underlying
+        # Azure SQL database name was not changed.
         # Server/user/password come from env vars: DB_SERVER, DB_USER, DB_PASSWORD.
         'env_prefix':        '',
         'database':          'Virtua',
-        'output_dir':        os.path.join('public', 'data', 'virtua'),
+        'output_dir':        os.path.join('public', 'data', 'nhs'),
         'hospital_filter':   'Our Lady of Lourdes Hospital',
         'service_line_col':  'SERVICE_LINE',
         'service_line_2_col': 'SERVICE_LINE_2',
@@ -57,7 +59,7 @@ TENANTS = {
         'case_date_range':  ('2023-01-01', '2025-12-31'),
         # First-case identification: 'column' = Turnover_Orderofcaseinroom = 1
         'first_case_strategy': 'column',
-        # CaseLogStatus filter value (Virtua stores the label; OHS stores a numeric code)
+        # CaseLogStatus filter value (NHS stores the label; OHS stores a numeric code)
         'case_posted_value': 'Posted',
         # Performance Briefs: status classification thresholds (first-match wins)
         'brief_status_rules': {
@@ -107,9 +109,9 @@ TENANTS = {
 
 # ── Helper functions ──────────────────────────────────────────────────────────
 
-def get_tenant_config(name='virtua'):
+def get_tenant_config(name='nhs'):
     """Return config dict for the named tenant."""
-    key = (name or 'virtua').lower().strip()
+    key = (name or 'nhs').lower().strip()
     if key not in TENANTS:
         raise ValueError(f"Unknown tenant '{key}'. Known: {list(TENANTS.keys())}")
     return TENANTS[key]
@@ -121,8 +123,8 @@ def get_db_params(cfg):
 
     database comes from cfg['database'] (hardcoded per-tenant, not an env var).
     server/user/password come from env vars with the tenant's prefix:
-      virtua (prefix ''):   DB_SERVER, DB_USER, DB_PASSWORD
-      ohs    (prefix 'OHS_'): OHS_DB_SERVER (fallback DB_SERVER), etc.
+      nhs (prefix ''):     DB_SERVER, DB_USER, DB_PASSWORD
+      ohs (prefix 'OHS_'): OHS_DB_SERVER (fallback DB_SERVER), etc.
     """
     p        = cfg['env_prefix']
     database = cfg['database']
@@ -146,9 +148,9 @@ def parse_tenant_arg(description='Run EBM pipeline for a specific tenant.'):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         '--tenant',
-        default='virtua',
+        default='nhs',
         choices=list(TENANTS.keys()),
-        help='Tenant name (default: virtua)',
+        help='Tenant name (default: nhs)',
     )
     args = parser.parse_args()
     cfg  = get_tenant_config(args.tenant)
