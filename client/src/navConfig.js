@@ -25,6 +25,12 @@ export const OR_NAV = [
       { id: 'sf-detail', label: 'Daily Detail',  type: 'link', path: '/schedule-forecast/detail' },
     ],
   },
+  {
+    id: 'open-time', label: 'Open Time', icon: 'CalendarClock', type: 'expander',
+    children: [
+      { id: 'ot-radar', label: 'Release Radar', type: 'link', path: '/open-time/radar' },
+    ],
+  },
 ]
 
 export const IP_NAV = [
@@ -62,6 +68,10 @@ const navConfig = [
   {
     id: 'forecasts', type: 'expander',
     children: OR_NAV[3].children,
+  },
+  {
+    id: 'open-time', type: 'expander',
+    children: OR_NAV[4].children,
   },
   { id: 'ip-forecast', type: 'link', path: '/ip/forecast', label: 'Forecasts' },
 ]

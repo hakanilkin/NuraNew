@@ -8,6 +8,7 @@ import {
   MessageSquareText,
   TrendingUp,
   CalendarDays,
+  CalendarClock,
   Target,
   ChevronRight,
   LogOut,
@@ -38,11 +39,12 @@ import RoomRunning           from './pages/RoomRunning'
 import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
+import OpenTimeRadar        from './pages/OpenTimeRadar'
 import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
-const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays, Target }
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays, CalendarClock, Target }
 
 function collectLeafPaths(items) {
   return items.flatMap(item =>
@@ -576,6 +578,8 @@ function Shell() {
           <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
           <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
           <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />
+          <Route path="/open-time/radar"             element={<OpenTimeRadar />} />
+          <Route path="/open-time"                   element={<Navigate to="/open-time/radar" replace />} />
           <Route path="/room-running"      element={<RoomRunning />} />
           <Route path="/or/service-lines" element={<ORServiceLines />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />

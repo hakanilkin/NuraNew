@@ -267,6 +267,7 @@ const iplosRouter          = require('./routes/iplos')(getTenantPool, sql, requi
 const ipbedplacementRouter = require('./routes/ipbedplacement')(getTenantPool, sql, requireTenant);
 const ipdischargesRouter   = require('./routes/ipdischarges')(getTenantPool, sql, requireTenant);
 const orservicelineRouter  = require('./routes/orserviceline')(getTenantPool, sql, requireTenant);
+const openTimeRouter       = require('./routes/opentime')(getTenantPool, sql, requireTenant);
 
 app.use('/api/auth',           authRouter);
 app.use('/api/admin',          adminRouter);
@@ -275,6 +276,7 @@ app.use('/api/iplos',          iplosRouter);
 app.use('/api/ipbedplacement', ipbedplacementRouter);
 app.use('/api/ipdischarges',   ipdischargesRouter);
 app.use('/api/orserviceline',  orservicelineRouter);
+app.use('/api/opentime',       openTimeRouter);
 app.use('/api',        analyticsRouter);
 app.use('/api',        askNuraRouter);
 
