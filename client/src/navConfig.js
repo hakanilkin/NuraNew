@@ -26,6 +26,16 @@ export const OR_NAV = [
     ],
   },
   {
+    // Gated by tenant features — see App.jsx. The pages only exist where the
+    // tenant has the data behind them.
+    id: 'isscm', label: 'Capacity Decisions', icon: 'Scale', type: 'expander',
+    feature: 'isscm',
+    children: [
+      { id: 'or-smoothing', label: 'OR Smoothing', type: 'link', path: '/or-smoothing', feature: 'smoothing' },
+      { id: 'staffing',     label: 'Staffing',     type: 'link', path: '/staffing',     feature: 'staffing' },
+    ],
+  },
+  {
     id: 'open-time', label: 'Open Time', icon: 'CalendarClock', type: 'expander',
     children: [
       { id: 'ot-radar',   label: 'Release Radar',  type: 'link', path: '/open-time/radar' },

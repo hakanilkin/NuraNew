@@ -15,6 +15,14 @@ const { getParam, resolveColumn } = require('../utils/tenantColumns');
 // this file — if a verdict needs explaining, the explanation is a driver in the
 // engine, not a string built here.
 
+// Required fields per decision kind, so a malformed decision fails at the door
+// rather than as a silent zero three pillars deep.
+const KINDS_ALLOWED = {
+  REALLOCATE: ['fromBlock', 'toService'],
+  SHIFT_DOW: ['service', 'casesPerWeek'],
+  FLEX_STAFFING: ['rooms'],
+};
+
 const DEFAULT_TRAILING_WEEKS = 8;
 const DEFAULT_HORIZON_WEEKS = 4;
 
@@ -482,21 +490,32 @@ module.exports = function isscmRoutes(getTenantPool, sql, requireTenant) {
     try {
       const tenant = req.tenantName || 'default';
       const d = req.body?.decision || {};
-      if (!d.fromBlock || !d.toService || d.dayOfWeek == null) {
-        return res.status(400).json({ error: 'decision.fromBlock, decision.toService and decision.dayOfWeek are required' });
+      const kind = String(d.kind || 'REALLOCATE');
+      if (!Object.prototype.hasOwnProperty.call(KINDS_ALLOWED, kind)) {
+        return res.status(400).json({ error: 'unknown decision kind' });
+      }
+      if (d.dayOfWeek == null) {
+        return res.status(400).json({ error: 'decision.dayOfWeek is required' });
+      }
+      // Each kind needs different fields: a flex has no receiving service, a
+      // shift has no source block.
+      const missing = KINDS_ALLOWED[kind].filter(f => d[f] == null || d[f] === '');
+      if (missing.length) {
+        return res.status(400).json({ error: `decision.${missing[0]} is required for ${kind}` });
       }
       const weekday = Math.min(Math.max(parseInt(d.dayOfWeek, 10), 0), 6);
       const hours = Math.min(Math.max(parseFloat(d.hours) || 4, 0.5), 12);
       const weeks = DEFAULT_TRAILING_WEEKS;
 
       const db = await getTenantPool(req.session.tenantId);
+      const service = String(d.toService || d.service || '');
       const baseline = await buildBaseline(db, tenant, {
-        block: String(d.fromBlock), service: String(d.toService),
+        block: String(d.fromBlock || d.service || ''), service,
         weekday, weeks, horizonDays: 28,
       });
       res.json(evaluate(baseline, {
-        kind: 'REALLOCATE', fromBlock: String(d.fromBlock), toService: String(d.toService),
-        hours, dayOfWeek: weekday, dayOfWeekLabel: DOW_LABEL[weekday], weeks,
+        ...d, kind, hours,
+        dayOfWeek: weekday, dayOfWeekLabel: DOW_LABEL[weekday], weeks,
       }, isscmConfig(tenant)));
     } catch (err) {
       console.error('/api/isscm/evaluate error:', err.message);

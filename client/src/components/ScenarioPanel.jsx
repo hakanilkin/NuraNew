@@ -206,23 +206,38 @@ export function Alternatives({ alternatives, onSelect }) {
   )
 }
 
-export default function ScenarioPanel({ open, scenarioId, hours = 4, onClose }) {
+/**
+ * Opens either on a curated scenario (`scenarioId`, from the Release Radar) or
+ * on an ad-hoc decision (`decision`, from the Smoothing and Staffing pages).
+ * Both go to the same engine; only the endpoint differs.
+ */
+export default function ScenarioPanel({ open, scenarioId, decision, hours = 4, onClose }) {
   const [state, setState] = useState({ loading: false, error: null, result: null })
   const [expanded, setExpanded] = useState(null)
   const [activeId, setActiveId] = useState(scenarioId)
 
   useEffect(() => { setActiveId(scenarioId) }, [scenarioId])
 
+  const decisionKey = decision ? JSON.stringify(decision) : null
+
   useEffect(() => {
-    if (!open || !activeId) return
+    if (!open || (!activeId && !decisionKey)) return
     let cancelled = false
     setState({ loading: true, error: null, result: null })
-    fetch(`/api/isscm/scenarios/${encodeURIComponent(activeId)}?hours=${hours}`)
+
+    const req = decisionKey && !activeId
+      ? fetch('/api/isscm/evaluate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision: JSON.parse(decisionKey) }),
+        })
+      : fetch(`/api/isscm/scenarios/${encodeURIComponent(activeId)}?hours=${hours}`)
+
+    req
       .then(r => (r.ok ? r.json() : r.json().then(d => Promise.reject(new Error(d.error || `HTTP ${r.status}`)))))
       .then(d => { if (!cancelled) setState({ loading: false, error: null, result: d }) })
       .catch(e => { if (!cancelled) setState({ loading: false, error: e.message, result: null }) })
     return () => { cancelled = true }
-  }, [open, activeId, hours])
+  }, [open, activeId, decisionKey, hours])
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose?.() }
@@ -255,7 +270,11 @@ export default function ScenarioPanel({ open, scenarioId, hours = 4, onClose }) 
             </div>
             {d && (
               <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-600)', marginTop: 3 }}>
-                Move {d.hours}h of <strong>{d.fromBlock}</strong> to <strong>{d.toService}</strong> on {d.dayOfWeekLabel}
+                {d.kind === 'SHIFT_DOW'
+                  ? <>Move {d.casesPerWeek} <strong>{d.service}</strong> case{d.casesPerWeek === 1 ? '' : 's'}/week to <strong>{d.dayOfWeekLabel}</strong></>
+                  : d.kind === 'FLEX_STAFFING'
+                    ? <>Flex {d.rooms > 0 ? 'up' : 'down'} {Math.abs(d.rooms)} room{Math.abs(d.rooms) === 1 ? '' : 's'} on <strong>{d.dayOfWeekLabel}</strong></>
+                    : <>Move {d.hours}h of <strong>{d.fromBlock}</strong> to <strong>{d.toService}</strong> on {d.dayOfWeekLabel}</>}
               </div>
             )}
           </div>

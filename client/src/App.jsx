@@ -14,8 +14,7 @@ import {
   LogOut,
   ShieldCheck,
   KeyRound,
-  Menu,
-} from 'lucide-react'
+  Menu, Scale } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
 import navConfig, { OR_NAV, IP_NAV } from './navConfig'
 import Login            from './pages/Login'
@@ -36,6 +35,8 @@ import ORServiceLines    from './pages/ORServiceLines'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
 import RoomRunning           from './pages/RoomRunning'
+import ORSmoothing  from './pages/ORSmoothing'
+import Staffing     from './pages/Staffing'
 import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
@@ -46,7 +47,7 @@ import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
-const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays, CalendarClock, Target }
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays, CalendarClock, Target, Scale }
 
 function collectLeafPaths(items) {
   return items.flatMap(item =>
@@ -183,6 +184,20 @@ function PlaceholderPage({ title }) {
 }
 
 /* ─── Nav renderer ───────────────────────────────────────────────────────── */
+
+/**
+ * Drop anything the tenant does not have the data for, and any group left
+ * empty by that. A nav entry leading to a page that cannot load is worse than
+ * no entry at all.
+ */
+function filterByFeature(items, features) {
+  return items
+    .filter(item => !item.feature || features?.[item.feature])
+    .map(item => (item.children
+      ? { ...item, children: filterByFeature(item.children, features) }
+      : item))
+    .filter(item => item.type !== 'expander' || item.children.length > 0)
+}
 
 function renderNavItems(items, level, { isOpen, toggle }) {
   return items.map(item => {
@@ -450,6 +465,16 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
   const { user }     = useAuth()
   const { pathname } = useLocation()
   const [open,   setOpen]   = useState({ analytics: false, atlas: false })
+  // Which pages this tenant has the data for. Absent until it loads, which
+  // hides the gated entries rather than flashing them.
+  const [features, setFeatures] = useState({})
+
+  useEffect(() => {
+    fetch('/api/tenant-config')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setFeatures(d?.features ?? {}))
+      .catch(() => setFeatures({}))
+  }, [])
   const [domain, setDomain] = useState(() => localStorage.getItem('nura_domain') ?? 'OR')
 
   // Close the mobile drawer whenever navigation happens
@@ -521,7 +546,7 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
 
       {/* ── Nav ── */}
       <nav className="sidebar-nav">
-        {renderNavItems(isOR ? OR_NAV : IP_NAV, 0, { isOpen, toggle })}
+        {renderNavItems(filterByFeature(isOR ? OR_NAV : IP_NAV, features), 0, { isOpen, toggle })}
       </nav>
 
       {/* ── User footer ── */}
@@ -577,6 +602,8 @@ function Shell() {
           <Route path="/capacity"          element={<Capacity />} />
           <Route path="/block-utilization" element={<BlockUtilization />} />
           <Route path="/room-running"                  element={<RoomRunning />} />
+          <Route path="/or-smoothing"                  element={<ORSmoothing />} />
+          <Route path="/staffing"                      element={<Staffing />} />
           <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
           <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
           <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />

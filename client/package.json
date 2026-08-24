@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "check:briefs-render": "node scripts/check-briefs-render.mjs",
-    "check:scenario-panel": "node scripts/check-scenario-panel.mjs"
+    "check:scenario-panel": "node scripts/check-scenario-panel.mjs",
+    "check:smoothing-staffing": "node scripts/check-smoothing-staffing-render.mjs"
   },
   "dependencies": {
     "dompurify": "^3.4.9",
