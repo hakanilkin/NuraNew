@@ -7,14 +7,14 @@
     {
       "caseblock": "ASC ENT",
       "status": "watch",
-      "inblock_util": 69.0,
-      "primetime_util": 69.0,
-      "volume": 134,
+      "inblock_util": 68.6,
+      "primetime_util": 68.6,
+      "volume": 129,
       "deltas": {
-        "volume": 3,
-        "volume_pct": 2.3,
-        "inblock_util": 5.6,
-        "primetime_util": 5.6
+        "volume": -4,
+        "volume_pct": -3.0,
+        "inblock_util": 2.7,
+        "primetime_util": 2.7
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -22,59 +22,47 @@
     },
     {
       "caseblock": "ASC General",
-      "status": "under_allocated",
-      "inblock_util": 75.9,
-      "primetime_util": 75.9,
-      "volume": 103,
+      "status": "right_sized",
+      "inblock_util": 74.4,
+      "primetime_util": 74.4,
+      "volume": 99,
       "deltas": {
-        "volume": 13,
-        "volume_pct": 14.4,
-        "inblock_util": 3.7,
-        "primetime_util": 3.7
+        "volume": 3,
+        "volume_pct": 3.1,
+        "inblock_util": 0.7,
+        "primetime_util": 0.7
       },
-      "findings": [
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 90 to 103 cases QoQ (+14%).",
-          "severity": 2
-        }
-      ],
+      "findings": [],
       "allocated_hours": 182.0,
       "budget": null
     },
     {
       "caseblock": "ASC Ortho",
       "status": "under_allocated",
-      "inblock_util": 78.2,
-      "primetime_util": 78.2,
-      "volume": 92,
+      "inblock_util": 76.8,
+      "primetime_util": 76.8,
+      "volume": 84,
       "deltas": {
-        "volume": 10,
-        "volume_pct": 12.2,
-        "inblock_util": -1.3,
-        "primetime_util": -1.3
+        "volume": 4,
+        "volume_pct": 5.0,
+        "inblock_util": 4.0,
+        "primetime_util": 4.0
       },
-      "findings": [
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 82 to 92 cases QoQ (+12%).",
-          "severity": 2
-        }
-      ],
+      "findings": [],
       "allocated_hours": 182.0,
       "budget": null
     },
     {
       "caseblock": "ASC Plastics",
       "status": "watch",
-      "inblock_util": 69.8,
-      "primetime_util": 69.8,
-      "volume": 45,
+      "inblock_util": 69.4,
+      "primetime_util": 69.4,
+      "volume": 44,
       "deltas": {
-        "volume": -3,
-        "volume_pct": -6.2,
-        "inblock_util": 3.2,
-        "primetime_util": 3.2
+        "volume": -1,
+        "volume_pct": -2.2,
+        "inblock_util": 6.0,
+        "primetime_util": 6.0
       },
       "findings": [],
       "allocated_hours": 91.0,
@@ -83,14 +71,14 @@
     {
       "caseblock": "ASC Uro/Gyn",
       "status": "under_allocated",
-      "inblock_util": 76.2,
-      "primetime_util": 76.2,
-      "volume": 121,
+      "inblock_util": 75.9,
+      "primetime_util": 75.9,
+      "volume": 126,
       "deltas": {
-        "volume": 5,
-        "volume_pct": 4.3,
-        "inblock_util": 4.7,
-        "primetime_util": 4.7
+        "volume": 6,
+        "volume_pct": 5.0,
+        "inblock_util": 1.9,
+        "primetime_util": 1.9
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -98,15 +86,15 @@
     },
     {
       "caseblock": "Colorectal",
-      "status": "right_sized",
-      "inblock_util": 73.3,
-      "primetime_util": 73.3,
-      "volume": 71,
+      "status": "watch",
+      "inblock_util": 64.6,
+      "primetime_util": 64.6,
+      "volume": 69,
       "deltas": {
-        "volume": 3,
-        "volume_pct": 4.4,
-        "inblock_util": 7.2,
-        "primetime_util": 7.2
+        "volume": -1,
+        "volume_pct": -1.4,
+        "inblock_util": -8.0,
+        "primetime_util": -8.0
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -114,37 +102,31 @@
     },
     {
       "caseblock": "ENT",
-      "status": "over_allocated",
-      "inblock_util": 54.8,
-      "primetime_util": 54.8,
-      "volume": 60,
+      "status": "watch",
+      "inblock_util": 64.2,
+      "primetime_util": 64.2,
+      "volume": 69,
       "deltas": {
-        "volume": -9,
-        "volume_pct": -13.0,
-        "inblock_util": 1.3,
-        "primetime_util": 1.3
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": 4.0,
+        "primetime_util": 4.0
       },
-      "findings": [
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 69 to 60 cases QoQ (-13%).",
-          "severity": 2
-        }
-      ],
+      "findings": [],
       "allocated_hours": 104.0,
       "budget": null
     },
     {
       "caseblock": "General A",
       "status": "watch",
-      "inblock_util": 66.0,
-      "primetime_util": 66.0,
-      "volume": 109,
+      "inblock_util": 68.8,
+      "primetime_util": 68.8,
+      "volume": 112,
       "deltas": {
-        "volume": 6,
-        "volume_pct": 5.8,
-        "inblock_util": -0.5,
-        "primetime_util": -0.5
+        "volume": 2,
+        "volume_pct": 1.8,
+        "inblock_util": 2.8,
+        "primetime_util": 2.8
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -153,14 +135,14 @@
     {
       "caseblock": "General B",
       "status": "watch",
-      "inblock_util": 64.4,
-      "primetime_util": 64.4,
-      "volume": 109,
+      "inblock_util": 63.6,
+      "primetime_util": 63.6,
+      "volume": 93,
       "deltas": {
-        "volume": 7,
-        "volume_pct": 6.9,
-        "inblock_util": 1.9,
-        "primetime_util": 1.9
+        "volume": -3,
+        "volume_pct": -3.1,
+        "inblock_util": 0.6,
+        "primetime_util": 0.6
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -170,73 +152,89 @@
       "caseblock": "Open",
       "status": "misaligned",
       "inblock_util": 0.0,
-      "primetime_util": 76.0,
-      "volume": 1048,
+      "primetime_util": 77.3,
+      "volume": 1151,
       "deltas": {
-        "volume": -15,
-        "volume_pct": -1.4,
+        "volume": 98,
+        "volume_pct": 9.3,
         "inblock_util": 0.0,
-        "primetime_util": -0.3
+        "primetime_util": 0.6
       },
       "findings": [
         {
           "type": "outofblock_high",
-          "text": "100% of OR time was out-of-block this quarter (97,599 min out of 97,599 min total).",
+          "text": "100% of OR time was out-of-block this quarter (104,885 min out of 104,885 min total).",
           "severity": 2
         }
       ],
-      "allocated_hours": 2140.0,
+      "allocated_hours": 2260.0,
       "budget": null
     },
     {
       "caseblock": "Ortho A",
-      "status": "watch",
-      "inblock_util": 61.9,
-      "primetime_util": 61.9,
-      "volume": 87,
+      "status": "over_allocated",
+      "inblock_util": 55.8,
+      "primetime_util": 55.8,
+      "volume": 39,
       "deltas": {
-        "volume": 19,
-        "volume_pct": 27.9,
-        "inblock_util": 2.8,
-        "primetime_util": 2.8
+        "volume": 2,
+        "volume_pct": 5.4,
+        "inblock_util": -2.8,
+        "primetime_util": -2.8
       },
-      "findings": [
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 68 to 87 cases QoQ (+28%).",
-          "severity": 2
-        }
-      ],
-      "allocated_hours": 208.0,
+      "findings": [],
+      "allocated_hours": 104.0,
       "budget": null
     },
     {
       "caseblock": "Ortho B",
       "status": "watch",
-      "inblock_util": 66.5,
-      "primetime_util": 66.5,
-      "volume": 87,
+      "inblock_util": 67.6,
+      "primetime_util": 67.6,
+      "volume": 89,
       "deltas": {
-        "volume": -4,
-        "volume_pct": -4.4,
-        "inblock_util": -3.6,
-        "primetime_util": -3.6
+        "volume": 7,
+        "volume_pct": 8.5,
+        "inblock_util": -1.7,
+        "primetime_util": -1.7
       },
       "findings": [],
       "allocated_hours": 208.0,
       "budget": null
     },
     {
-      "caseblock": "Plastics",
-      "status": "right_sized",
-      "inblock_util": 73.2,
-      "primetime_util": 73.2,
-      "volume": 54,
+      "caseblock": "Ortho C",
+      "status": "watch",
+      "inblock_util": 64.4,
+      "primetime_util": 64.4,
+      "volume": 39,
       "deltas": {
-        "volume": 1,
-        "volume_pct": 1.9,
-        "inblock_util": 7.5,
-        "primetime_util": 7.5
+        "volume": -6,
+        "volume_pct": -13.3,
+        "inblock_util": -0.3,
+        "primetime_util": -0.3
+      },
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 45 to 39 cases QoQ (-13%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 104.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Plastics",
+      "status": "watch",
+      "inblock_util": 63.9,
+      "primetime_util": 63.9,
+      "volume": 57,
+      "deltas": {
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": 2.5,
+        "primetime_util": 2.5
       },
       "findings": [],
       "allocated_hours": 104.0,
@@ -245,14 +243,14 @@
     {
       "caseblock": "Robotics 1",
       "status": "watch",
-      "inblock_util": 65.5,
-      "primetime_util": 65.5,
+      "inblock_util": 68.4,
+      "primetime_util": 68.4,
       "volume": 108,
       "deltas": {
-        "volume": 2,
-        "volume_pct": 1.9,
-        "inblock_util": -1.0,
-        "primetime_util": -1.0
+        "volume": -1,
+        "volume_pct": -0.9,
+        "inblock_util": 0.7,
+        "primetime_util": 0.7
       },
       "findings": [],
       "allocated_hours": 312.0,
@@ -261,51 +259,19 @@
     {
       "caseblock": "Spine",
       "status": "under_allocated",
-      "inblock_util": 77.7,
-      "primetime_util": 77.7,
+      "inblock_util": 78.9,
+      "primetime_util": 78.9,
       "volume": 69,
       "deltas": {
-        "volume": 4,
-        "volume_pct": 6.2,
-        "inblock_util": 4.7,
-        "primetime_util": 4.7
-      },
-      "findings": [],
-      "allocated_hours": 208.0,
-      "budget": null
-    },
-    {
-      "caseblock": "Spine B",
-      "status": "right_sized",
-      "inblock_util": 71.8,
-      "primetime_util": 71.8,
-      "volume": 31,
-      "deltas": {
-        "volume": -2,
-        "volume_pct": -6.1,
-        "inblock_util": 0.1,
-        "primetime_util": 0.1
-      },
-      "findings": [],
-      "allocated_hours": 104.0,
-      "budget": null
-    },
-    {
-      "caseblock": "Uro/Gyn",
-      "status": "watch",
-      "inblock_util": 63.5,
-      "primetime_util": 63.5,
-      "volume": 113,
-      "deltas": {
-        "volume": -15,
-        "volume_pct": -11.7,
-        "inblock_util": 3.0,
-        "primetime_util": 3.0
+        "volume": 7,
+        "volume_pct": 11.3,
+        "inblock_util": 1.3,
+        "primetime_util": 1.3
       },
       "findings": [
         {
           "type": "volume_qoq",
-          "text": "Volume moved from 128 to 113 cases QoQ (-12%).",
+          "text": "Volume moved from 62 to 69 cases QoQ (+11%).",
           "severity": 2
         }
       ],
@@ -313,21 +279,69 @@
       "budget": null
     },
     {
+      "caseblock": "Spine B",
+      "status": "watch",
+      "inblock_util": 64.7,
+      "primetime_util": 64.7,
+      "volume": 37,
+      "deltas": {
+        "volume": 9,
+        "volume_pct": 32.1,
+        "inblock_util": -13.6,
+        "primetime_util": -13.6
+      },
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 78.3% to 64.7% QoQ (-13.6 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 78.3% to 64.7% QoQ (-13.6 pts).",
+          "severity": 3
+        },
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 28 to 37 cases QoQ (+32%).",
+          "severity": 2
+        }
+      ],
+      "allocated_hours": 104.0,
+      "budget": null
+    },
+    {
+      "caseblock": "Uro/Gyn",
+      "status": "watch",
+      "inblock_util": 63.8,
+      "primetime_util": 63.8,
+      "volume": 117,
+      "deltas": {
+        "volume": 1,
+        "volume_pct": 0.9,
+        "inblock_util": 0.4,
+        "primetime_util": 0.4
+      },
+      "findings": [],
+      "allocated_hours": 208.0,
+      "budget": null
+    },
+    {
       "caseblock": "Vascular",
       "status": "under_allocated",
-      "inblock_util": 79.0,
-      "primetime_util": 79.0,
-      "volume": 45,
+      "inblock_util": 76.6,
+      "primetime_util": 76.6,
+      "volume": 46,
       "deltas": {
-        "volume": 6,
-        "volume_pct": 15.4,
-        "inblock_util": 3.2,
-        "primetime_util": 3.2
+        "volume": 7,
+        "volume_pct": 17.9,
+        "inblock_util": 4.3,
+        "primetime_util": 4.3
       },
       "findings": [
         {
           "type": "volume_qoq",
-          "text": "Volume moved from 39 to 45 cases QoQ (+15%).",
+          "text": "Volume moved from 39 to 46 cases QoQ (+18%).",
           "severity": 2
         }
       ],
