@@ -327,7 +327,9 @@ def generate_occupancy(encounters, unit_meta, calendar, rng):
 def generate_bedplacement(encounters, unit_meta, params, rng):
     rows = []
     for e in encounters:
-        src = 'PACU' if e['_source'] == 'OR' else 'EMERGENCY DEPARTMENT'
+        from_or = e['_source'] == 'OR'
+        src     = 'PACU' if from_or else 'EMERGENCY DEPARTMENT'
+        src_loc = 'Surgery' if from_or else 'Emergency'
         req = e['_admit'] - dt.timedelta(minutes=float(rng.uniform(45, 260)))
 
         req_to_assigned = max(2.0, float(rng.lognormal(3.15, 0.75)))       # median ~23 min
@@ -344,6 +346,7 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
             'TIME_REQUESTTIME':   _minute(req),
             'TIME_EVSREQUESTED':  _minute(evs_req),
             'SOURCE_DEPTNAME':    src,
+            'SOURCE_DEPTLOC':     src_loc,
             'SOURCE_DEPTHOSPITAL': C.MAIN_SITE,
             'DEST_DEPTNAME':      e['_unit'],
             'DEST_DEPTHOSPITAL':  C.MAIN_SITE,
@@ -374,6 +377,7 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
                     'TIME_REQUESTTIME':   _minute(treq),
                     'TIME_EVSREQUESTED':  _minute(treq - dt.timedelta(minutes=float(rng.uniform(15, 120)))),
                     'SOURCE_DEPTNAME':    e['_unit'],
+                    'SOURCE_DEPTLOC':     unit_meta[e['_unit']]['level_of_care'],
                     'SOURCE_DEPTHOSPITAL': C.MAIN_SITE,
                     'DEST_DEPTNAME':      dest,
                     'DEST_DEPTHOSPITAL':  C.MAIN_SITE,

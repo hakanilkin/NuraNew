@@ -9,7 +9,21 @@
       "hospital_filter": null,
       "case_posted_value": "Posted"
     },
-    "features": {}
+    "features": {},
+    "unit_category_map": {
+      "column": "DEP_LASTDEPT",
+      "fallback": "Other",
+      "rules": [
+        { "category": "2nd Floor", "contains": ["2E", "2W"] },
+        { "category": "3rd Floor", "contains": ["3E", "3W"] },
+        { "category": "6N/5W", "contains": ["5W", "6N"] },
+        { "category": "ICU", "contains": ["ICU", "CORONARY CARE"] },
+        { "category": "PCU", "contains": ["PCU"] },
+        { "category": "Maternal Child Health", "contains": ["MOTHER BABY", "LABOR", "SPECIAL CARE NURS", "NEWBORN"] },
+        { "category": "Hospital at Home", "contains": ["HOSPITAL AT HOME"] },
+        { "category": "Rehab", "contains": ["IP REHAB"] }
+      ]
+    }
   },
   "NHS": {
     "columns": {
@@ -40,6 +54,47 @@
     "features": {
       "tdc": true,
       "service_line_drill": true
+    },
+    "unit_category_map": {
+      "column": "DEP_LASTDEPT",
+      "fallback": "Other",
+      "rules": [
+        { "category": "2nd Floor", "contains": ["2E", "2W"] },
+        { "category": "3rd Floor", "contains": ["3E", "3W"] },
+        { "category": "6N/5W", "contains": ["5W", "6N"] },
+        { "category": "ICU", "contains": ["ICU", "CORONARY CARE"] },
+        { "category": "PCU", "contains": ["PCU"] },
+        { "category": "Maternal Child Health", "contains": ["MOTHER BABY", "LABOR", "SPECIAL CARE NURS", "NEWBORN"] },
+        { "category": "Hospital at Home", "contains": ["HOSPITAL AT HOME"] },
+        { "category": "Rehab", "contains": ["IP REHAB"] }
+      ]
+    }
+  },
+  "Demo": {
+    "columns": {
+      "SERVICE_LINE":   "SERVICE_LINE",
+      "SERVICE_LINE_2": "SERVICE_LINE_2",
+      "SERVICE_LINE_3": "SERVICE_LINE_3"
+    },
+    "params": {
+      "hospital_filter": null,
+      "case_posted_value": "Posted",
+      "block_fill_target": 75
+    },
+    "features": {
+      "tdc": true,
+      "service_line_drill": true
+    },
+    "unit_category_map": {
+      "column": "DEP_LASTDEPT",
+      "fallback": "Other",
+      "rules": [
+        { "category": "5 Central", "contains": ["5 CENTRAL"] },
+        { "category": "4 East", "contains": ["4 EAST"] },
+        { "category": "3 West", "contains": ["3 WEST"] },
+        { "category": "ICU", "contains": ["ICU"] },
+        { "category": "Stepdown", "contains": ["STEPDOWN", "PCU"] }
+      ]
     }
   },
   "OHS": {

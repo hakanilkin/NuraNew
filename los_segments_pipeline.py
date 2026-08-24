@@ -41,7 +41,7 @@ print("Step 1: Loading credentials and connecting to database...")
 print("=" * 60)
 
 load_dotenv()
-from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
+from pipeline_config import parse_tenant_arg, get_db_params, unit_category_sql  # noqa: E402
 
 args, cfg = parse_tenant_arg('LOS Segments pipeline — excess LOS segment analysis')
 server, database, user, password = get_db_params(cfg)
@@ -100,6 +100,11 @@ print("=" * 60)
 print("Step 2: Pulling excess LOS segment data...")
 print("=" * 60)
 
+# Unit category mapping comes from config/tenantColumns.json, shared with the
+# Node routes, so a tenant whose departments are named differently is bucketed
+# correctly instead of collapsing into 'Other'.
+_unit_category_sql = unit_category_sql(cfg, column='e.DEP_LASTDEPT', indent='  ')
+
 _enc_hosp_clause = f"\n  AND e.DEP_LASTDEPTHOSPITAL = '{hospital_filter}'" if hospital_filter else ''
 
 QUERY = f"""
@@ -111,19 +116,7 @@ SELECT
   e.ENC_DISCHDISPO,
   e.ACCOUNT_FINANCIALCLASS,
   e.TIME_HOSPADMISSION,
-  CASE
-    WHEN e.DEP_LASTDEPT LIKE '%2E%' OR e.DEP_LASTDEPT LIKE '%2W%' THEN '2nd Floor'
-    WHEN e.DEP_LASTDEPT LIKE '%3E%' OR e.DEP_LASTDEPT LIKE '%3W%' THEN '3rd Floor'
-    WHEN e.DEP_LASTDEPT LIKE '%5W%' OR e.DEP_LASTDEPT LIKE '%6N%' THEN '6N/5W'
-    WHEN e.DEP_LASTDEPT LIKE '%ICU%' OR e.DEP_LASTDEPT LIKE '%CORONARY CARE%' THEN 'ICU'
-    WHEN e.DEP_LASTDEPT LIKE '%PCU%'                               THEN 'PCU'
-    WHEN (e.DEP_LASTDEPT LIKE '%MOTHER BABY%' OR e.DEP_LASTDEPT LIKE '%LABOR%'
-      OR  e.DEP_LASTDEPT LIKE '%SPECIAL CARE NURS%'
-      OR  e.DEP_LASTDEPT LIKE '%NEWBORN%')                         THEN 'Maternal Child Health'
-    WHEN e.DEP_LASTDEPT LIKE '%HOSPITAL AT HOME%'                  THEN 'Hospital at Home'
-    WHEN e.DEP_LASTDEPT LIKE '%IP REHAB%'                          THEN 'Rehab'
-    ELSE 'Other'
-  END AS DEST_CATEGORY
+  {_unit_category_sql} AS DEST_CATEGORY
 FROM DS_Encounters e
 WHERE e.BEDDED = 'Y'{_enc_hosp_clause}
   AND e.TIME_HOSPADMISSION >= '2025-01-01'

@@ -92,12 +92,18 @@ makes the demo credible.
 - **ODBC driver.** These scripts pick the newest installed SQL Server ODBC
   driver; set `ODBC_DRIVER` to pin one. The older `*_pipeline.py` files still
   hardcode "ODBC Driver 17".
-- **`DEST_CATEGORY` is hardcoded to NHS unit names.** `routes/iplos.js` and
-  `routes/ipbedplacement.js` derive the unit bucket from `DEP_LASTDEPT` with
-  NHS-specific `LIKE` patterns (`%2E%`, `%ICU%`, `%PCU%`, …). Bright Memorial's
-  units fall through to "Other", so the IP LOS and Bed Placement breakdowns will
-  under-report until that mapping is made tenant-configurable. Tracked as a
-  follow-up; it is not something the seeder can fix.
+- **`DEST_CATEGORY` is now tenant-configurable** — `config/tenantColumns.json`
+  → `unit_category_map`, read by `utils/tenantColumns.js` and by
+  `pipeline_config.py`. Demo's entry maps Bright Memorial's units; NHS keeps its
+  own patterns; OHS inherits `default`, which is still the NHS list, so nothing
+  changed for it. Guarded by `npm run check:unit-categories` and
+  `python scripts/checks/unit_category_regression.py`.
+- **Still hardcoded to NHS: `SRC_LOC` / `DST_LOC`** in `routes/ipbedplacement.js`
+  and `LOC_EXPR` in `routes/ipdischarges.js`. These group a department into
+  Emergency / Surgery / Endoscopy via an exact NHS OR-room list. They degrade
+  gracefully (falling back to `*_DEPTLOC`) rather than collapsing to "Other", so
+  the seeder populates `SOURCE_DEPTLOC` / `DEST_DEPTLOC` and the demo reads
+  correctly without a product change. Worth folding into the same config later.
 - **ST-3's Friday idle-hours check is a floor, not a point target** (`DemoTenant.md`
   rev 2026-08-24). Nine staffed rooms against a six-room peak necessarily idle
   far more than the original ~12/week figure; the storyline is the visible gap,

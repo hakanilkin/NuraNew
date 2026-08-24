@@ -32,6 +32,9 @@ TENANTS = {
         # Server/user/password come from env vars: DB_SERVER, DB_USER, DB_PASSWORD.
         'env_prefix':        '',
         'database':          'Virtua',
+        # Key in config/tenantColumns.json — the shared source of truth the
+        # Node routes read too (unit_category_map lives there).
+        'tenant_config_key': 'NHS',
         'output_dir':        os.path.join('public', 'data', 'nhs'),
         'hospital_filter':   'Our Lady of Lourdes Hospital',
         'service_line_col':  'SERVICE_LINE',
@@ -76,6 +79,7 @@ TENANTS = {
         # DEMO_-prefixed env vars: DEMO_DB_SERVER, DEMO_DB_USER, DEMO_DB_PASSWORD.
         'env_prefix':        'DEMO_',
         'database':          'Demo',
+        'tenant_config_key': 'Demo',
         'output_dir':        os.path.join('public', 'data', 'demo'),
         'hospital_filter':   None,      # both Bright sites are in scope
         'service_line_col':  'SERVICE_LINE',
@@ -107,6 +111,7 @@ TENANTS = {
         # Server/user/password come from OHS_-prefixed env vars: OHS_DB_SERVER, etc.
         'env_prefix':        'OHS_',
         'database':          'OHS',
+        'tenant_config_key': 'OHS',
         'output_dir':        os.path.join('public', 'data', 'ohs'),
         'hospital_filter':   None,      # None = omit the hospital WHERE clause
         'service_line_col':  'ENC_HOSPITALSERVICE',
@@ -138,6 +143,83 @@ TENANTS = {
         },
     },
 }
+
+
+# ── Shared tenant config (config/tenantColumns.json) ─────────────────────────
+#
+# The Node routes and these pipelines used to derive a department's unit
+# category from the same CASE expression, hardcoded to NHS department codes and
+# copied into five files. Any tenant whose departments are named differently
+# saw nearly everything bucket into 'Other'. The mapping now lives once, in
+# config/tenantColumns.json, and both runtimes read it from there.
+
+import json
+
+_TENANT_COLUMNS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    'config', 'tenantColumns.json')
+_tenant_columns_cache = None
+_DEFAULT_FALLBACK = 'Other'
+
+
+def _tenant_columns():
+    global _tenant_columns_cache
+    if _tenant_columns_cache is None:
+        with open(_TENANT_COLUMNS_PATH, encoding='utf-8') as fh:
+            _tenant_columns_cache = json.load(fh)
+    return _tenant_columns_cache
+
+
+def get_unit_category_map(cfg):
+    """The unit_category_map for a tenant config, falling back to 'default'."""
+    data = _tenant_columns()
+    key = (cfg or {}).get('tenant_config_key')
+    entry = data.get(key) if key else None
+    m = (entry or {}).get('unit_category_map')
+    if m is None:
+        m = data.get('default', {}).get('unit_category_map')
+    return m or {'column': 'DEP_LASTDEPT', 'fallback': _DEFAULT_FALLBACK, 'rules': []}
+
+
+def _sql_literal(v):
+    return "'" + str(v).replace("'", "''") + "'"
+
+
+def unit_category_sql(cfg, column=None, alias=None, indent='    '):
+    """
+    The CASE expression resolving a department column to its unit category.
+    `column` overrides the configured source column (bed placement classifies
+    DEST_DEPTNAME). Safe to interpolate — every value comes from this config.
+    """
+    m = get_unit_category_map(cfg)
+    col = column or m.get('column') or 'DEP_LASTDEPT'
+    fallback = m.get('fallback', _DEFAULT_FALLBACK)
+
+    whens = []
+    for rule in m.get('rules', []):
+        tests = [f'{col} LIKE {_sql_literal("%" + p + "%")}' for p in rule.get('contains', [])]
+        if not tests:
+            continue
+        cond = f"({' OR '.join(tests)})" if len(tests) > 1 else tests[0]
+        whens.append(f'{indent}  WHEN {cond} THEN {_sql_literal(rule["category"])}')
+
+    body = ('\n'.join(whens) + '\n') if whens else ''
+    expr = f'CASE\n{body}{indent}  ELSE {_sql_literal(fallback)}\n{indent}END'
+    return f'{expr} AS {alias}' if alias else expr
+
+
+def classify_unit(cfg, dept_name):
+    """The same mapping applied to a value already in hand (pandas paths)."""
+    m = get_unit_category_map(cfg)
+    fallback = m.get('fallback', _DEFAULT_FALLBACK)
+    if dept_name is None:
+        return fallback
+    n = str(dept_name).upper()
+    if n in ('NAN', 'NULL', ''):
+        return fallback
+    for rule in m.get('rules', []):
+        if any(str(p).upper() in n for p in rule.get('contains', [])):
+            return rule['category']
+    return fallback
 
 
 # ── Helper functions ──────────────────────────────────────────────────────────
