@@ -1,6 +1,7 @@
 const express      = require('express');
 const makeFilters  = require('./filters');
 const { scoreBlocks } = require('../lib/releaseRisk');
+const store        = require('../lib/openTimeStore');
 
 // OR Open Time — Block Release & Reallocation.
 // Phase 1: the Release Radar. Read-only; scores upcoming block instances for
@@ -101,6 +102,122 @@ module.exports = function openTimeRoutes(getTenantPool, sql, requireTenant) {
       console.error('/api/opentime/radar error:', err.message);
       res.status(500).json({ error: 'Internal server error' });
     }
+  });
+
+  // ── Release requests (demo store — no email; response links are the "email") ─
+
+  // POST /api/opentime/requests  — record a sent release request
+  router.post('/requests', (req, res) => {
+    try {
+      const b = req.body || {};
+      if (!b.blockDate || !b.site || !b.caseBlock) {
+        return res.status(400).json({ error: 'blockDate, site and caseBlock are required' });
+      }
+      const created = store.createRequest(req.session.tenantId, b);
+      res.status(201).json(created);
+    } catch (err) {
+      console.error('/api/opentime/requests POST error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // GET /api/opentime/requests  — tracker board
+  router.get('/requests', (req, res) => {
+    res.json({ requests: store.listRequests(req.session.tenantId) });
+  });
+
+  // POST /api/opentime/requests/:id/snooze
+  router.post('/requests/:id/snooze', (req, res) => {
+    const r = store.snoozeRequest(req.session.tenantId, req.params.id, (req.body || {}).until || null);
+    if (!r) return res.status(404).json({ error: 'Request not found' });
+    res.json(r);
+  });
+
+  // ── Open-time slots + reallocation ──────────────────────────────────────────
+
+  // GET /api/opentime/slots  — released-time inventory
+  router.get('/slots', (req, res) => {
+    res.json({ slots: store.listSlots(req.session.tenantId) });
+  });
+
+  // GET /api/opentime/slots/:id/candidates
+  // Ranks other service lines to offer the freed time to, by forward demand
+  // (V4_FORECAST_COMPILE) blended with tenant strategic-goal weights.
+  router.get('/slots/:id/candidates', async (req, res) => {
+    try {
+      const slot = store.getSlot(req.session.tenantId, req.params.id);
+      if (!slot) return res.status(404).json({ error: 'Slot not found' });
+
+      const db = await getTenantPool(req.session.tenantId);
+      const r  = db.request();
+      r.input('site', sql.NVarChar, slot.site);
+      const demand = await r.query(`
+        SELECT
+          ISNULL(SurgeonService, 'Unknown') AS Service,
+          SUM(ISNULL(SCHEDULED_INPATIENT, 0) + ISNULL(SCHEDULED_OUTPATIENT, 0)
+            + ISNULL(FORECAST_INPATIENT, 0)  + ISNULL(FORECAST_OUTPATIENT, 0)) AS ForecastCases
+        FROM V4_FORECAST_COMPILE
+        WHERE Date >= CAST(GETDATE() AS DATE)
+          AND Date <= DATEADD(day, 42, CAST(GETDATE() AS DATE))
+          AND ISNULL(ORGRP2, 'Unknown') = @site
+        GROUP BY SurgeonService
+      `);
+
+      const goals    = store.getGoals(req.session.tenantId);
+      const goalMap  = new Map(goals.map(g => [g.service.toLowerCase(), Number(g.weight) || 0]));
+      const maxGoal  = Math.max(1, ...goals.map(g => Number(g.weight) || 0));
+
+      // Candidate pool = services with forward demand at this site, minus the
+      // one that just gave up the time.
+      const pool = demand.recordset
+        .filter(d => (d.Service || '').toLowerCase() !== (slot.service || '').toLowerCase())
+        .map(d => ({ service: d.Service, forecastCases: Number(d.ForecastCases) || 0 }));
+      const maxCases = Math.max(1, ...pool.map(p => p.forecastCases));
+
+      const W_DEMAND = 0.6, W_STRATEGIC = 0.4;
+      const candidates = pool.map(p => {
+        const demandNorm = p.forecastCases / maxCases;
+        const goalW      = goalMap.get(p.service.toLowerCase()) || 0;
+        const goalNorm   = goalW / maxGoal;
+        const score      = Math.round((W_DEMAND * demandNorm + W_STRATEGIC * goalNorm) * 100);
+        const drivers = [
+          { key: 'demand', label: 'Forward demand', contribution: Math.round(demandNorm * 100),
+            detail: `${p.forecastCases} cases forecast at this site over the next 6 weeks` },
+        ];
+        if (goalW > 0) drivers.push({
+          key: 'strategic', label: 'Strategic priority', contribution: Math.round(goalNorm * 100),
+          detail: `Growth target (weight ${goalW})`,
+        });
+        return { candidate: p.service, service: p.service, matchScore: score, forecastCases: p.forecastCases, isStrategic: goalW > 0, drivers };
+      }).sort((a, b) => b.matchScore - a.matchScore);
+
+      res.json({ slot, candidates });
+    } catch (err) {
+      console.error('/api/opentime/slots/:id/candidates error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // POST /api/opentime/slots/:id/offer  — send fill offer(s)
+  router.post('/slots/:id/offer', (req, res) => {
+    const candidates = (req.body || {}).candidates;
+    if (!Array.isArray(candidates) || !candidates.length) {
+      return res.status(400).json({ error: 'candidates[] is required' });
+    }
+    const slot = store.createOffers(req.session.tenantId, req.params.id, candidates);
+    if (!slot) return res.status(404).json({ error: 'Slot not found' });
+    res.status(201).json(slot);
+  });
+
+  // ── Strategic goals ─────────────────────────────────────────────────────────
+
+  router.get('/goals', (req, res) => {
+    res.json({ goals: store.getGoals(req.session.tenantId) });
+  });
+
+  router.put('/goals', (req, res) => {
+    const goals = store.setGoals(req.session.tenantId, (req.body || {}).goals);
+    res.json({ goals });
   });
 
   return router;

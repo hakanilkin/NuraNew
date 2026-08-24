@@ -28,7 +28,9 @@ export const OR_NAV = [
   {
     id: 'open-time', label: 'Open Time', icon: 'CalendarClock', type: 'expander',
     children: [
-      { id: 'ot-radar', label: 'Release Radar', type: 'link', path: '/open-time/radar' },
+      { id: 'ot-radar',   label: 'Release Radar',  type: 'link', path: '/open-time/radar' },
+      { id: 'ot-tracker', label: 'Release Tracker', type: 'link', path: '/open-time/tracker' },
+      { id: 'ot-board',   label: 'Open Time Board', type: 'link', path: '/open-time/board' },
     ],
   },
 ]

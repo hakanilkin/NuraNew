@@ -7,6 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:3000',
+      '/r':   'http://localhost:3000',  // public release-response pages
+      '/o':   'http://localhost:3000',  // public fill-offer pages
     },
   },
 })

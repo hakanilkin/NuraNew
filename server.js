@@ -11,6 +11,7 @@ const { getTenantConfig } = require('./utils/tenantColumns');
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: false })); // for public Open Time response forms
 
 // ── Security headers ───────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -32,6 +33,7 @@ const baseConfig = {
   port:     parseInt(process.env.DB_PORT) || 1433,
   user:     process.env.DB_USER,
   password: process.env.DB_PASSWORD,
+  connectionTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT) || 30000, // cold Azure SQL handshakes can exceed the 15s default
   options: { encrypt: true, trustServerCertificate, enableArithAbort: true },
 };
 
@@ -39,7 +41,14 @@ const authConfig = { ...baseConfig, database: process.env.AUTH_DB_DATABASE };  /
 
 let authPool;
 async function getAuthPool() {
-  if (!authPool) authPool = await new sql.ConnectionPool(authConfig).connect();
+  if (authPool) return authPool;
+  // Attach the error handler BEFORE connect(): a connect-time failure emits an
+  // 'error' event, and an EventEmitter with no 'error' listener throws and
+  // crashes the process.
+  const pool = new sql.ConnectionPool(authConfig);
+  pool.on('error', err => { console.error('Auth pool error, evicting:', err.message); authPool = null; });
+  await pool.connect();
+  authPool = pool;
   return authPool;
 }
 
@@ -69,20 +78,24 @@ async function getTenantPool(tenantId) {
       .query(`SELECT DBServer, DBName, DBUser, DBPassword FROM Tenants WHERE TenantID = @tid AND IsActive = 1`);
     const t = result.recordset[0];
     if (!t) throw new Error(`Tenant ${tenantId} not found or inactive`);
-    const pool = await new sql.ConnectionPool({
+    const pool = new sql.ConnectionPool({
       server:   t.DBServer,
       database: t.DBName,
       user:     t.DBUser,
       password: decryptSecret(t.DBPassword),
       port:     parseInt(process.env.DB_PORT) || 1433,
+      connectionTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT) || 30000,
       options:  { encrypt: true, trustServerCertificate, enableArithAbort: true },
-    }).connect();
+    });
     // Self-evict on pool-level errors (Azure transient outages, idle-connection
     // resets, etc.) so the next request opens a fresh pool instead of hanging.
+    // Attached BEFORE connect() so a connect-time timeout's 'error' event has a
+    // listener and doesn't crash the process as an unhandled emitter error.
     pool.on('error', err => {
       console.error('Tenant pool error, evicting:', tenantId, err.message);
       delete tenantPools[tenantId];
     });
+    await pool.connect();
     tenantPools[tenantId] = pool;
     return pool;
   })();
@@ -219,6 +232,10 @@ function requireTenant(req, res, next) {
   if (!req.session || !req.session.tenantId) return res.status(400).json({ error: 'No client selected' });
   next();
 }
+
+// Public Open Time response pages (release/offer links) — no auth, so they must
+// be mounted before requireAuth. Serves plain HTML at /r/:token and /o/:token.
+app.use(require('./routes/opentimePublic')());
 
 app.use(requireAuth);
 
