@@ -28,6 +28,7 @@ Prerequisites, in order:
 import argparse
 import csv
 import datetime as dt
+import math
 import os
 import sys
 
@@ -47,6 +48,39 @@ import verify as V                 # noqa: E402
 
 DEMO_DATABASE = 'Demo'
 
+# Chunk size for executemany. Small enough that a failure report names a narrow
+# range of rows, large enough that a 50k-row table still loads in seconds.
+LOAD_BATCH = 1000
+
+
+def coerce(v):
+    """
+    Reduce a value to something pyodbc can bind without guessing.
+
+    numpy scalars, pandas timestamps and NaN/NaT all reach the driver as objects
+    it does not recognise, and the resulting error names neither the column nor
+    the row. Converting here means a bad value is impossible rather than merely
+    unlikely.
+    """
+    if v is None:
+        return None
+    # numpy scalars expose .item(); pandas NaT/NA and float nan are not equal to
+    # themselves.
+    item = getattr(v, 'item', None)
+    if item is not None and type(v).__module__ == 'numpy':
+        v = item()
+    if isinstance(v, float) and math.isnan(v):
+        return None
+    if v is not v:                      # NaT, pandas.NA
+        return None
+    if isinstance(v, bool):
+        return int(v)
+    if isinstance(v, (int, float, str, bytes, dt.datetime, dt.date, dt.time)):
+        return v
+    if hasattr(v, 'to_pydatetime'):     # pandas.Timestamp
+        return v.to_pydatetime()
+    return str(v)
+
 # Internal bookkeeping keys the generators carry between stages. Never loaded.
 # Double underscore, because the real schema has columns like _ID_CaseID and a
 # single leading underscore would strip them.
@@ -59,9 +93,16 @@ def strip_internal(rows):
 
 # ── ISSCM tables (DemoTenant.md 5.2) ─────────────────────────────────────────
 
+def _as_time(hhmm):
+    """'07:00' -> datetime.time. The column is TIME; a string will not cast."""
+    h, m = hhmm.split(':')
+    return dt.time(int(h), int(m))
+
+
 def generate_isscm_tables(roster):
     staffing = [
-        {'Site': site, 'DayOfWeek': dow, 'ShiftStart': start, 'ShiftEnd': end,
+        {'Site': site, 'DayOfWeek': dow,
+         'ShiftStart': _as_time(start), 'ShiftEnd': _as_time(end),
          'StaffedRooms': rooms, 'CoverageRatio': ratio}
         for site, dow, start, end, rooms, ratio in C.STAFFING_PLAN
     ]
@@ -169,7 +210,50 @@ def write_csv(tables, out_dir):
     print(f'  Wrote {len(tables)} CSV files to {out_dir}')
 
 
-def load_into_db(tables, reseed, batch=1000):
+def report_load_failure(cur, conn, table, sql_text, chunk, keys, db_cols,
+                        col_types, offset, exc):
+    """
+    Say exactly what failed. The driver's own message names neither the table,
+    the row nor the column, which makes a mid-load failure almost unactionable.
+    """
+    print()
+    print('=' * 72)
+    print(f'  LOAD FAILED: {table}')
+    print('=' * 72)
+    print(f'  {exc.__class__.__name__}: {exc}')
+    print(f'  Chunk starting at row {offset:,} ({len(chunk)} rows, '
+          f'source rows {offset:,}-{offset + len(chunk) - 1:,})')
+    print()
+    print('  First row of the failing chunk:')
+    for k, col, val in zip(keys, db_cols, chunk[0]):
+        flag = '' if val is None else f'  [{type(val).__name__}]'
+        print(f'    {col:34s} {col_types.get(col, "?"):14s} {val!r:.60}{flag}')
+
+    # Retry the chunk one row at a time with fast_executemany off. Batched
+    # binding infers a type from the first row and reuses it, so a value that
+    # only fails in row 400 is invisible until each row is bound on its own.
+    print()
+    print('  Retrying the chunk row by row with fast_executemany off '
+          'to find the offending value ...')
+    cur.fast_executemany = False
+    for n, row in enumerate(chunk):
+        try:
+            cur.execute(sql_text, row)
+            conn.rollback()
+        except Exception as row_exc:
+            print(f'    Row {offset + n:,} rejected: {row_exc}')
+            for col, val in zip(db_cols, row):
+                print(f'      {col:34s} {col_types.get(col, "?"):14s} {val!r:.60}'
+                      + ('' if val is None else f'  [{type(val).__name__}]'))
+            conn.rollback()
+            break
+    else:
+        print('    No single row failed on its own — the batch binding is the '
+              'problem, not one value. Re-run with --no-fast-executemany.')
+    print('=' * 72)
+
+
+def load_into_db(tables, reseed, batch=LOAD_BATCH, fast=True):
     import pyodbc
     from dotenv import load_dotenv
     load_dotenv()
@@ -188,18 +272,22 @@ def load_into_db(tables, reseed, batch=1000):
         timeout=60, autocommit=False,
     )
     cur = conn.cursor()
-    cur.fast_executemany = True
-    print(f'  Connected to {server} / {database}')
+    cur.fast_executemany = fast
+    print(f'  Connected to {server} / {database}'
+          + ('' if fast else '  (fast_executemany off)'))
 
     # The database is the authority on structure; the generator only offers
     # values for the columns it knows how to author.
     cur.execute("""
-        SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+        FROM INFORMATION_SCHEMA.COLUMNS
         ORDER BY TABLE_NAME, ORDINAL_POSITION
     """)
-    actual = {}
-    for tbl, col in cur.fetchall():
+    actual, types = {}, {}
+    for tbl, col, dtype, clen in cur.fetchall():
         actual.setdefault(tbl, []).append(col)
+        label = f'{dtype}({clen})' if clen not in (None, -1) else str(dtype)
+        types.setdefault(tbl, {})[col.lower()] = label
 
     total = 0
     for name, rows in tables.items():
@@ -224,11 +312,19 @@ def load_into_db(tables, reseed, batch=1000):
         db_cols = [lower[c.lower()] for c in usable]
         placeholders = ', '.join('?' * len(db_cols))
         collist = ', '.join(f'[{c}]' for c in db_cols)
-        sql = f'INSERT INTO dbo.[{name}] ({collist}) VALUES ({placeholders})'
+        sql_text = f'INSERT INTO dbo.[{name}] ({collist}) VALUES ({placeholders})'
+        col_types = {c: types.get(name, {}).get(c.lower(), '?') for c in db_cols}
 
         for i in range(0, len(rows), batch):
-            chunk = [[r.get(c) for c in usable] for r in rows[i:i + batch]]
-            cur.executemany(sql, chunk)
+            chunk = [[coerce(r.get(c)) for c in usable] for r in rows[i:i + batch]]
+            try:
+                cur.fast_executemany = fast
+                cur.executemany(sql_text, chunk)
+            except Exception as exc:
+                conn.rollback()
+                report_load_failure(cur, conn, name, sql_text, chunk, usable, db_cols,
+                                    col_types, i, exc)
+                raise
         conn.commit()
         total += len(rows)
         print(f'  {name:34s} {len(rows):>8,} rows  ({len(usable)}/{len(actual[name])} columns populated)')
@@ -249,6 +345,11 @@ def main():
                     help='generate and verify without touching a database')
     ap.add_argument('--out-dir', default=None, help='also write the tables as CSV')
     ap.add_argument('--no-verify', action='store_true')
+    ap.add_argument('--no-fast-executemany', action='store_true',
+                    help='bind row by row; slower, but some drivers mis-infer '
+                         'a column type from the first row of a batch')
+    ap.add_argument('--batch', type=int, default=LOAD_BATCH,
+                    help=f'rows per insert batch (default {LOAD_BATCH})')
     args = ap.parse_args()
 
     if not args.load and not args.dry_run and not args.out_dir:
@@ -276,7 +377,8 @@ def main():
 
     if args.load:
         print()
-        load_into_db(tables, args.reseed)
+        load_into_db(tables, args.reseed, batch=args.batch,
+                     fast=not args.no_fast_executemany)
 
 
 if __name__ == '__main__':

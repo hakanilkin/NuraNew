@@ -23,6 +23,7 @@ Run: python scripts/checks/generated_schema_coverage.py
 
 import datetime as dt
 import glob
+import json
 import os
 import re
 import sys
@@ -119,6 +120,83 @@ def generated_columns():
     return {t: [c for c in (tables[t][0].keys() if tables.get(t) else [])] for t in GENERATED}
 
 
+DATEISH = {'date', 'datetime', 'datetime2', 'smalldatetime', 'time', 'datetimeoffset'}
+NUMERIC = {'int', 'bigint', 'smallint', 'tinyint', 'float', 'real', 'decimal',
+           'numeric', 'bit', 'money', 'smallmoney'}
+TEXT    = {'char', 'varchar', 'nchar', 'nvarchar', 'text', 'ntext'}
+
+
+def _py_kind(v):
+    import datetime as _d
+    if v is None:                    return None
+    if isinstance(v, bool):          return 'bool'
+    if isinstance(v, _d.datetime):   return 'datetime'
+    if isinstance(v, _d.date):       return 'date'
+    if isinstance(v, _d.time):       return 'time'
+    if isinstance(v, int):           return 'int'
+    if isinstance(v, float):         return 'float'
+    if isinstance(v, str):           return 'str'
+    return type(v).__name__
+
+
+def _kind_fits(sql_type, kind):
+    t = sql_type.lower().split('(')[0].strip()
+    if t in DATEISH:
+        return kind in ('date', 'datetime', 'time')
+    if t in NUMERIC:
+        return kind in ('int', 'float', 'bool')
+    if t in TEXT:
+        return kind == 'str'
+    return True                      # binary, uniqueidentifier, xml: not our business
+
+
+def declared_types(snapshot_tables, derived, new_table_ddl):
+    """
+    column -> declared SQL type, from all three sources of truth: the extraction
+    snapshot, the generator-derived DDL, and the hand-written Demo-first DDL.
+    """
+    out = {}
+    for table, cols in (snapshot_tables or {}).items():
+        for c in cols:
+            t = c.get('sql_type') or c.get('data_type')
+            if t:
+                out.setdefault(table, {})[c['name'].lower()] = t
+    for table, cols in (derived or {}).items():
+        for c in cols:
+            out.setdefault(table, {})[c['name'].lower()] = c['sql_type']
+    # The Demo-first tables are declared inline in demo_config.NEW_TABLE_DDL.
+    for block in re.finditer(r'CREATE TABLE dbo\.(\w+) \((.*?)\n\);', new_table_ddl, re.S):
+        table, body = block.group(1), block.group(2)
+        for line in body.split('\n'):
+            m = re.match(r'\s*(\w+)\s+([A-Za-z]+(?:\(\s*[\w,\s]+\))?)', line.split('--')[0])
+            if m and m.group(1).upper() not in ('CONSTRAINT', 'PRIMARY'):
+                out.setdefault(table, {})[m.group(1).lower()] = m.group(2)
+    return out
+
+
+def check_value_types(all_tables, declared, sample=4000):
+    """
+    Every value the seeder produces has to be bindable to its column's declared
+    type. A string in a BIT column or a 'Y' in a DATETIME2 column is an ODBC
+    22018 halfway through the load, with a message that names neither.
+    """
+    problems = []
+    for table, rows in all_tables.items():
+        cols = declared.get(table)
+        if not cols or not rows:
+            continue
+        for col in [c for c in rows[0] if not c.startswith('__')]:
+            sql_type = cols.get(col.lower())
+            if not sql_type:
+                continue
+            kinds = {_py_kind(r.get(col)) for r in rows[:sample]} - {None}
+            bad = sorted({k for k in kinds if not _kind_fits(sql_type, k)})
+            if bad:
+                problems.append(f'{table}.{col}: column is {sql_type}, seeder produces '
+                                f'{", ".join(bad)}')
+    return problems
+
+
 def validate_ddl(sql, derived):
     """
     The derived DDL is hand-rolled text, so check it is well-formed before
@@ -207,7 +285,6 @@ def main():
     # here against the extraction snapshot while there is still time to fix it.
     snapshot = os.path.join(ROOT, 'scripts', 'demo', 'schema_snapshot.json')
     if os.path.exists(snapshot):
-        import json
         snap = json.load(open(snapshot, encoding='utf-8'))
         real = {t: {c['name'].lower() for c in cols} for t, cols in snap.get('tables', {}).items()}
         import seed_demo_tenant as S
@@ -228,6 +305,24 @@ def main():
     else:
         print('\n  (no schema_snapshot.json yet — run extract_schema.py to enable '
               'the authored-column cross-check)')
+
+    # ── Value types must be bindable to their declared column types ─────────
+    import demo_config as _C
+    declared = declared_types(
+        (json.load(open(snapshot, encoding='utf-8')).get('tables')
+         if os.path.exists(snapshot) else {}),
+        derived, _C.NEW_TABLE_DDL)
+    if 'all_tables' not in dir():
+        import seed_demo_tenant as S2
+        all_tables, _ = S2.generate_all(_dt.date(2026, 8, 24), 42)
+    print()
+    type_problems = check_value_types(all_tables, declared)
+    for prob in type_problems:
+        failures.append(f'value type: {prob}')
+        print(f'  TYPE MISMATCH: {prob}')
+    if not type_problems:
+        print(f'  every value is bindable to its column type '
+              f'({sum(len(v) for v in declared.values())} columns declared)')
 
     if failures:
         print(f'\n  {len(failures)} coverage failure(s):\n')

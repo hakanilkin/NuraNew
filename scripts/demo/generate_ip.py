@@ -143,7 +143,7 @@ def _make_encounter(rng, params, csn, service, unit, unit_meta, admit_dt, source
 
     tdc_complete = rng.random() < 0.71
     return {
-        'EPICCSN':                 csn,
+        'EPICCSN':                 str(csn),
         'BEDDED':                  'Y',
         'PATIENT_IN_HOSPITAL_YN':  'N',
         'TIME_HOSPADMISSION':      admit_dt,
@@ -164,7 +164,7 @@ def _make_encounter(rng, params, csn, service, unit, unit_meta, admit_dt, source
         'DEP_LASTDEPT':            unit_meta['dept_code'],
         'DEP_LASTDEPTHOSPITAL':    C.MAIN_SITE,
         'DEP_LASTDEPTLOC':         unit,
-        'DEP_LASTDEPTID':          unit_meta['dep_id'],
+        'DEP_LASTDEPTID':          str(unit_meta['dep_id']),
         'DISCHORDER_ORDERTIME':    _minute(order_dt),
         'DISCHORDER_ORDERINST':    _minute(order_dt),
         'DISCHORDER_DISCHARGE':    int(round(do_to_dc)),
@@ -182,7 +182,9 @@ def _make_encounter(rng, params, csn, service, unit, unit_meta, admit_dt, source
         'TDC_Workflow_Complete_Engaged_to_Complete':      int(max(0, rng.normal(41, 24))),
         'TDC_Workflow_Complete_TDCEngaged_to_AVSPrinted': int(max(0, rng.normal(33, 20))),
         'TDC_Workflow_Complete_to_Discharge':             int(max(0, rng.normal(52, 31))),
-        'DM_Complete_MedRec':      'Y' if rng.random() < 0.82 else 'N',
+        'DM_Complete_MedRec':      (_minute(order_dt + dt.timedelta(
+            minutes=float(rng.uniform(10, max(15, do_to_dc)))))
+            if rng.random() < 0.82 else None),
         # Internal
         '__unit':      unit,
         '__source':    source,
@@ -303,7 +305,7 @@ def generate_occupancy(encounters, unit_meta, calendar, rng):
                 occ = counts.get((unit, stamp), 0)
                 blocked = int(rng.integers(0, 3))
                 rows.append({
-                    'DEP_ID':             meta['dep_id'],
+                    'DEP_ID':             str(meta['dep_id']),
                     'DEP_NAME':           unit,
                     'DEP_Hospital':       C.MAIN_SITE,
                     'DEP_LOC':            meta['level_of_care'],
@@ -336,7 +338,7 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
 
         meta = unit_meta[e['__unit']]
         rows.append({
-            'EPICCSN':            e['EPICCSN'],
+            'EPICCSN':            str(e['EPICCSN']),
             'EVENT_TYPE_MOD':     'Admission',
             'TIME_REQUESTTIME':   _minute(req),
             'TIME_EVSREQUESTED':  _minute(evs_req),
@@ -345,7 +347,7 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
             'SOURCE_DEPTHOSPITAL': C.MAIN_SITE,
             'DEST_DEPTNAME':      e['__unit'],
             'DEST_DEPTHOSPITAL':  C.MAIN_SITE,
-            'DEST_DEPTID':        meta['dep_id'],
+            'DEST_DEPTID':        str(meta['dep_id']),
             'DEST_DEPTLOC':       meta['level_of_care'],
             'DUR_Requested_Assigned':      int(round(req_to_assigned)),
             'DUR_Assigned_Complete':       int(round(assigned_to_complete)),
@@ -366,7 +368,7 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
                 t_ra = max(2.0, float(rng.lognormal(3.05, 0.75)))
                 t_ac = max(5.0, float(rng.lognormal(3.85, 0.62)))
                 rows.append({
-                    'EPICCSN':            e['EPICCSN'],
+                    'EPICCSN':            str(e['EPICCSN']),
                     'EVENT_TYPE_MOD':     'Transfer',
                     'TIME_REQUESTTIME':   _minute(treq),
                     'TIME_EVSREQUESTED':  _minute(treq - dt.timedelta(minutes=float(rng.uniform(15, 120)))),
@@ -375,7 +377,7 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
                     'SOURCE_DEPTHOSPITAL': C.MAIN_SITE,
                     'DEST_DEPTNAME':      dest,
                     'DEST_DEPTHOSPITAL':  C.MAIN_SITE,
-                    'DEST_DEPTID':        dmeta['dep_id'],
+                    'DEST_DEPTID':        str(dmeta['dep_id']),
                     'DEST_DEPTLOC':       dmeta['level_of_care'],
                     'DUR_Requested_Assigned':      int(round(t_ra)),
                     'DUR_Assigned_Complete':       int(round(t_ac)),

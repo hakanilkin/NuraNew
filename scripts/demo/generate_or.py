@@ -439,7 +439,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
                         'Turnover_Maxnumofcasesinroom':  n_room,
                         'Turnover_NextCaseSameSurgeon':  None,   # filled below
                         'DD_DOW_Long':                   day['dow_long'],
-                        'DD_Holiday':                    day['holiday'] or 'N',
+                        'DD_Holiday':                    1 if day['holiday'] else 0,
                         'DD_WeekOfMonth':                day['week_of_month'],
                         'DD_Month_Int':                  d.month,
                         'DD_Year_Month':                 f'{d.year}-{d.month:02d}',
@@ -603,7 +603,7 @@ def generate_block_results(cases, block_instances):
         rows.append({
             'BlockDate':            c['Date_SchedDate'],
             'CaseBlock':            block,
-            'CaseID':               c['_ID_CaseID'],
+            'CaseID':               str(c['_ID_CaseID']),
             'LocationGroup':        c['Loc_ORGrp2'],
             'ORLoc':                c['Loc_ORLoc'],
             'OrGrp2':               c['Loc_ORGrp2'],
