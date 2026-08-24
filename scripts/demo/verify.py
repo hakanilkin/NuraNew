@@ -56,8 +56,8 @@ def _fmt(v):
 # ── Individual storyline measurements ────────────────────────────────────────
 
 def _background(tables, ctx):
-    cases  = [c for c in ctx['cases'] if not c['_is_future'] and not c['_cancelled']]
-    allhist = [c for c in ctx['cases'] if not c['_is_future']]
+    cases  = [c for c in ctx['cases'] if not c['__is_future'] and not c['__cancelled']]
+    allhist = [c for c in ctx['cases'] if not c['__is_future']]
     br = tables['V4_BlockResultsView']
 
     prime = sum(r['Total_Prime_Time'] for r in br)
@@ -84,7 +84,7 @@ def _background(tables, ctx):
     _near('Add-on rate', 100.0 * sum(1 for c in cases if c['Case_AddOnCode']) / len(cases),
           C.BACKGROUND['addon_rate'] * 100, 30, unit='%')
     _near('Cancellation rate',
-          100.0 * sum(1 for c in allhist if c['_cancelled']) / len(allhist),
+          100.0 * sum(1 for c in allhist if c['__cancelled']) / len(allhist),
           C.BACKGROUND['cancellation_rate'] * 100, 35, unit='%')
 
 
@@ -106,9 +106,9 @@ def _st1(tables, ctx):
           unit='%', note=f'{len({r["BlockDate"] for r in rows})} instances')
 
     # True utilisation: same rooms, same days, all cases including out-of-block.
-    room_days = {(r['BlockDate'], r['ORGroup']) for r in rows}
+    room_days = {(r['BlockDate'], r['ORLoc']) for r in rows}
     all_prime = sum(r['Total_Prime_Time'] for r in br
-                    if (r['BlockDate'], r['ORGroup']) in room_days)
+                    if (r['BlockDate'], r['ORLoc']) in room_days)
     _near('ST-1 true utilisation (incl. out-of-block)',
           100.0 * all_prime / blk if blk else None,
           s['trailing_true_util_pct'], s['tolerance_pct'] * 100 / s['trailing_true_util_pct'],
@@ -146,12 +146,12 @@ def _st1(tables, ctx):
     # the cases, because the forecast table discounts forward volume by lead
     # time and would understate a surge that is genuinely there.
     def _per_weekday(pred):
-        rows = [c for c in ctx['cases'] if pred(c) and c['_weekday'] < 5 and not c['_cancelled']]
+        rows = [c for c in ctx['cases'] if pred(c) and c['__weekday'] < 5 and not c['__cancelled']]
         days = len({c['Date_SchedDate'] for c in rows}) or 1
         return len(rows) / days
 
-    fwd_rate  = _per_weekday(lambda c: c['_is_future'] and c['Case_SurgeonService'] == 'Spine')
-    hist_rate = _per_weekday(lambda c: not c['_is_future'] and c['Case_SurgeonService'] == 'Spine')
+    fwd_rate  = _per_weekday(lambda c: c['__is_future'] and c['Case_SurgeonService'] == 'Spine')
+    hist_rate = _per_weekday(lambda c: not c['__is_future'] and c['Case_SurgeonService'] == 'Spine')
     _near('ST-1 Spine forward pipeline vs baseline',
           100.0 * (fwd_rate / hist_rate - 1) if hist_rate else None,
           s['spine_forward_surge_pct'], 40, unit='%')
@@ -193,9 +193,9 @@ def _st2(tables, ctx):
     for e in ctx['encounters']:
         for d in wed_dates:
             t = dt.datetime.combine(d, dt.time(7, 0))
-            if e['_unit'] == s['unit'] and e['_admit'] <= t < e['_discharge']:
+            if e['__unit'] == s['unit'] and e['__admit'] <= t < e['__discharge']:
                 all_ct += 1
-                if e['_source'] == 'OR':
+                if e['__source'] == 'OR':
                     or_ct += 1
     _near('ST-2 Wednesday census attributable to the OR',
           100.0 * or_ct / all_ct if all_ct else None,
@@ -234,13 +234,13 @@ def _st3(tables, ctx):
     # Overtime: room-minutes worked past the end of the staffed shift.
     ot, weeks = 0.0, set()
     for c in ctx['cases']:
-        if c['_is_future'] or c['_cancelled'] or c['Loc_ORGrp2'] != s['site']:
+        if c['__is_future'] or c['__cancelled'] or c['Loc_ORGrp2'] != s['site']:
             continue
-        if c['_weekday'] > 4:
+        if c['__weekday'] > 4:
             continue
         weeks.add(c['Date_SchedDate'].isocalendar()[:2])
-        end_of_shift = shift_end[(s['site'], c['_weekday'] + 1)]
-        ot += max(0, c['_end_min'] - max(c['_start_min'], end_of_shift))
+        end_of_shift = shift_end[(s['site'], c['__weekday'] + 1)]
+        ot += max(0, c['__end_min'] - max(c['__start_min'], end_of_shift))
     _band('ST-3 overtime room-hours per week', ot / 60.0 / max(1, len(weeks)),
           *s['overtime_room_hours_per_week'])
 
@@ -249,11 +249,11 @@ def _st3(tables, ctx):
     fri_idle = []
     by_day = {}
     for c in ctx['cases']:
-        if c['_is_future'] or c['_cancelled'] or c['Loc_ORGrp2'] != s['site'] or c['_weekday'] != 4:
+        if c['__is_future'] or c['__cancelled'] or c['Loc_ORGrp2'] != s['site'] or c['__weekday'] != 4:
             continue
         by_day.setdefault(c['Date_SchedDate'], []).append(c)
     for d, day_cases in by_day.items():
-        spans = [(c['_start_min'], c['_end_min']) for c in day_cases]
+        spans = [(c['__start_min'], c['__end_min']) for c in day_cases]
         peak = 0
         used_room_minutes = 0.0
         for t in range(7 * 60, 16 * 60, 15):
@@ -280,12 +280,12 @@ def _st3(tables, ctx):
 def GOR_rooms_running(cases, when_minutes, site, weekdays):
     per_day = {}
     for c in cases:
-        if c['_is_future'] or c['_cancelled'] or c['Loc_ORGrp2'] != site:
+        if c['__is_future'] or c['__cancelled'] or c['Loc_ORGrp2'] != site:
             continue
-        if c['_weekday'] not in weekdays:
+        if c['__weekday'] not in weekdays:
             continue
         per_day.setdefault(c['Date_SchedDate'], 0)
-        if c['_start_min'] <= when_minutes < c['_end_min']:
+        if c['__start_min'] <= when_minutes < c['__end_min']:
             per_day[c['Date_SchedDate']] += 1
     return per_day
 
@@ -294,7 +294,7 @@ def _st4(tables, ctx):
     s = C.STORYLINES['st4']
     cast = ctx['roster']['cast']
     firsts = [c for c in ctx['cases']
-              if not c['_is_future'] and not c['_cancelled']
+              if not c['__is_future'] and not c['__cancelled']
               and c['Turnover_Orderofcaseinroom'] == 1
               and c['Dur_Act_vs_SchedStart'] is not None]
 
@@ -303,11 +303,11 @@ def _st4(tables, ctx):
         return st.mean(v) if v else None, len(v)
 
     base, n_base = mean_delay(lambda c: not c['Case_AddOnCode']
-                              and c['Case_SurgeonService'] != 'Spine' and c['_weekday'] != 0)
+                              and c['Case_SurgeonService'] != 'Spine' and c['__weekday'] != 0)
     for label, pred, target in (
         ('add-on',  lambda c: bool(c['Case_AddOnCode']),                s['addon_delay_minutes']),
         ('Spine',   lambda c: c['Case_SurgeonService'] == 'Spine',      s['spine_delay_minutes']),
-        ('Monday',  lambda c: c['_weekday'] == 0,                       s['monday_delay_minutes']),
+        ('Monday',  lambda c: c['__weekday'] == 0,                       s['monday_delay_minutes']),
         ('outlier', lambda c: c['Case_Surgeon'] == cast['st4_fcot_offender'],
                                                                         s['outlier_extra_delay_minutes']),
     ):
@@ -322,7 +322,7 @@ def _st4(tables, ctx):
 
 def _st5(tables, ctx):
     s = C.STORYLINES['st5']
-    cases = [c for c in ctx['cases'] if not c['_is_future'] and not c['_cancelled']
+    cases = [c for c in ctx['cases'] if not c['__is_future'] and not c['__cancelled']
              and c['Turnover_Turnover']]
     by_room_day = {}
     for c in ctx['cases']:
@@ -334,7 +334,7 @@ def _st5(tables, ctx):
     for lst in by_room_day.values():
         for i in range(1, len(lst)):
             cur, prev = lst[i], lst[i - 1]
-            if cur['_is_future'] or cur['_cancelled'] or not cur['Turnover_Turnover']:
+            if cur['__is_future'] or cur['__cancelled'] or not cur['Turnover_Turnover']:
                 continue
             if (prev['Case_SurgeonService'] == s['robotics_service']
                     and prev['Case_Surgeon'] != cur['Case_Surgeon']):
@@ -372,14 +372,14 @@ def _st6(tables, ctx):
     def peak_rooms(weekday):
         by_day = {}
         for c in ctx['cases']:
-            if c['_is_future'] or c['_cancelled'] or c['Loc_ORGrp2'] != site:
+            if c['__is_future'] or c['__cancelled'] or c['Loc_ORGrp2'] != site:
                 continue
-            if c['_weekday'] != weekday:
+            if c['__weekday'] != weekday:
                 continue
             by_day.setdefault(c['Date_SchedDate'], []).append(c)
         peaks = []
         for day_cases in by_day.values():
-            spans = [(c['_start_min'], c['_end_min']) for c in day_cases]
+            spans = [(c['__start_min'], c['__end_min']) for c in day_cases]
             peaks.append(max((sum(1 for a, b in spans if a <= t < b)
                               for t in range(7 * 60, 16 * 60, 15)), default=0))
         return st.mean(peaks) if peaks else None

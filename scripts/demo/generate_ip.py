@@ -164,10 +164,7 @@ def _make_encounter(rng, params, csn, service, unit, unit_meta, admit_dt, source
         'DEP_LASTDEPT':            unit_meta['dept_code'],
         'DEP_LASTDEPTHOSPITAL':    C.MAIN_SITE,
         'DEP_LASTDEPTLOC':         unit,
-        'DEP_ID':                  unit_meta['dep_id'],
-        'DEST_DEPTNAME':           unit,
-        'DEST_DEPTHOSPITAL':       C.MAIN_SITE,
-        'DEST_DEPTID':             unit_meta['dep_id'],
+        'DEP_LASTDEPTID':          unit_meta['dep_id'],
         'DISCHORDER_ORDERTIME':    _minute(order_dt),
         'DISCHORDER_ORDERINST':    _minute(order_dt),
         'DISCHORDER_DISCHARGE':    int(round(do_to_dc)),
@@ -187,12 +184,12 @@ def _make_encounter(rng, params, csn, service, unit, unit_meta, admit_dt, source
         'TDC_Workflow_Complete_to_Discharge':             int(max(0, rng.normal(52, 31))),
         'DM_Complete_MedRec':      'Y' if rng.random() < 0.82 else 'N',
         # Internal
-        '_unit':      unit,
-        '_source':    source,
-        '_admit':     admit_dt,
-        '_discharge': _minute(disch_dt),
-        '_case_id':   case_id,
-        '_service':   service,
+        '__unit':      unit,
+        '__source':    source,
+        '__admit':     admit_dt,
+        '__discharge': _minute(disch_dt),
+        '__case_id':   case_id,
+        '__service':   service,
     }
 
 
@@ -213,14 +210,14 @@ def generate_encounters(cases, calendar, params, rng, anchor):
 
     # ── 1. OR-derived admissions ─────────────────────────────────────────────
     for c in sorted(cases, key=lambda x: x['Date_SchedDate']):
-        if c['_is_future'] or c['_cancelled'] or not c['_inpatient'] or not c['_site_inpatient']:
+        if c['__is_future'] or c['__cancelled'] or not c['__inpatient'] or not c['__site_inpatient']:
             continue
         unit = _pick_unit(rng, c['Case_SurgeonService'])
-        admit_dt = c['_or_out'] + dt.timedelta(minutes=PACU_MINUTES * float(rng.uniform(0.7, 1.5)))
+        admit_dt = c['__or_out'] + dt.timedelta(minutes=PACU_MINUTES * float(rng.uniform(0.7, 1.5)))
         csn += 1
         encounters.append(_make_encounter(
             rng, params, csn, c['Case_SurgeonService'], unit, unit_meta[unit],
-            admit_dt, 'OR', surgeon=c['Case_Surgeon'], case_id=c['CaseID'],
+            admit_dt, 'OR', surgeon=c['Case_Surgeon'], case_id=c['_ID_CaseID'],
         ))
 
     # ── 2. ED/medical controller ─────────────────────────────────────────────
@@ -229,9 +226,9 @@ def generate_encounters(cases, calendar, params, rng, anchor):
     active = {u: [] for u in unit_meta}          # encounters currently in-house
     by_unit_admit = {u: [] for u in unit_meta}
     for e in encounters:
-        by_unit_admit[e['_unit']].append(e)
+        by_unit_admit[e['__unit']].append(e)
     for u in by_unit_admit:
-        by_unit_admit[u].sort(key=lambda e: e['_admit'])
+        by_unit_admit[u].sort(key=lambda e: e['__admit'])
 
     hist_days = [d for d in calendar if not d['is_future']]
     or_idx = {u: 0 for u in unit_meta}
@@ -244,14 +241,14 @@ def generate_encounters(cases, calendar, params, rng, anchor):
         for unit, meta in unit_meta.items():
             # Everyone admitted so far who is still in-house tomorrow at 07:00.
             lst = by_unit_admit[unit]
-            while or_idx[unit] < len(lst) and lst[or_idx[unit]]['_admit'].date() <= d:
+            while or_idx[unit] < len(lst) and lst[or_idx[unit]]['__admit'].date() <= d:
                 active[unit].append(lst[or_idx[unit]])
                 or_idx[unit] += 1
-            active[unit] = [e for e in active[unit] if e['_discharge'] > census_time_tomorrow - dt.timedelta(days=3)]
+            active[unit] = [e for e in active[unit] if e['__discharge'] > census_time_tomorrow - dt.timedelta(days=3)]
 
             carryover = sum(
                 1 for e in active[unit]
-                if e['_admit'] <= census_time_tomorrow < e['_discharge']
+                if e['__admit'] <= census_time_tomorrow < e['__discharge']
             )
             target_frac = OCCUPANCY_TARGET[unit][tomorrow.weekday()]
             target = int(round(target_frac * meta['staffed_beds'] * float(rng.normal(1.0, 0.035))))
@@ -272,7 +269,7 @@ def generate_encounters(cases, calendar, params, rng, anchor):
                 encounters.append(e)
                 active[unit].append(e)
 
-    encounters.sort(key=lambda e: e['_admit'])
+    encounters.sort(key=lambda e: e['__admit'])
     return encounters, unit_meta
 
 
@@ -287,13 +284,13 @@ def generate_occupancy(encounters, unit_meta, calendar, rng):
     # Bucket each encounter into the hours it occupies.
     counts = {}
     for e in encounters:
-        a, dsc = e['_admit'], e['_discharge']
+        a, dsc = e['__admit'], e['__discharge']
         if dsc.date() < start or a.date() > end:
             continue
         t = a.replace(minute=0, second=0, microsecond=0)
         stop = min(dsc, dt.datetime.combine(end, dt.time(23, 0)))
         while t <= stop:
-            counts[(e['_unit'], t)] = counts.get((e['_unit'], t), 0) + 1
+            counts[(e['__unit'], t)] = counts.get((e['__unit'], t), 0) + 1
             t += dt.timedelta(hours=1)
 
     rows = []
@@ -305,18 +302,16 @@ def generate_occupancy(encounters, unit_meta, calendar, rng):
                 stamp = dt.datetime.combine(d, dt.time(hour, 0))
                 occ = counts.get((unit, stamp), 0)
                 blocked = int(rng.integers(0, 3))
-                available = max(0, beds - occ - blocked)
                 rows.append({
                     'DEP_ID':             meta['dep_id'],
                     'DEP_NAME':           unit,
                     'DEP_Hospital':       C.MAIN_SITE,
-                    'DEP_LevelofCare':    meta['level_of_care'],
+                    'DEP_LOC':            meta['level_of_care'],
                     'Datehour':           stamp,
                     'Occupancy':          occ,
                     'StaffedBeds':        beds,
-                    'AVAILABLE_BEDS':     available,
+                    'DirtyBeds':          blocked,
                     'BedBlocked_or_Dirty': blocked,
-                    'OCC_PCT':            round(100.0 * occ / beds, 2) if beds else 0.0,
                 })
         d += dt.timedelta(days=1)
     return rows
@@ -327,10 +322,10 @@ def generate_occupancy(encounters, unit_meta, calendar, rng):
 def generate_bedplacement(encounters, unit_meta, params, rng):
     rows = []
     for e in encounters:
-        from_or = e['_source'] == 'OR'
+        from_or = e['__source'] == 'OR'
         src     = 'PACU' if from_or else 'EMERGENCY DEPARTMENT'
         src_loc = 'Surgery' if from_or else 'Emergency'
-        req = e['_admit'] - dt.timedelta(minutes=float(rng.uniform(45, 260)))
+        req = e['__admit'] - dt.timedelta(minutes=float(rng.uniform(45, 260)))
 
         req_to_assigned = max(2.0, float(rng.lognormal(3.15, 0.75)))       # median ~23 min
         assigned_to_complete = max(5.0, float(rng.lognormal(3.95, 0.62)))  # median ~52 min
@@ -339,7 +334,7 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
         evs_a_to_p = max(1.0, float(rng.lognormal(2.55, 0.7)))
         evs_p_to_c = max(3.0, float(rng.lognormal(3.45, 0.6)))
 
-        meta = unit_meta[e['_unit']]
+        meta = unit_meta[e['__unit']]
         rows.append({
             'EPICCSN':            e['EPICCSN'],
             'EVENT_TYPE_MOD':     'Admission',
@@ -348,12 +343,11 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
             'SOURCE_DEPTNAME':    src,
             'SOURCE_DEPTLOC':     src_loc,
             'SOURCE_DEPTHOSPITAL': C.MAIN_SITE,
-            'DEST_DEPTNAME':      e['_unit'],
+            'DEST_DEPTNAME':      e['__unit'],
             'DEST_DEPTHOSPITAL':  C.MAIN_SITE,
             'DEST_DEPTID':        meta['dep_id'],
             'DEST_DEPTLOC':       meta['level_of_care'],
             'DUR_Requested_Assigned':      int(round(req_to_assigned)),
-            'DUR_Req_Assigned_Valid':      int(round(req_to_assigned)),
             'DUR_Assigned_Complete':       int(round(assigned_to_complete)),
             'DUR_Requested_Complete':      int(round(req_to_assigned + assigned_to_complete)),
             'DUR_EVSRequested_Assigned':   int(round(evs_r_to_a)),
@@ -364,11 +358,11 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
 
         # A minority of stays include one unit-to-unit transfer.
         if rng.random() < params['transfer_rates']['into_unit']:
-            others = [u for u in unit_meta if u != e['_unit']]
+            others = [u for u in unit_meta if u != e['__unit']]
             dest = others[int(rng.integers(0, len(others)))]
             dmeta = unit_meta[dest]
-            treq = e['_admit'] + dt.timedelta(hours=float(rng.uniform(8, 60)))
-            if treq < e['_discharge']:
+            treq = e['__admit'] + dt.timedelta(hours=float(rng.uniform(8, 60)))
+            if treq < e['__discharge']:
                 t_ra = max(2.0, float(rng.lognormal(3.05, 0.75)))
                 t_ac = max(5.0, float(rng.lognormal(3.85, 0.62)))
                 rows.append({
@@ -376,15 +370,14 @@ def generate_bedplacement(encounters, unit_meta, params, rng):
                     'EVENT_TYPE_MOD':     'Transfer',
                     'TIME_REQUESTTIME':   _minute(treq),
                     'TIME_EVSREQUESTED':  _minute(treq - dt.timedelta(minutes=float(rng.uniform(15, 120)))),
-                    'SOURCE_DEPTNAME':    e['_unit'],
-                    'SOURCE_DEPTLOC':     unit_meta[e['_unit']]['level_of_care'],
+                    'SOURCE_DEPTNAME':    e['__unit'],
+                    'SOURCE_DEPTLOC':     unit_meta[e['__unit']]['level_of_care'],
                     'SOURCE_DEPTHOSPITAL': C.MAIN_SITE,
                     'DEST_DEPTNAME':      dest,
                     'DEST_DEPTHOSPITAL':  C.MAIN_SITE,
                     'DEST_DEPTID':        dmeta['dep_id'],
                     'DEST_DEPTLOC':       dmeta['level_of_care'],
                     'DUR_Requested_Assigned':      int(round(t_ra)),
-                    'DUR_Req_Assigned_Valid':      int(round(t_ra)),
                     'DUR_Assigned_Complete':       int(round(t_ac)),
                     'DUR_Requested_Complete':      int(round(t_ra + t_ac)),
                     'DUR_EVSRequested_Assigned':   int(round(max(1.0, rng.lognormal(2.7, 0.8)))),
@@ -422,9 +415,9 @@ def generate_ip_forecast(encounters, unit_meta, occupancy, anchor, params, rng):
         # window ST-2's Wednesday pressure arrives in.
         or_total = sum(
             1 for e in encounters
-            if e['_source'] == 'OR' and e['_unit'] == unit
-            and e['_admit'].weekday() == wd
-        ) / max(1, len({e['_admit'].date() for e in encounters if e['_admit'].weekday() == wd}))
+            if e['__source'] == 'OR' and e['__unit'] == unit
+            and e['__admit'].weekday() == wd
+        ) / max(1, len({e['__admit'].date() for e in encounters if e['__admit'].weekday() == wd}))
         orr = _split(or_total, [0.02, 0.10, 0.46, 0.42])
 
         rows.append({

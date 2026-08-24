@@ -48,7 +48,9 @@ import verify as V                 # noqa: E402
 DEMO_DATABASE = 'Demo'
 
 # Internal bookkeeping keys the generators carry between stages. Never loaded.
-INTERNAL_PREFIX = '_'
+# Double underscore, because the real schema has columns like _ID_CaseID and a
+# single leading underscore would strip them.
+INTERNAL_PREFIX = '__'
 
 
 def strip_internal(rows):

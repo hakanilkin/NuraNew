@@ -412,7 +412,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
 
                     case_id += 1
                     cases.append({
-                        'CaseID':                        case_id,
+                        '_ID_CaseID':                    case_id,
                         'Date_SchedDate':                d,
                         'Loc_ORGrp2':                    site,
                         'Loc_ORLoc':                     room,
@@ -444,21 +444,18 @@ def generate_cases(calendar, roster, params, rng, anchor):
                         'DD_Month_Int':                  d.month,
                         'DD_Year_Month':                 f'{d.year}-{d.month:02d}',
                         'CaseLogStatus':                 'Scheduled' if day['is_future'] else C.CASE_LOG_STATUS,
-                        'SERVICE_LINE':                  service,
-                        'SERVICE_LINE_2':                block_name if block_name else 'Open Time',
-                        'SERVICE_LINE_3':                site_cfg['abbr'],
                         # Internal, dropped before load — downstream stages use these.
-                        '_prime_min':      prime,
-                        '_nonprime_min':   (actual_end - actual_start) - prime,
-                        '_start_min':      actual_start,
-                        '_end_min':        actual_end,
-                        '_or_in':          or_in,
-                        '_or_out':         or_out,
-                        '_is_future':      day['is_future'],
-                        '_inpatient':      inpatient_intent,
-                        '_cancelled':      cancelled,
-                        '_weekday':        wd,
-                        '_site_inpatient': site_cfg['inpatient'],
+                        '__prime_min':      prime,
+                        '__nonprime_min':   (actual_end - actual_start) - prime,
+                        '__start_min':      actual_start,
+                        '__end_min':        actual_end,
+                        '__or_in':          or_in,
+                        '__or_out':         or_out,
+                        '__is_future':      day['is_future'],
+                        '__inpatient':      inpatient_intent,
+                        '__cancelled':      cancelled,
+                        '__weekday':        wd,
+                        '__site_inpatient': site_cfg['inpatient'],
                     })
 
                 if is_st1_slot:
@@ -542,13 +539,13 @@ def generate_rr(cases):
     slots = list(range(RR_START, RR_END, RR_SLOT_MINUTES))
     by_day_site = {}
     for c in cases:
-        if c['_is_future'] or c['_cancelled']:
+        if c['__is_future'] or c['__cancelled']:
             continue
         by_day_site.setdefault((c['Date_SchedDate'], c['Loc_ORGrp2']), []).append(c)
 
     rows = []
     for (d, site), day_cases in sorted(by_day_site.items(), key=lambda kv: (kv[0][0], kv[0][1])):
-        spans = [(c['_start_min'], c['_end_min']) for c in day_cases]
+        spans = [(c['__start_min'], c['__end_min']) for c in day_cases]
         for slot in slots:
             slot_end = slot + RR_SLOT_MINUTES
             occupied = sum(1 for s, e in spans if s < slot_end and e > slot)
@@ -565,11 +562,11 @@ def rooms_running_at(cases, when_minutes, site, weekdays):
     """Average concurrent rooms at a clock time, for the ST-3 checks."""
     per_day = {}
     for c in cases:
-        if c['_is_future'] or c['_cancelled'] or c['Loc_ORGrp2'] != site:
+        if c['__is_future'] or c['__cancelled'] or c['Loc_ORGrp2'] != site:
             continue
-        if c['_weekday'] not in weekdays:
+        if c['__weekday'] not in weekdays:
             continue
-        if c['_start_min'] <= when_minutes < c['_end_min']:
+        if c['__start_min'] <= when_minutes < c['__end_min']:
             per_day[c['Date_SchedDate']] = per_day.get(c['Date_SchedDate'], 0) + 1
         else:
             per_day.setdefault(c['Date_SchedDate'], 0)
@@ -593,7 +590,7 @@ def generate_block_results(cases, block_instances):
     }
 
     for c in ordered:
-        if c['_is_future'] or c['_cancelled']:
+        if c['__is_future'] or c['__cancelled']:
             continue
         block = c['Case_CaseBlock']
         key = (c['Date_SchedDate'], block, c['Loc_ORLoc'])
@@ -606,16 +603,17 @@ def generate_block_results(cases, block_instances):
         rows.append({
             'BlockDate':            c['Date_SchedDate'],
             'CaseBlock':            block,
-            'CaseID':               c['CaseID'],
+            'CaseID':               c['_ID_CaseID'],
             'LocationGroup':        c['Loc_ORGrp2'],
-            'ORGroup':              c['Loc_ORLoc'],
+            'ORLoc':                c['Loc_ORLoc'],
+            'OrGrp2':               c['Loc_ORGrp2'],
             'Group_Service':        c['Case_SurgeonService'],
             'Surgeonservice':       c['Case_SurgeonService'],
-            'Total_Prime_Time':     int(c['_prime_min']),
-            'Total_Non_Prime_time': int(c['_nonprime_min']),
-            'totalTime':            int(c['_prime_min'] + c['_nonprime_min']),
-            'InBlock':              int(c['_prime_min']) if in_block else 0,
-            'OutofBlock':           0 if in_block else int(c['_prime_min']),
+            'Total_Prime_Time':     int(c['__prime_min']),
+            'Total_Non_Prime_time': int(c['__nonprime_min']),
+            'totalTime':            int(c['__prime_min'] + c['__nonprime_min']),
+            'InBlock':              int(c['__prime_min']) if in_block else 0,
+            'OutofBlock':           0 if in_block else int(c['__prime_min']),
             'blockTime':            inst['block_minutes'] if first_of_instance else 0,
             'ReleasedTime':         inst['released'] if first_of_instance else 0,
             'DD_WeekOfMonth':       ((c['Date_SchedDate'].day - 1) // 7) + 1,
@@ -633,7 +631,8 @@ def generate_block_results(cases, block_instances):
             'CaseBlock':            b['block'],
             'CaseID':               None,
             'LocationGroup':        b['site'],
-            'ORGroup':              b['room'],
+            'ORLoc':                b['room'],
+            'OrGrp2':               b['site'],
             'Group_Service':        b['service'],
             'Surgeonservice':       b['service'],
             'Total_Prime_Time':     0,
@@ -676,16 +675,16 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
     # Aggregate the generated cases to the forecast grain.
     agg = {}
     for c in cases:
-        if c['_cancelled']:
+        if c['__cancelled']:
             continue
         key = (c['Date_SchedDate'], c['Loc_ORGrp2'], c['Case_CaseBlock'],
                c['Case_SurgeonService'])
         a = agg.setdefault(key, {'ip': 0, 'op': 0, 'ip_min': 0.0, 'op_min': 0.0,
                                  'room': c['Loc_ORLoc']})
-        dur = (c['Sched_SchedDur'] if c['_is_future']
+        dur = (c['Sched_SchedDur'] if c['__is_future']
                else (c['Dur_ORIn_OROut'] or c['Sched_SchedDur']))
         durwturn = dur + STD_TURNOVER_SCHED
-        if c['_inpatient']:
+        if c['__inpatient']:
             a['ip'] += 1
             a['ip_min'] += durwturn
         else:
@@ -719,6 +718,8 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
         blocktime = inst['block_minutes'] if (inst and inst['service'] == service) else 0
 
         bud_ip, bud_op = _budget(site, block, service, d.weekday(), a['ip'], a['op'])
+        budget_ip = round(bud_ip * float(rng.uniform(0.94, 1.08)), 2)
+        budget_op = round(bud_op * float(rng.uniform(0.94, 1.08)), 2)
 
         if meta['is_future']:
             frac = _booked_fraction(meta['days_ahead'])
@@ -751,10 +752,17 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
             'FORECAST_OUTPATIENT_DURwTurn': round(fc_opm, 1),
             'ACTUAL_INPATIENT':             act_ip,
             'ACTUAL_OUTPATIENT':            act_op,
+            # The Cases-vs-Budget page sums un-suffixed ACTUAL and BUDGET
+            # alongside the inpatient/outpatient split, so the totals have to
+            # exist as their own columns rather than being derived in the query.
+            'ACTUAL':                       act_ip + act_op,
             # Budget is the trailing baseline, so a surging service reads as over
-            # budget instead of quietly moving its own target.
-            'BUDGET_INPATIENT':             round(bud_ip * float(rng.uniform(0.94, 1.08)), 2),
-            'BUDGET_OUTPATIENT':            round(bud_op * float(rng.uniform(0.94, 1.08)), 2),
+            # budget instead of quietly moving its own target. The total is the
+            # sum of the two parts, not its own draw — the page shows all three
+            # and they have to add up.
+            'BUDGET_INPATIENT':             budget_ip,
+            'BUDGET_OUTPATIENT':            budget_op,
+            'BUDGET':                       round(budget_ip + budget_op, 2),
             'BLOCKTIME':                    blocktime,
         })
 
@@ -776,8 +784,8 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
             'SCHEDULED_INPATIENT_DURwTurn': 0, 'SCHEDULED_OUTPATIENT_DURwTurn': 0,
             'FORECAST_INPATIENT': 0, 'FORECAST_OUTPATIENT': 0,
             'FORECAST_INPATIENT_DURwTurn': 0, 'FORECAST_OUTPATIENT_DURwTurn': 0,
-            'ACTUAL_INPATIENT': 0, 'ACTUAL_OUTPATIENT': 0,
-            'BUDGET_INPATIENT': 0, 'BUDGET_OUTPATIENT': 0,
+            'ACTUAL_INPATIENT': 0, 'ACTUAL_OUTPATIENT': 0, 'ACTUAL': 0,
+            'BUDGET_INPATIENT': 0, 'BUDGET_OUTPATIENT': 0, 'BUDGET': 0,
             'BLOCKTIME': b['block_minutes'],
         })
     return rows
