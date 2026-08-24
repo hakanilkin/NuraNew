@@ -66,7 +66,27 @@ const LEGACY_SQL = norm(`CASE
   ELSE 'Other'
 END`)
 
+// ── 0. The config file itself must be well-formed ───────────────────────────
+// JSON.parse silently keeps the last of any duplicated key, so a duplicated
+// tenant block shadows an earlier one and every behavioural check below still
+// passes. Read the raw text and look for it directly.
+const rawConfig = require('fs').readFileSync(
+  path.join(__dirname, '..', '..', 'config', 'tenantColumns.json'), 'utf8')
+const topLevelKeys = [...rawConfig.matchAll(/^ {2}"([^"]+)":/gm)].map(m => m[1])
+const duplicated = topLevelKeys.filter((k, i) => topLevelKeys.indexOf(k) !== i)
+
 const failures = []
+if (duplicated.length) {
+  failures.push(`config/tenantColumns.json has duplicated tenant keys: ${[...new Set(duplicated)].join(', ')} `
+              + `— JSON.parse keeps only the last, so the earlier block is silently dead config`)
+}
+// Every live tenant should say what its patterns are rather than inheriting
+// them by accident.
+for (const key of ['NHS', 'Demo']) {
+  if (!new RegExp(`"${key}"[\\s\\S]*?unit_category_map`).test(rawConfig)) {
+    failures.push(`config/tenantColumns.json: ${key} has no unit_category_map of its own`)
+  }
+}
 const check = (label, actual, expected) => {
   if (actual !== expected) failures.push(`${label}\n    expected: ${expected}\n    actual:   ${actual}`)
 }

@@ -285,6 +285,7 @@ const ipbedplacementRouter = require('./routes/ipbedplacement')(getTenantPool, s
 const ipdischargesRouter   = require('./routes/ipdischarges')(getTenantPool, sql, requireTenant);
 const orservicelineRouter  = require('./routes/orserviceline')(getTenantPool, sql, requireTenant);
 const openTimeRouter       = require('./routes/opentime')(getTenantPool, sql, requireTenant);
+const briefsRouter         = require('./routes/briefs')(getTenantPool, sql, requireTenant);
 
 app.use('/api/auth',           authRouter);
 app.use('/api/admin',          adminRouter);
@@ -294,6 +295,7 @@ app.use('/api/ipbedplacement', ipbedplacementRouter);
 app.use('/api/ipdischarges',   ipdischargesRouter);
 app.use('/api/orserviceline',  orservicelineRouter);
 app.use('/api/opentime',       openTimeRouter);
+app.use('/api/briefs',         briefsRouter);
 app.use('/api',        analyticsRouter);
 app.use('/api',        askNuraRouter);
 

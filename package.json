@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "build": "cd client && npm install && npm run build",
     "check:unit-categories": "node scripts/checks/unit_category_regression.js",
-    "check": "npm run check:unit-categories"
+    "check": "npm run check:unit-categories && npm run check:briefs-focus",
+    "check:briefs-focus": "node --test scripts/checks/briefs_focus_classifier.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

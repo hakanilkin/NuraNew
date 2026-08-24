@@ -1,5 +1,41 @@
 import { useState, useEffect } from 'react'
-import { AlertCircle, X, Search } from 'lucide-react'
+import { AlertCircle, X, Search, ArrowRight } from 'lucide-react'
+
+/* ─── Focus config — the forward layer (BriefsForwardLayer.md) ──────────────── */
+/* Focus is encoded by glyph as well as colour: these get read off a projector,
+   and colour alone does not survive that. The server decides the focus value;
+   this only decides how it looks. */
+
+function focusConfig(focus) {
+  switch (focus) {
+    case 'ACT':     return { label: 'Act',           glyph: '▲', bg: 'rgba(239,68,68,0.14)',   color: '#dc2626',
+                             blurb: 'Ran light and nothing is coming' }
+    case 'GROW':    return { label: 'Grow',          glyph: '●', bg: 'rgba(34,197,94,0.14)',   color: '#16a34a',
+                             blurb: 'Bursting and still booking' }
+    case 'SELF_OK': return { label: 'Self-correcting', glyph: '◆', bg: 'rgba(234,179,8,0.14)', color: '#b45309',
+                             blurb: 'Ran light, but the book is filling' }
+    case 'WATCH':   return { label: 'Watch',         glyph: '■', bg: 'rgba(148,163,184,0.16)', color: '#64748b',
+                             blurb: 'Worth monitoring' }
+    default:        return { label: 'OK',            glyph: '—', bg: 'rgba(148,163,184,0.10)', color: '#94a3b8',
+                             blurb: 'No action' }
+  }
+}
+
+const FOCUS_ORDER = ['ACT', 'GROW', 'SELF_OK', 'WATCH', 'OK']
+
+function FocusBadge({ focus }) {
+  const fc = focusConfig(focus)
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px',
+      borderRadius: 'var(--radius-full)', background: fc.bg, color: fc.color,
+      fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+    }}>
+      <span aria-hidden="true" style={{ fontSize: 9, lineHeight: 1 }}>{fc.glyph}</span>
+      {fc.label}
+    </span>
+  )
+}
 
 /* ─── Status config — keys match real API values ────────────────────────────── */
 
@@ -110,7 +146,7 @@ function FindingRow({ f }) {
 
 /* ─── Slide-over detail panel ────────────────────────────────────────────────── */
 
-function SlideOverPanel({ group, open, period, onClose }) {
+export function SlideOverPanel({ group, open, period, onClose, focus }) {
   const pipelineCtx = group?.context?.pipeline ?? null
   const periodLabel = period
     ? `${period.current_quarter} vs ${period.prior_quarter}`
@@ -144,6 +180,7 @@ function SlideOverPanel({ group, open, period, onClose }) {
                   {group.caseblock}
                 </span>
                 <StatusBadge status={group.status} />
+                {focus && <FocusBadge focus={focus.focus} />}
               </div>
               {periodLabel && (
                 <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 5 }}>{periodLabel}</div>
@@ -159,6 +196,35 @@ function SlideOverPanel({ group, open, period, onClose }) {
           </div>
 
           <div style={{ height: 1, background: 'var(--surface-border)', margin: '14px 0 20px' }} />
+
+          {/* Section 0 — Where to focus (forward layer) */}
+          {focus && (
+            <>
+              <SectionLabel>Where to focus</SectionLabel>
+              <div style={{
+                background: focusConfig(focus.focus).bg,
+                border: `1px solid ${focusConfig(focus.focus).color}33`,
+                borderRadius: 'var(--radius-md)', padding: '10px 14px', marginBottom: 22,
+              }}>
+                <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)', lineHeight: 1.5 }}>
+                  {focus.reason}
+                </p>
+                <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                  <MetricInline label="Forward fill" value={focus.fwd_fill_pct != null ? fmtPct(focus.fwd_fill_pct) : 'No forward data'} />
+                </div>
+                {/* Briefs identifies; the ISSCM siblings act. */}
+                {focus.focus === 'ACT' && (
+                  <HandoffLink
+                    href={`/open-time/radar?caseBlock=${encodeURIComponent(group.caseblock)}`}
+                    label="Review this block in Release Radar"
+                  />
+                )}
+                {focus.focus === 'GROW' && (
+                  <HandoffLink href="/open-time/board" label="Offer released time on the Open Time Board" />
+                )}
+              </div>
+            </>
+          )}
 
           {/* Section 1 — Key metrics */}
           <SectionLabel>Key metrics</SectionLabel>
@@ -214,6 +280,32 @@ function SlideOverPanel({ group, open, period, onClose }) {
   )
 }
 
+function MetricInline({ label, value }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'baseline', gap: 5,
+      fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)',
+    }}>
+      {label}: <strong style={{ color: 'var(--color-gray-800)' }}>{value}</strong>
+    </span>
+  )
+}
+
+function HandoffLink({ href, label }) {
+  return (
+    <a
+      href={href}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10,
+        fontSize: 'var(--font-size-sm)', fontWeight: 600,
+        color: 'var(--color-blue)', textDecoration: 'none',
+      }}
+    >
+      {label} <ArrowRight size={13} />
+    </a>
+  )
+}
+
 function SectionLabel({ children }) {
   return (
     <div style={{
@@ -263,11 +355,19 @@ const STATUS_OPTIONS = [
   { value: 'watch',           label: 'Watch' },
 ]
 
-function CapacityTab({ groups, period }) {
+export function CapacityTab({ groups, period, focusData }) {
   const [expanded,     setExpanded]     = useState(null)   // selected caseblock id
   const [panelGroup,   setPanelGroup]   = useState(null)   // content kept during slide-out
   const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  // 'focus' answers "where do I act first"; 'status' is the retrospective view
+  // this page has always had. Focus leads when the data is there.
+  const [view,         setView]         = useState('focus')
+
+  const focusByBlock = new Map((focusData?.items ?? []).map(i => [i.caseblock, i]))
+  const hasFocus     = focusByBlock.size > 0
+  const focusView    = hasFocus && view === 'focus'
+  const focusRank    = new Map((focusData?.items ?? []).map((i, idx) => [i.caseblock, idx]))
 
   function toggleRow(caseblock) {
     if (expanded === caseblock) {
@@ -301,6 +401,15 @@ function CapacityTab({ groups, period }) {
     return matchName && matchStatus
   })
 
+  // In the focus view the server's ranking is the order — ACT first, then GROW,
+  // and within a bucket the blocks furthest from target. Re-sorting here would
+  // risk the page and the API disagreeing about what matters most.
+  const ordered = focusView
+    ? [...filtered].sort((a, b) =>
+        (focusRank.get(a.caseblock) ?? Number.MAX_SAFE_INTEGER)
+        - (focusRank.get(b.caseblock) ?? Number.MAX_SAFE_INTEGER))
+    : filtered
+
   const periodLabel = period
     ? `${period.prior_quarter} → ${period.current_quarter}`
     : ''
@@ -328,7 +437,60 @@ function CapacityTab({ groups, period }) {
         group={panelGroup}
         period={period}
         onClose={closePanel}
+        focus={panelGroup ? focusByBlock.get(panelGroup.caseblock) : null}
       />
+
+      {/* Focus strip — the "where do I act first" answer in one glance */}
+      {hasFocus && (
+        <div style={{ marginBottom: 'var(--space-5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
+            {FOCUS_ORDER.map(k => {
+              const fc = focusConfig(k)
+              const n  = focusData.counts?.[k] ?? 0
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => { setView('focus'); setStatusFilter('') }}
+                  title={fc.blurb}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
+                    borderRadius: 'var(--radius-full)', cursor: 'pointer',
+                    background: fc.bg, border: `1px solid ${fc.color}33`, color: fc.color,
+                    fontSize: 'var(--font-size-sm)', fontWeight: 600,
+                  }}
+                >
+                  <span aria-hidden="true">{fc.glyph}</span>
+                  <span>{fc.label}</span>
+                  <span style={{ fontWeight: 700, fontSize: 'var(--font-size-base)' }}>{n}</span>
+                </button>
+              )
+            })}
+            <span style={{ marginLeft: 'auto', fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)' }}>
+              Forward fill over the next {Math.round((focusData.horizonDays ?? 28) / 7)} weeks vs a {focusData.target}% target
+              {focusData.forward_available === false && ' — no forward block time found'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[{ id: 'focus', label: 'Focus' }, { id: 'status', label: 'By status' }].map(v => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setView(v.id)}
+                style={{
+                  padding: '5px 12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                  border: '1px solid var(--surface-border)',
+                  background: view === v.id ? 'var(--color-blue)' : 'var(--surface-card)',
+                  color: view === v.id ? '#fff' : 'var(--color-gray-600)',
+                  fontSize: 'var(--font-size-xs)', fontWeight: 600,
+                }}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Five status summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
@@ -372,7 +534,9 @@ function CapacityTab({ groups, period }) {
             <thead>
               <tr>
                 <th style={TH}>Block / Surgeon</th>
+                {hasFocus && <th style={TH}>Focus</th>}
                 <th style={TH}>Status</th>
+                {hasFocus && <th style={{ ...TH, textAlign: 'right' }}>Fwd fill</th>}
                 <th style={{ ...TH, textAlign: 'right' }}>In-block</th>
                 <th style={{ ...TH, textAlign: 'right' }}>Primetime</th>
                 <th style={{ ...TH, textAlign: 'right' }}>Volume</th>
@@ -384,13 +548,14 @@ function CapacityTab({ groups, period }) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ ...TD, textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8)' }}>
+                  <td colSpan={hasFocus ? 10 : 8} style={{ ...TD, textAlign: 'center', color: 'var(--color-gray-400)', padding: 'var(--space-8)' }}>
                     No groups match the current filter.
                   </td>
                 </tr>
               )}
-              {filtered.map(g => {
+              {ordered.map(g => {
                 const isSelected = expanded === g.caseblock
+                const f = focusByBlock.get(g.caseblock)
                 return (
                   <tr
                     key={g.caseblock}
@@ -402,7 +567,22 @@ function CapacityTab({ groups, period }) {
                     <td style={TD}>
                       <div style={{ fontWeight: 500, color: 'var(--color-gray-900)', fontSize: 'var(--font-size-sm)' }}>{g.caseblock}</div>
                     </td>
+                    {hasFocus && (
+                      <td style={TD}>
+                        {f ? <FocusBadge focus={f.focus} /> : <span style={{ color: 'var(--color-gray-300)' }}>—</span>}
+                      </td>
+                    )}
                     <td style={TD}><StatusBadge status={g.status} /></td>
+                    {hasFocus && (
+                      <td style={{ ...TD, textAlign: 'right' }}>
+                        {f && f.fwd_fill_pct != null
+                          ? <span style={{ fontWeight: 600, color: utilColor(f.fwd_fill_pct) }}>{fmtPct(f.fwd_fill_pct)}</span>
+                          /* No forward block time is not zero forward fill — the two
+                             call for opposite actions, so it renders as a dash. */
+                          : <span style={{ color: 'var(--color-gray-300)' }} title="No block time in the forward window">—</span>
+                        }
+                      </td>
+                    )}
                     <td style={{ ...TD, textAlign: 'right' }}>
                       <span style={{ fontWeight: 600, color: utilColor(g.inblock_util) }}>{fmtPct(g.inblock_util)}</span>
                     </td>
@@ -445,6 +625,17 @@ export default function AtlasPerformanceBriefs() {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
+
+  const [focusData, setFocusData] = useState(null)
+
+  // The forward layer is additive: if /api/briefs/focus is absent or fails, the
+  // page falls back to the retrospective view it has always shown.
+  useEffect(() => {
+    fetch('/api/briefs/focus?horizonDays=28')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setFocusData(d && !d.error ? d : null))
+      .catch(() => setFocusData(null))
+  }, [])
 
   useEffect(() => {
     fetch('/api/atlas/performance-briefs')
@@ -510,7 +701,7 @@ export default function AtlasPerformanceBriefs() {
   return (
     <div className="page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <CapacityTab groups={data.groups ?? []} period={data.period ?? null} />
+      <CapacityTab groups={data.groups ?? []} period={data.period ?? null} focusData={focusData} />
     </div>
   )
 }

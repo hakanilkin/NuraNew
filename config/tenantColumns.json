@@ -38,22 +38,6 @@
     "features": {
       "tdc": true,
       "service_line_drill": true
-    }
-  },
-  "Demo": {
-    "columns": {
-      "SERVICE_LINE":   "SERVICE_LINE",
-      "SERVICE_LINE_2": "SERVICE_LINE_2",
-      "SERVICE_LINE_3": "SERVICE_LINE_3"
-    },
-    "params": {
-      "hospital_filter": null,
-      "case_posted_value": "Posted",
-      "block_fill_target": 75
-    },
-    "features": {
-      "tdc": true,
-      "service_line_drill": true
     },
     "unit_category_map": {
       "column": "DEP_LASTDEPT",
@@ -71,6 +55,7 @@
     }
   },
   "Demo": {
+    "aliases": ["Bright Memorial"],
     "columns": {
       "SERVICE_LINE":   "SERVICE_LINE",
       "SERVICE_LINE_2": "SERVICE_LINE_2",
@@ -79,7 +64,8 @@
     "params": {
       "hospital_filter": null,
       "case_posted_value": "Posted",
-      "block_fill_target": 75
+      "block_fill_target": 75,
+      "data_dir": "demo"
     },
     "features": {
       "tdc": true,

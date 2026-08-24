@@ -4,9 +4,17 @@ const columnMap = require('../config/tenantColumns.json')
 // Build a case-insensitive lookup table so 'OHS Health System' matches 'OHS', etc.
 // Keys in tenantColumns.json are treated as case-insensitive prefixes of the actual
 // tenant name stored in the session (TenantName from the Tenants table).
+// A config entry is found by its key, or by any name in its optional `aliases`
+// list. Aliases exist because a tenant's display name and its config key drift
+// apart — Virtua was renamed to NHS, and the demo tenant is keyed 'Demo' but
+// shows as 'Bright Memorial Health'. Without them a renamed tenant silently
+// falls back to 'default' and loses its entire configuration.
 const keysLower = Object.keys(columnMap)
   .filter(k => k !== 'default')
-  .map(k => ({ key: k, lower: k.toLowerCase() }))
+  .flatMap(k => [
+    { key: k, lower: k.toLowerCase() },
+    ...(columnMap[k].aliases ?? []).map(a => ({ key: k, lower: String(a).toLowerCase() })),
+  ])
 
 function normalizeTenantName(tenantName) {
   if (!tenantName) return 'default'

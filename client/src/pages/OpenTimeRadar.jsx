@@ -362,6 +362,18 @@ export default function OpenTimeRadar() {
   const [error,    setError]    = useState(null)
   const [tab,      setTab]      = useState('surgical')  // 'surgical' | 'endoscopy'
 
+  // Briefs hands a block over here with ?caseBlock=…; the chip below makes the
+  // narrowed view obvious and clearable, so it never looks like missing data.
+  const [blockFilter, setBlockFilter] = useState(
+    () => new URLSearchParams(window.location.search).get('caseBlock') || ''
+  )
+  function clearBlockFilter() {
+    setBlockFilter('')
+    const url = new URL(window.location.href)
+    url.searchParams.delete('caseBlock')
+    window.history.replaceState({}, '', url)
+  }
+
   // Drawer state — a single selected row that slides in from the right.
   const [selected, setSelected] = useState(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -406,9 +418,12 @@ export default function OpenTimeRadar() {
     fetchData({ start: startDate, end: endDate, sites: selSites, services: selServices, minRisk })
   }
 
-  const endoCount = new Set(rows.filter(r => isEndoscopy(r.Site)).map(r => r.Site)).size
-  const surgCount = new Set(rows.filter(r => !isEndoscopy(r.Site)).map(r => r.Site)).size
-  const tabRows = rows.filter(r => tab === 'endoscopy' ? isEndoscopy(r.Site) : !isEndoscopy(r.Site))
+  const scopedRows = blockFilter
+    ? rows.filter(r => String(r.CaseBlock || '').toLowerCase() === blockFilter.toLowerCase())
+    : rows
+  const endoCount = new Set(scopedRows.filter(r => isEndoscopy(r.Site)).map(r => r.Site)).size
+  const surgCount = new Set(scopedRows.filter(r => !isEndoscopy(r.Site)).map(r => r.Site)).size
+  const tabRows = scopedRows.filter(r => tab === 'endoscopy' ? isEndoscopy(r.Site) : !isEndoscopy(r.Site))
   const atRiskHrs = tabRows.reduce((s, r) => s + (r.BlockTimeMins || 0), 0) / 60
 
   return (
@@ -455,6 +470,30 @@ export default function OpenTimeRadar() {
           </button>
         </div>
       </div>
+
+      {/* Narrowed to one block, handed over from Briefs */}
+      {blockFilter && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
+          padding: '8px 14px', borderRadius: 'var(--radius-md)',
+          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.28)',
+          fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)',
+        }}>
+          <span>Showing one block: <strong>{blockFilter}</strong>
+            {scopedRows.length === 0 && ' — no upcoming instances in this window'}</span>
+          <button
+            type="button"
+            onClick={clearBlockFilter}
+            style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4,
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--color-blue)', fontSize: 'var(--font-size-sm)', fontWeight: 600,
+            }}
+          >
+            <X size={13} /> Show all blocks
+          </button>
+        </div>
+      )}
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '2px solid var(--surface-border)' }}>
