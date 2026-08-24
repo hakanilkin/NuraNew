@@ -78,6 +78,13 @@ def columns_referenced(sql, table):
     # Drop JS interpolations and string literals — neither contains a column.
     s = re.sub(r'\$\{[^}]*\}', ' ', sql)
     s = re.sub(r"'[^']*'", ' ', s)
+    # A table alias is not a column: collect the aliases, unqualify the columns
+    # they introduce, then drop the alias names themselves.
+    table_aliases = {m.group(1) for m in re.finditer(
+        r'\b(?:FROM|JOIN)\s+[A-Za-z_][A-Za-z0-9_.]*\s+(?:AS\s+)?([A-Za-z_][A-Za-z0-9_]*)\b',
+        s, re.I) if m.group(1).upper() not in SQL_WORDS}
+    for a in table_aliases:
+        s = re.sub(r'\b' + re.escape(a) + r'\.', ' ', s)
     # Aliases introduced with AS are outputs, not columns of the source table.
     aliases = {m.group(1).upper() for m in re.finditer(r'\bAS\s+([A-Za-z_][A-Za-z0-9_]*)', s, re.I)}
     # Bind parameters are not columns either.
@@ -90,6 +97,8 @@ def columns_referenced(sql, table):
         if up in SQL_WORDS or up in aliases:
             continue
         if up in (t.upper() for t in GENERATED):
+            continue
+        if tok in table_aliases:
             continue
         # A bare word immediately followed by '(' is a function call.
         if s[m.end():m.end() + 1] == '(':

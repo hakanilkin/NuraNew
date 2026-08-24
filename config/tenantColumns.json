@@ -65,11 +65,22 @@
       "hospital_filter": null,
       "case_posted_value": "Posted",
       "block_fill_target": 75,
-      "data_dir": "demo"
+      "data_dir": "demo",
+      "isscm": {
+        "packingCeiling": 0.85,
+        "thresholds": {
+          "utilPts": 2.0,
+          "coverageRooms": 0.5,
+          "overtimeHours": 2.0,
+          "headroomBeds": 2.0,
+          "unitPressurePct": 92.0
+        }
+      }
     },
     "features": {
       "tdc": true,
-      "service_line_drill": true
+      "service_line_drill": true,
+      "isscm": true
     },
     "unit_category_map": {
       "column": "DEP_LASTDEPT",

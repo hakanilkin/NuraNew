@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check:briefs-render": "node scripts/check-briefs-render.mjs"
+    "check:briefs-render": "node scripts/check-briefs-render.mjs",
+    "check:scenario-panel": "node scripts/check-scenario-panel.mjs"
   },
   "dependencies": {
     "dompurify": "^3.4.9",

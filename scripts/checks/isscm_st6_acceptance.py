@@ -143,7 +143,8 @@ def main():
     lift = spine_pipeline_lift(cases)
 
     results = {}
-    for label, weekday in (('Thursday', 3), ('Tuesday', 1)):
+    for label, weekday in (('Monday', 0), ('Tuesday', 1), ('Wednesday', 2),
+                           ('Thursday', 3), ('Friday', 4)):
         util = block_utilisation(tables['V4_BlockResultsView'], BLOCK, 3)   # the block's own day
         baseline = {
             'site': SITE, 'block': BLOCK, 'dayOfWeek': weekday,
@@ -173,9 +174,41 @@ def main():
         if not r['conflicts']:
             print('     no conflict — all pillars clear')
 
+    # The demo finale (click path steps 7-8) is the alternatives list: the same
+    # decision on other days, ranked, with the clean option on top. If every day
+    # clears, there is no finale — just five identical rows.
+    def rank_key(item):
+        label, (_baseline, r) = item
+        improves = sum(1 for p in r['pillars'].values() if p['status'] == 'improves')
+        degrades = sum(1 for p in r['pillars'].values() if p['status'] == 'degrades')
+        return (len(r['conflicts']) * 10 + degrades - improves, label)
+
+    print('\n  ── Alternatives, ranked as /api/isscm/scenarios/:id ranks them ──')
+    ranked = sorted(results.items(), key=rank_key)
+    for label, (_b, r) in ranked:
+        statuses = ' '.join(f'{k}={p["status"]}' for k, p in r['pillars'].items())
+        sev = r['conflicts'][0]['severity'] if r['conflicts'] else '-'
+        print(f'     {label:10s} conflicts={len(r["conflicts"])} ({sev:6s}) {statuses}')
+
     failures = []
     thu = results['Thursday'][1]
     tue = results['Tuesday'][1]
+
+    clean = [label for label, (_b, r) in results.items() if not r['conflicts']]
+    if len(clean) == len(results):
+        failures.append('every weekday clears, so the alternatives list has nothing '
+                        'to rank and the finale has no contrast')
+    if not clean:
+        failures.append('no weekday clears, so the decision has no good answer to offer')
+    if 'Tuesday' not in clean:
+        failures.append('Tuesday is not among the clean alternatives')
+    # The list has to lead with a clean option and end with a conflicted one, or
+    # ranking it tells the room nothing.
+    if ranked[0][1][1]['conflicts']:
+        failures.append(f'the alternatives list leads with {ranked[0][0]}, which conflicts')
+    if not ranked[-1][1][1]['conflicts']:
+        failures.append(f'the alternatives list ends with {ranked[-1][0]}, which is clean — '
+                        'nothing is being ranked')
 
     if not thu['conflicts']:
         failures.append('Thursday produces no conflict — the demo\'s central moment '

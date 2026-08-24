@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { CalendarClock, Mail, Send, ExternalLink, Check, X } from 'lucide-react'
+import { CalendarClock, Mail, Send, ExternalLink, Check, X, Scale } from 'lucide-react'
+import ScenarioPanel from '../components/ScenarioPanel'
 
 /* ── Multi-select dropdown (shared pattern across pages) ─────────────────── */
 
@@ -298,7 +299,7 @@ function DrawerBody({ row, onSent }) {
 
 /* ── Right slide-in drawer ────────────────────────────────────────────── */
 
-function Drawer({ row, open, onClose, onSent }) {
+function Drawer({ row, open, onClose, onSent, onEvaluate }) {
   useEffect(() => {
     if (!row) return
     const onKey = e => { if (e.key === 'Escape') onClose() }
@@ -331,9 +332,25 @@ function Drawer({ row, open, onClose, onSent }) {
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-gray-900)' }}>{row.CaseBlock}</div>
             <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 2 }}>{fmtLongDate(row.Date)} · {row.Site}</div>
           </div>
-          <button onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--color-gray-400)', padding: 4, borderRadius: 6 }}>
-            <X size={20} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {onEvaluate && (
+              <button
+                type="button"
+                onClick={() => onEvaluate(row)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                  border: '1px solid var(--color-blue)', background: 'var(--color-blue)',
+                  color: '#fff', borderRadius: 'var(--radius-md)', padding: '6px 11px',
+                  fontSize: 'var(--font-size-xs)', fontWeight: 700, whiteSpace: 'nowrap',
+                }}
+              >
+                <Scale size={13} /> Evaluate impact
+              </button>
+            )}
+            <button onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--color-gray-400)', padding: 4, borderRadius: 6 }}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>
           <DrawerBody row={row} onSent={onSent} />
@@ -364,6 +381,17 @@ export default function OpenTimeRadar() {
 
   // Briefs hands a block over here with ?caseBlock=…; the chip below makes the
   // narrowed view obvious and clearable, so it never looks like missing data.
+  // The scenario panel is summoned from this page rather than living on one of
+  // its own; it only appears where the tenant has the ISSCM tables behind it.
+  const [isscmEnabled, setIsscmEnabled] = useState(false)
+  const [scenarioId,   setScenarioId]   = useState(null)
+  useEffect(() => {
+    fetch('/api/tenant-config')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setIsscmEnabled(Boolean(d?.features?.isscm)))
+      .catch(() => setIsscmEnabled(false))
+  }, [])
+
   const [blockFilter, setBlockFilter] = useState(
     () => new URLSearchParams(window.location.search).get('caseBlock') || ''
   )
@@ -558,7 +586,21 @@ export default function OpenTimeRadar() {
         </div>
       )}
 
-      <Drawer row={selected} open={drawerOpen} onClose={closeDrawer} />
+      <Drawer
+        row={selected} open={drawerOpen} onClose={closeDrawer}
+        onEvaluate={isscmEnabled ? (r => {
+          // The scenario id is the tenant's own, built the same way
+          // routes/isscm.js builds its catalogue: site, block, weekday.
+          const weekday = (new Date(`${r.Date}T00:00:00`).getDay() + 6) % 7
+          setScenarioId(`${r.Site}|${r.CaseBlock}|${weekday}`)
+        }) : null}
+      />
+      <ScenarioPanel
+        open={scenarioId !== null}
+        scenarioId={scenarioId}
+        hours={4}
+        onClose={() => setScenarioId(null)}
+      />
     </div>
   )
 }
