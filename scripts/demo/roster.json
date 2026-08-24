@@ -640,7 +640,6 @@
         "BMH OR 01"
       ],
       "weekdays": [
-        0,
         3
       ],
       "services": [
@@ -648,8 +647,7 @@
       ],
       "panel": [
         "Delacroix, Theo A",
-        "Estrada, Desmond H",
-        "Ferrante, Anika D"
+        "Estrada, Desmond H"
       ]
     },
     {
@@ -669,6 +667,23 @@
         "Delacroix, Theo A",
         "Estrada, Desmond H",
         "Ferrante, Anika D"
+      ]
+    },
+    {
+      "block": "Ortho C",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 01"
+      ],
+      "weekdays": [
+        0
+      ],
+      "services": [
+        "Orthopedics"
+      ],
+      "panel": [
+        "Delacroix, Theo A",
+        "Estrada, Desmond H"
       ]
     },
     {

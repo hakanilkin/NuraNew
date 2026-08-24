@@ -176,7 +176,7 @@ SERVICE_UNIT_MAP = {
 
 BLOCK_TEMPLATE = [
     # Bright Memorial Hospital — 11 block lines
-    ('Ortho A',      MAIN_SITE, 'BMH OR 01', 0, 'Orthopedics'),
+    ('Ortho C',      MAIN_SITE, 'BMH OR 01', 0, 'Orthopedics'),
     ('Ortho A',      MAIN_SITE, 'BMH OR 01', 3, 'Orthopedics'),      # ST-1 Thursday
     ('Ortho B',      MAIN_SITE, 'BMH OR 02', 1, 'Orthopedics'),
     ('Ortho B',      MAIN_SITE, 'BMH OR 02', 4, 'Orthopedics'),

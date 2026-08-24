@@ -152,6 +152,13 @@ SPINE_FORWARD_OPEN_WEIGHT = 0.062
 # gain leaves the trailing average wandering.
 ST1_CONTROLLER_GAIN = 2.5
 
+# Two ortho cases fill about 42% of an eight-hour block and three fill about
+# 62%, so a single instance lands well off target either way. The forward
+# instances are the ones the radar puts on screen three at a time, so bias them
+# a little low: a block that reads light every week tells the story the block
+# actually has.
+ST1_FUTURE_BIAS = -0.07
+
 
 def _service_weights(weekday, is_future=False, spine_surge=1.0):
     w = dict(C.SERVICE_VOLUME_WEIGHT)
@@ -240,6 +247,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
                             drift = ((sum(u for u, _ in recent) / alloc - st1_target)
                                      if alloc else 0.0)
                             util_target = max(0.15, st1_target - ST1_CONTROLLER_GAIN * drift
+                                              + (ST1_FUTURE_BIAS if day['is_future'] else 0.0)
                                               + float(rng.normal(0, 0.02)))
                         else:
                             util_target = float(rng.normal(st1['healthy_day_util_pct'] / 100, 0.07))
@@ -667,6 +675,12 @@ def _booked_fraction(days_ahead):
 
 FORECAST_CAPTURE = 0.15   # share of the not-yet-booked remainder the model claims
 
+# A service whose pipeline is surging books further ahead than everyone else, so
+# at any given lead time more of its block is already on the books. Without this
+# the ST-1 counterweight is invisible on Briefs: Spine's block reads like every
+# other partly-booked block, and "bursting and still booking" never surfaces.
+SURGING_BOOKING_LEAD = 0.28
+
 
 def generate_forecast_compile(cases, block_instances, calendar, rng):
     inst_by_key = {(b['date'], b['block'], b['room']): b for b in block_instances}
@@ -723,6 +737,8 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
 
         if meta['is_future']:
             frac = _booked_fraction(meta['days_ahead'])
+            if service == 'Spine':
+                frac = min(1.0, frac + SURGING_BOOKING_LEAD)
             sched_ip,  sched_op  = a['ip'] * frac,     a['op'] * frac
             sched_ipm, sched_opm = a['ip_min'] * frac, a['op_min'] * frac
             rest = (1.0 - frac) * FORECAST_CAPTURE

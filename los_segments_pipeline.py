@@ -437,17 +437,21 @@ for seg in home_segments[:5]:
 
 print()
 print("=" * 60)
-print("Step 7: Writing public/data/los_segments.json...")
+print(f"Step 7: Writing {os.path.join(cfg['output_dir'], 'los_segments.json')}...")
 print("=" * 60)
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-out_dir    = os.path.join(script_dir, 'public', 'data')
+# Every other pipeline writes to its tenant's directory; this one wrote to the
+# shared root, so a --tenant run produced output no route reads (routes/atlas.js
+# serves los_segments.json from tenantDataDir) and left the tenant's own file
+# missing.
+out_dir    = os.path.join(script_dir, cfg['output_dir'])
 os.makedirs(out_dir, exist_ok=True)
 out_path   = os.path.join(out_dir, 'los_segments.json')
 
 output = {
     'generated_at':      datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    'hospital':          'Our Lady of Lourdes Hospital',
+    'hospital':          cfg['hospital_filter'] or 'All hospitals',
     'headline':          headline,
     'facility_segments': facility_segments,
     'home_segments':     home_segments,
