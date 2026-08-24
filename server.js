@@ -287,6 +287,8 @@ const orservicelineRouter  = require('./routes/orserviceline')(getTenantPool, sq
 const openTimeRouter       = require('./routes/opentime')(getTenantPool, sql, requireTenant);
 const briefsRouter         = require('./routes/briefs')(getTenantPool, sql, requireTenant);
 const isscmRouter          = require('./routes/isscm')(getTenantPool, sql, requireTenant);
+const staffingRouter       = require('./routes/staffing')(getTenantPool, sql, requireTenant);
+const smoothingRouter      = require('./routes/smoothing')(getTenantPool, sql, requireTenant);
 
 app.use('/api/auth',           authRouter);
 app.use('/api/admin',          adminRouter);
@@ -298,6 +300,8 @@ app.use('/api/orserviceline',  orservicelineRouter);
 app.use('/api/opentime',       openTimeRouter);
 app.use('/api/briefs',         briefsRouter);
 app.use('/api/isscm',          isscmRouter);
+app.use('/api/staffing',       staffingRouter);
+app.use('/api/smoothing',      smoothingRouter);
 app.use('/api',        analyticsRouter);
 app.use('/api',        askNuraRouter);
 

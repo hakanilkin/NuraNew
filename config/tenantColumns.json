@@ -65,6 +65,7 @@
       "hospital_filter": null,
       "case_posted_value": "Posted",
       "block_fill_target": 75,
+      "crunch_occupancy_pct": 92,
       "data_dir": "demo",
       "isscm": {
         "packingCeiling": 0.85,
@@ -80,7 +81,9 @@
     "features": {
       "tdc": true,
       "service_line_drill": true,
-      "isscm": true
+      "isscm": true,
+      "staffing": true,
+      "smoothing": true
     },
     "unit_category_map": {
       "column": "DEP_LASTDEPT",
