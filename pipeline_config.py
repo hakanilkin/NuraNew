@@ -70,6 +70,39 @@ TENANTS = {
             'over_allocated':  {'inblock_util_lt': 60,  'primetime_util_lt': 65},
         },
     },
+    'demo': {
+        # Bright Memorial Health — the fully synthetic demo tenant. See
+        # DemoTenant.md and scripts/demo/. Server/user/password come from
+        # DEMO_-prefixed env vars: DEMO_DB_SERVER, DEMO_DB_USER, DEMO_DB_PASSWORD.
+        'env_prefix':        'DEMO_',
+        'database':          'Demo',
+        'output_dir':        os.path.join('public', 'data', 'demo'),
+        'hospital_filter':   None,      # both Bright sites are in scope
+        'service_line_col':  'SERVICE_LINE',
+        'service_line_2_col': 'SERVICE_LINE_2',
+        'or_combo_locs':     None,
+        'rf_exclude_locs':   set(),
+        # The seeder writes NHS-style disposition labels, so NHS matching applies.
+        'dispo_selfcare_exact':      'Disch to Home or Self Care',
+        'dispo_homehealth_contains': ['Home-Health Care'],
+        'dispo_facility_contains':   ['SNF', 'Skilled', 'Rehab', 'LTACH'],
+        'dispo_exclusions_contains': [
+            'Expired', 'Left AMA', 'Court', 'Elopement', 'Transfer to Short Term',
+        ],
+        # The seed window is relative to the anchor date, so these are wide
+        # enough to cover any anchor the demo is reseeded against.
+        'fcot_date_range':  ('2024-01-01', '2027-12-31'),
+        'case_date_range':  ('2024-01-01', '2027-12-31'),
+        'first_case_strategy': 'column',
+        'case_posted_value': 'Posted',
+        'brief_status_rules': {
+            'misaligned':      {'inblock_util_lt': 65,  'primetime_util_gt': 75},
+            'under_allocated': {'inblock_util_gt': 75,  'primetime_util_gt': 75},
+            'right_sized':     {'inblock_util_min': 70, 'inblock_util_max': 80,
+                                'primetime_util_min': 70, 'primetime_util_max': 80},
+            'over_allocated':  {'inblock_util_lt': 60,  'primetime_util_lt': 65},
+        },
+    },
     'ohs': {
         # Server/user/password come from OHS_-prefixed env vars: OHS_DB_SERVER, etc.
         'env_prefix':        'OHS_',
