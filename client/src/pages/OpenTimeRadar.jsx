@@ -362,7 +362,13 @@ function Drawer({ row, open, onClose, onSent, onEvaluate }) {
 
 /* ── Main page ────────────────────────────────────────────────────────── */
 
-export default function OpenTimeRadar() {
+/* Rendered standalone at its own route, or as a tab body inside Release Time
+   Mgmt. Embedded, the tabbed host owns the page frame and the heading. */
+function Shell({ embedded, children }) {
+  return embedded ? <>{children}</> : <div className="page">{children}</div>
+}
+
+export default function OpenTimeRadar({ embedded = false }) {
   const [sites,       setSites]       = useState([])
   const [services,    setServices]    = useState([])
   const [selSites,    setSelSites]    = useState([])
@@ -455,8 +461,8 @@ export default function OpenTimeRadar() {
   const atRiskHrs = tabRows.reduce((s, r) => s + (r.BlockTimeMins || 0), 0) / 60
 
   return (
-    <div className="page">
-      <div className="page-header">
+    <Shell embedded={embedded}>
+      <div className="page-header" style={embedded ? { display: 'none' } : undefined}>
         <h1 className="page-title">Release Radar</h1>
         <p className="page-subtitle">Upcoming OR blocks most likely to under-utilize — ranked by release-risk, with the reasoning behind each score. Default: 2–5 weeks out.</p>
       </div>
@@ -601,6 +607,6 @@ export default function OpenTimeRadar() {
         hours={4}
         onClose={() => setScenarioId(null)}
       />
-    </div>
+    </Shell>
   )
 }

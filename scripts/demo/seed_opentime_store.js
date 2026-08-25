@@ -23,6 +23,7 @@ const ROSTER = path.join(__dirname, 'roster.json');
 const MARKER = '[demo-seed]';      // lets a re-run detect its own earlier work
 
 const MAIN_SITE = 'Bright Memorial Hospital';
+const ASC_SITE  = 'Bright Surgery Center';
 const DOMAIN    = 'brightmemorial.demo';
 
 function arg(name, fallback = null) {
@@ -90,7 +91,7 @@ function main() {
       body: 'Ortho A has run at 58% of its Thursday block over the last eight weeks, and '
           + `${thursdays[0]} is currently forecast to fill about 44%. If the practice does not `
           + 'expect to fill it, releasing now gives another service enough notice to book it.',
-      respond: 'RELEASE',
+      respond: 'RELEASE', book: true,
     },
     {
       blockDate: thursdays[1], site: MAIN_SITE, caseBlock: 'Ortho A', service: 'Orthopedics',
@@ -129,9 +130,40 @@ function main() {
       body: 'Routine check ahead of the four-week deadline.',
       respond: null,
     },
+    {
+      blockDate: tuesdays[0], site: MAIN_SITE, caseBlock: 'General B', service: 'General Surgery',
+      riskScore: 61, blockTimeMins: 360,
+      recipientName: 'General Surgery scheduling',
+      recipientEmail: practiceEmail('General Surgery'),
+      subject: `General B — ${tuesdays[0]}: release the afternoon?`,
+      body: 'The afternoon has been unused for three consecutive weeks.',
+      respond: 'RELEASE', book: true,
+    },
+    {
+      blockDate: fridays[0], site: ASC_SITE, caseBlock: 'ASC Plastics', service: 'Plastics',
+      riskScore: 57, blockTimeMins: 420,
+      recipientName: 'ASC Plastics scheduling',
+      recipientEmail: practiceEmail('Plastics'),
+      subject: `ASC Plastics — Friday ${fridays[0]}: light book`,
+      body: 'Two short cases against a full surgery-centre day.',
+      // Left unclaimed on purpose: the Board needs inventory on screen.
+      respond: 'RELEASE', book: false,
+    },
+    {
+      blockDate: thursdays[1], site: MAIN_SITE, caseBlock: 'ENT', service: 'ENT',
+      riskScore: 49, blockTimeMins: 240,
+      recipientName: 'ENT scheduling',
+      recipientEmail: practiceEmail('ENT'),
+      subject: `ENT — Thursday ${thursdays[1]}: partial release`,
+      body: 'Morning only is booked.',
+      respond: 'RELEASE', book: true,
+    },
   ];
 
-  let released = null;
+  // Enough answered history that the funnel reads as a working capability
+  // rather than a fresh install: most released time gets booked, some is still
+  // on the Board as inventory to work.
+  const releasedSlots = [];
   for (const r of requests) {
     const created = store.createRequest(tenantId, {
       ...r,
@@ -140,14 +172,15 @@ function main() {
     });
     if (r.respond) {
       const out = store.respondToRequest(created.token, r.respond);
-      if (r.respond === 'RELEASE') released = out.slot;
+      if (r.respond === 'RELEASE' && out.slot) releasedSlots.push({ slot: out.slot, book: r.book });
     }
   }
+  const released = releasedSlots[0]?.slot ?? null;
 
-  // The released Thursday becomes an open slot, offered to ranked candidates.
-  // Spine leads because its forward pipeline is the one that is surging.
-  if (released) {
-    store.createOffers(tenantId, released.id, [
+  // Every released slot is offered to ranked candidates. Spine leads because its
+  // forward pipeline is the one that is surging.
+  for (const { slot } of releasedSlots) {
+    store.createOffers(tenantId, slot.id, [
       { candidate: cast.st1_spine_surge, service: 'Spine', matchScore: 94,
         recipientEmail: practiceEmail('Spine') },
       { candidate: cast.st5_turnover_offender, service: 'Robotics-General', matchScore: 71,
@@ -155,6 +188,22 @@ function main() {
       { candidate: 'General Surgery scheduling', service: 'General Surgery', matchScore: 63,
         recipientEmail: practiceEmail('General Surgery') },
     ]);
+  }
+
+  // Book most but not all, so the fill rate lands in a believable band and the
+  // Board still has inventory on screen. "Released but still open" is the
+  // scheduler's next hour of work, not a failure.
+  for (const { slot, book } of releasedSlots) {
+    if (!book) continue;
+    const offer = store.getSlot(tenantId, slot.id)?.offers?.[0];
+    if (offer) store.respondToOffer(offer.token, 'CLAIM');
+  }
+
+  // A few of the resulting EMR entries are already done; the rest are the
+  // scheduler's queue.
+  const pending = store.listTasks(tenantId, 'PENDING');
+  for (const task of pending.slice(0, Math.max(0, pending.length - 4))) {
+    store.completeTask(tenantId, task.id, { completedBy: 'j.alvarez@brightmemorial.demo' });
   }
 
   // Strategic goals drive the candidate ranking; Spine is the growth target.
@@ -166,7 +215,13 @@ function main() {
 
   const reqs  = store.listRequests(tenantId);
   const slots = store.listSlots(tenantId);
+  const sum   = store.summary(tenantId);
+  const tasks = store.listTasks(tenantId, 'ALL');
   console.log(`  Tenant ${tenantId}: ${reqs.length} requests, ${slots.length} open-time slots`);
+  console.log(`  Funnel: ${sum.hoursReleased}h released, ${sum.hoursBooked}h booked `
+            + `(fill rate ${sum.fillRatePct}%), ${sum.hoursStillOpen}h still open`);
+  console.log(`  Fulfillment: ${tasks.filter(t => t.status === 'PENDING').length} to enter, `
+            + `${tasks.filter(t => t.status === 'DONE').length} done`);
   if (released) {
     console.log(`  Released slot ${released.caseBlock} ${released.blockDate} with `
               + `${store.getSlot(tenantId, released.id).offers.length} ranked offers`);

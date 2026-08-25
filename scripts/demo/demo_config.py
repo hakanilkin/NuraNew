@@ -308,6 +308,60 @@ STORYLINES = {
         'different_surgeon_extra_minutes': 18.0,
         'robotics_room_extra_minutes': 9.0,
     },
+    # ST-7 The risk gradient
+    #
+    # A radar with one at-risk row reads as a demo, not a work queue. Practices
+    # book at different paces, and a practice that books late looks like a
+    # release candidate long before it looks like a problem — so the gradient
+    # comes from booking pace on forward dates, which leaves every historical
+    # utilisation figure ST-0 depends on untouched.
+    'st7': {
+        # The radar's own badge thresholds (client/src/pages/OpenTimeRadar.jsx).
+        'badge_high': 67,
+        'badge_medium': 34,
+        # What the gradient actually delivers, measured on forward fill rather
+        # than on the badge: a band of blocks worth a scheduler's attention,
+        # spread across services and sites, over a healthy floor.
+        'attention_fill_pct': 50,
+        'attention_rows': (5, 25),
+        'attention_services': 3,
+        'top_ranked_block': 'Ortho A',
+        # lib/releaseRisk.js scores risk as a weighted mean of three features.
+        # Two of them — trailing utilisation against a 75% target, and share of
+        # block time previously released — sit near zero for any block that runs
+        # at all, so risk is in practice about half the forward-fill shortfall
+        # and tops out near 50. Reaching the badge's High threshold would need a
+        # block that is barely booked, chronically half-used AND frequently
+        # released. See the note in verify.py's ST-7 check.
+        'model_ceiling_note': True,
+        # Booking pace by block, as a multiplier on how far along a block's
+        # forward book is at a given lead time. Below 1 books late.
+        #
+        # The slow end stops short of Ortho A's own fill: ST-1 requires Ortho A
+        # to rank first, and the scorer ranks almost entirely on forward fill,
+        # so any block that books slower than it takes the top row away. The
+        # gradient therefore sits above ST-1's block rather than around it.
+        'booking_pace': {
+            'Ortho A':      1.00,   # ST-1: pace left alone; its light book is ST-1's own
+            'Uro/Gyn':      0.98,
+            'ASC Plastics': 0.87,
+            'General B':    0.88,
+            'Plastics':     0.90,
+            'Colorectal':   0.92,
+            'ENT':          0.94,
+            'ASC ENT':      0.96,
+            'Ortho C':      0.90,
+            'General A':    0.95,
+            'ASC General':  1.00,
+            'Ortho B':      1.02,
+            'Robotics 1':   1.05,
+            'Vascular':     1.06,
+            'ASC Ortho':    1.08,
+            'ASC Uro/Gyn':  1.10,
+            'Spine B':      1.12,
+            'Spine':        1.15,   # the surging counterweight books earliest
+        },
+    },
     # ST-6 The Tuesday resolution — derived, never seeded. These are the
     # headroom conditions the seeder must leave in place for the ISSCM engine
     # to find the Thursday conflict and the Tuesday resolution on its own.

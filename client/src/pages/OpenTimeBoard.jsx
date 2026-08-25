@@ -9,6 +9,9 @@ function fmtDate(iso) {
   return mm && dd ? `${mm}/${dd}` : iso
 }
 function fmtHrs(mins) { return mins == null ? '—' : (mins / 60).toFixed(1) + 'h' }
+// Scores and percentages arrive at full precision so the API's ranking stays
+// exact; they are whole numbers on screen.
+function fmtScore(v) { return v == null ? '—' : Math.round(Number(v)) }
 function slugEmail(s) {
   const base = (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 28)
   return `${base || 'practice'}@practice.demo`
@@ -62,7 +65,13 @@ function GoalsEditor({ goals, onSave }) {
 
 /* ── Main page ────────────────────────────────────────────────────────── */
 
-export default function OpenTimeBoard() {
+/* Rendered standalone at its own route, or as a tab body inside Release Time
+   Mgmt. Embedded, the tabbed host owns the page frame and the heading. */
+function Shell({ embedded, children }) {
+  return embedded ? <>{children}</> : <div className="page">{children}</div>
+}
+
+export default function OpenTimeBoard({ embedded = false }) {
   const [slots,      setSlots]      = useState([])
   const [selId,      setSelId]      = useState(null)
   const [candidates, setCandidates] = useState([])
@@ -144,8 +153,8 @@ export default function OpenTimeBoard() {
   const TD = { padding: '8px 10px', fontSize: 12, textAlign: 'left', borderBottom: '1px solid #f0f1f3', verticalAlign: 'middle' }
 
   return (
-    <div className="page">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Shell embedded={embedded}>
+      <div className="page-header" style={{ display: embedded ? 'none' : 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="page-title">Open Time Board</h1>
           <p className="page-subtitle">Released blocks and who to offer them to — ranked by forward demand and your strategic growth goals.</p>
@@ -271,7 +280,7 @@ export default function OpenTimeBoard() {
                                     <input type="checkbox" checked={checked} disabled={offered} onChange={() => toggleCand(c.candidate)} style={{ accentColor: 'var(--color-blue)', cursor: offered ? 'default' : 'pointer' }} />
                                   </td>
                                   <td style={{ ...TD, textAlign: 'right' }}>
-                                    <span style={{ fontWeight: 700, fontSize: 14, color: c.matchScore >= 60 ? '#15803d' : c.matchScore >= 30 ? '#b45309' : 'var(--color-gray-500)' }}>{c.matchScore}</span>
+                                    <span style={{ fontWeight: 700, fontSize: 14, color: c.matchScore >= 60 ? '#15803d' : c.matchScore >= 30 ? '#b45309' : 'var(--color-gray-500)' }}>{fmtScore(c.matchScore)}</span>
                                   </td>
                                   <td style={{ ...TD }}>
                                     <span style={{ fontWeight: 600, color: 'var(--color-gray-800)' }}>{c.candidate}</span>
@@ -303,6 +312,6 @@ export default function OpenTimeBoard() {
       <p style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 12 }}>
         Demo: no email is sent. "Respond as practice" opens the page a surgeon's office would see, where they claim or pass the open time.
       </p>
-    </div>
+    </Shell>
   )
 }

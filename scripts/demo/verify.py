@@ -359,6 +359,103 @@ def _st5(tables, ctx):
            f">= {s['robotics_room_extra_minutes'] * 0.4:g}", ok, 'min')
 
 
+def _st7(tables, ctx):
+    """
+    The radar has to read as a work queue, not a one-row demo: a few blocks at
+    real risk, a spread behind them, and a healthy majority. Scored with the
+    shipping scorer in lib/releaseRisk.js rather than a copy of it, so the bands
+    are a tested property of what ships.
+    """
+    import json as _json
+    import os as _os
+    import subprocess as _sp
+
+    s = C.STORYLINES['st7']
+    anchor = ctx['anchor']
+    root = _os.path.abspath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))
+
+    # The radar's own default window and aggregation (routes/opentime.js).
+    fwd = {}
+    for r in tables['V4_FORECAST_COMPILE']:
+        if not (14 <= r['DaysAhead'] <= 35):
+            continue
+        key = (r['Date'], r['ORGRP2'], r['Caseblock'], r['SurgeonService'])
+        a = fwd.setdefault(key, {'Date': str(r['Date']), 'Site': r['ORGRP2'],
+                                 'CaseBlock': r['Caseblock'], 'Service': r['SurgeonService'],
+                                 'DaysAhead': r['DaysAhead'], 'TotalDurwTurn': 0.0, 'BlockTime': 0.0})
+        a['TotalDurwTurn'] += (r['SCHEDULED_INPATIENT_DURwTurn'] + r['SCHEDULED_OUTPATIENT_DURwTurn']
+                               + r['FORECAST_INPATIENT_DURwTurn'] + r['FORECAST_OUTPATIENT_DURwTurn'])
+        a['BlockTime'] += r['BLOCKTIME']
+    fwd_rows = [v for v in fwd.values() if v['BlockTime'] > 0]
+
+    since = anchor - dt.timedelta(days=90)
+    hist = {}
+    for r in tables['V4_BlockResultsView']:
+        if not (since <= r['BlockDate'] < anchor) or r['BlockDate'].weekday() > 4:
+            continue
+        h = hist.setdefault(r['CaseBlock'], {'CaseBlock': r['CaseBlock'], 'BlockDays': set(),
+                                             'SumPrime': 0.0, 'SumBlock': 0.0, 'SumReleased': 0.0})
+        h['BlockDays'].add(str(r['BlockDate']))
+        h['SumPrime'] += r['Total_Prime_Time']
+        h['SumBlock'] += r['blockTime']
+        h['SumReleased'] += r['ReleasedTime']
+    hist_rows = [{**h, 'BlockDays': len(h['BlockDays'])} for h in hist.values()]
+
+    script = ("const {scoreBlocks}=require(process.argv[1]);"
+              "const f=JSON.parse(process.argv[2]), h=JSON.parse(process.argv[3]);"
+              "const m=new Map(h.map(x=>[x.CaseBlock,x]));"
+              "console.log(JSON.stringify(scoreBlocks(f,m)));")
+    try:
+        out = _sp.run(['node', '-e', script, _os.path.join(root, 'lib', 'releaseRisk.js'),
+                       _json.dumps(fwd_rows), _json.dumps(hist_rows)],
+                      capture_output=True, text=True, check=True, cwd=root)
+        scored = _json.loads(out.stdout)
+    except Exception as exc:
+        _check('ST-7 radar risk gradient', f'scorer unavailable ({exc})', '-', FAIL)
+        return
+
+    scored.sort(key=lambda r: -(r.get('risk') or 0))
+    risks = [r.get('risk') or 0 for r in scored]
+
+    # Measured on forward fill, not on the badge. The badge is where the model's
+    # compressed range shows up (see the ceiling check below); the gradient
+    # itself is a property of the data and is what a scheduler actually reads.
+    limit = s['attention_fill_pct']
+    attention = [r for r in scored if (r.get('ForecastFillPct') or 100) < limit]
+
+    lo, hi = s['attention_rows']
+    _check(f'ST-7 blocks under {limit}% forecast fill', len(attention), f'{lo}–{hi}',
+           PASS if lo <= len(attention) <= hi else FAIL, 'rows',
+           f'of {len(scored)} in the radar window')
+    _check('ST-7 healthy remainder', len(scored) - len(attention), '> 0',
+           PASS if len(scored) - len(attention) > 0 else FAIL, 'rows')
+
+    top = scored[0]['CaseBlock'] if scored else None
+    _check('ST-7 top-ranked block', top, s['top_ranked_block'],
+           PASS if top == s['top_ranked_block'] else FAIL)
+
+    n_services = len({r['Service'] for r in attention})
+    _check('ST-7 spread across services', n_services, f">= {s['attention_services']}",
+           PASS if n_services >= s['attention_services'] else FAIL, 'services')
+    n_sites = len({r['Site'] for r in attention})
+    _check('ST-7 spread across sites', n_sites, '>= 2',
+           PASS if n_sites >= 2 else WARN, 'sites')
+
+    # The gradient exists in the data but cannot reach the radar's High badge,
+    # and that is a property of the scorer rather than of this seed. Risk is a
+    # weighted mean of three features; trailing utilisation and prior-release
+    # share both sit near zero for any block that runs at all, so the score is
+    # in practice about half the forward-fill shortfall and tops out near 50.
+    # Reported rather than left to look like an empty band.
+    peak = max(risks) if risks else 0
+    over_medium = sum(1 for r in risks if r >= s['badge_medium'])
+    _check('ST-7 highest risk score', peak, f">= {s['badge_high']} would badge High",
+           WARN if peak < s['badge_high'] else PASS, '',
+           f'{over_medium} row(s) reach the Medium badge; lib/releaseRisk.js cannot '
+           f'reach High without a block barely booked AND chronically half-used AND '
+           f'often released')
+
+
 def _st6(tables, ctx):
     """
     ST-6 is derived by the ISSCM engine, never seeded. What the seeder owes it is
@@ -415,7 +512,7 @@ def run(tables, ctx):
     print('  Storyline reconciliation — DemoTenant.md section 10')
     print('=' * 72)
 
-    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6):
+    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6, _st7):
         try:
             fn(tables, ctx)
         except Exception as exc:                    # a broken check must not hide the rest

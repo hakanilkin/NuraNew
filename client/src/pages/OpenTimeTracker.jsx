@@ -38,7 +38,13 @@ function Metric({ value, label, color }) {
 
 /* ── Main page ────────────────────────────────────────────────────────── */
 
-export default function OpenTimeTracker() {
+/* Rendered standalone at its own route, or as a tab body inside Release Time
+   Mgmt. Embedded, the tabbed host owns the page frame and the heading. */
+function Shell({ embedded, children }) {
+  return embedded ? <>{children}</> : <div className="page">{children}</div>
+}
+
+export default function OpenTimeTracker({ embedded = false }) {
   const [requests, setRequests] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
@@ -67,8 +73,8 @@ export default function OpenTimeTracker() {
   const TD = { padding: '8px 10px', fontSize: 12, textAlign: 'left', borderBottom: '1px solid #f0f1f3', verticalAlign: 'middle' }
 
   return (
-    <div className="page">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Shell embedded={embedded}>
+      <div className="page-header" style={{ display: embedded ? 'none' : 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="page-title">Release Tracker</h1>
           <p className="page-subtitle">Release requests you've sent and how each practice responded. Responses update here as they come in.</p>
@@ -147,6 +153,6 @@ export default function OpenTimeTracker() {
       <p style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 12 }}>
         Demo: no email is sent. "Respond as practice" opens the exact page a recipient would see from the email link.
       </p>
-    </div>
+    </Shell>
   )
 }

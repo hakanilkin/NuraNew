@@ -40,9 +40,7 @@ import Staffing     from './pages/Staffing'
 import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
-import OpenTimeRadar        from './pages/OpenTimeRadar'
-import OpenTimeTracker      from './pages/OpenTimeTracker'
-import OpenTimeBoard        from './pages/OpenTimeBoard'
+import ReleaseTimeMgmt      from './pages/ReleaseTimeMgmt'
 import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
@@ -607,10 +605,11 @@ function Shell() {
           <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
           <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
           <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />
-          <Route path="/open-time/radar"             element={<OpenTimeRadar />} />
-          <Route path="/open-time/tracker"           element={<OpenTimeTracker />} />
-          <Route path="/open-time/board"             element={<OpenTimeBoard />} />
-          <Route path="/open-time"                   element={<Navigate to="/open-time/radar" replace />} />
+          {/* One page, four tabs. The old per-view URLs still resolve — they
+              are now the tab parameter, so deep links and the Briefs hand-offs
+              land on the right tab with their query intact. */}
+          <Route path="/open-time"                   element={<ReleaseTimeMgmt />} />
+          <Route path="/open-time/:tab"              element={<ReleaseTimeMgmt />} />
           <Route path="/room-running"      element={<RoomRunning />} />
           <Route path="/or/service-lines" element={<ORServiceLines />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />

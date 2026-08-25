@@ -36,7 +36,16 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'scripts', 'demo'))
 
 from pipeline_config import get_tenant_config                       # noqa: E402
-from performance_briefs_pipeline import _quarter_end                # noqa: E402  (pure helper)
+
+
+def _quarter_end(year, q):
+    """
+    Transcribed from performance_briefs_pipeline._quarter_end rather than
+    imported: that module opens a database connection at import time, which
+    would make this offline check fail whenever the source database is asleep.
+    """
+    m, d = {1: (3, 31), 2: (6, 30), 3: (9, 30), 4: (12, 31)}[q]
+    return dt.date(year, m, d)
 
 ANCHOR = dt.date(2026, 8, 24)
 SEED = 42

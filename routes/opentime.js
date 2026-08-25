@@ -175,17 +175,19 @@ module.exports = function openTimeRoutes(getTenantPool, sql, requireTenant) {
       const maxCases = Math.max(1, ...pool.map(p => p.forecastCases));
 
       const W_DEMAND = 0.6, W_STRATEGIC = 0.4;
+      // Scores keep full precision here so ranking and any future tie-break
+      // stay exact; rounding is the render layer's job.
       const candidates = pool.map(p => {
         const demandNorm = p.forecastCases / maxCases;
         const goalW      = goalMap.get(p.service.toLowerCase()) || 0;
         const goalNorm   = goalW / maxGoal;
-        const score      = Math.round((W_DEMAND * demandNorm + W_STRATEGIC * goalNorm) * 100);
+        const score      = (W_DEMAND * demandNorm + W_STRATEGIC * goalNorm) * 100;
         const drivers = [
-          { key: 'demand', label: 'Forward demand', contribution: Math.round(demandNorm * 100),
-            detail: `${p.forecastCases} cases forecast at this site over the next 6 weeks` },
+          { key: 'demand', label: 'Forward demand', contribution: demandNorm * 100,
+            detail: `${Math.round(p.forecastCases)} cases forecast at this site over the next 6 weeks` },
         ];
         if (goalW > 0) drivers.push({
-          key: 'strategic', label: 'Strategic priority', contribution: Math.round(goalNorm * 100),
+          key: 'strategic', label: 'Strategic priority', contribution: goalNorm * 100,
           detail: `Growth target (weight ${goalW})`,
         });
         return { candidate: p.service, service: p.service, matchScore: score, forecastCases: p.forecastCases, isStrategic: goalW > 0, drivers };
@@ -207,6 +209,81 @@ module.exports = function openTimeRoutes(getTenantPool, sql, requireTenant) {
     const slot = store.createOffers(req.session.tenantId, req.params.id, candidates);
     if (!slot) return res.status(404).json({ error: 'Slot not found' });
     res.status(201).json(slot);
+  });
+
+  // ── Fulfillment queue ───────────────────────────────────────────────────────
+  //
+  // Nura decides; the EMR transacts. These are the entries a scheduler still has
+  // to make by hand. A worklist, not a tracking instrument — see
+  // OpenTimeFulfillment.md §1 for why nothing here ages, scores or ranks.
+
+  const VALID_STATUS = new Set(['PENDING', 'DONE', 'CANCELLED', 'ALL']);
+
+  // GET /api/opentime/tasks?status=PENDING|DONE|ALL
+  router.get('/tasks', (req, res) => {
+    try {
+      const raw = String(req.query.status || 'ALL').toUpperCase();
+      const status = VALID_STATUS.has(raw) ? raw : 'ALL';
+      const all = store.listTasks(req.session.tenantId, 'ALL');
+      res.json({
+        tasks: status === 'ALL' ? all : all.filter(t => t.status === status),
+        summary: {
+          pending: all.filter(t => t.status === 'PENDING').length,
+          done: all.filter(t => t.status === 'DONE').length,
+        },
+      });
+    } catch (err) {
+      console.error('/api/opentime/tasks error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // POST /api/opentime/tasks/:id/complete
+  router.post('/tasks/:id/complete', (req, res) => {
+    try {
+      // Who completed it comes from the session, never the request body.
+      const who = req.session?.email || req.session?.username || 'A teammate';
+      const task = store.completeTask(req.session.tenantId, req.params.id, {
+        completedBy: who, note: (req.body || {}).note,
+      });
+      if (!task) return res.status(404).json({ error: 'Task not found or already closed' });
+      res.json(task);
+    } catch (err) {
+      console.error('/api/opentime/tasks complete error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // POST /api/opentime/tasks/:id/cancel — the decision behind it was reversed
+  router.post('/tasks/:id/cancel', (req, res) => {
+    try {
+      const note = (req.body || {}).note;
+      if (!note) return res.status(400).json({ error: 'note is required when cancelling' });
+      const who = req.session?.email || req.session?.username || 'A teammate';
+      const task = store.cancelTask(req.session.tenantId, req.params.id, { completedBy: who, note });
+      if (!task) return res.status(404).json({ error: 'Task not found or already closed' });
+      res.json(task);
+    } catch (err) {
+      console.error('/api/opentime/tasks cancel error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ── The funnel ──────────────────────────────────────────────────────────────
+  // Released hours alone flatter the product. Released-and-filled is the honest
+  // number, and it is the one nobody else publishes.
+
+  router.get('/summary', (req, res) => {
+    try {
+      const { from, to } = req.query;
+      res.json(store.summary(req.session.tenantId, {
+        from: isValidDate(from) ? from : undefined,
+        to:   isValidDate(to)   ? to   : undefined,
+      }));
+    } catch (err) {
+      console.error('/api/opentime/summary error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   });
 
   // ── Strategic goals ─────────────────────────────────────────────────────────

@@ -157,7 +157,7 @@ ST1_CONTROLLER_GAIN = 2.5
 # instances are the ones the radar puts on screen three at a time, so bias them
 # a little low: a block that reads light every week tells the story the block
 # actually has.
-ST1_FUTURE_BIAS = -0.07
+ST1_FUTURE_BIAS = -0.045
 
 
 def _service_weights(weekday, is_future=False, spine_surge=1.0):
@@ -685,6 +685,9 @@ SURGING_BOOKING_LEAD = 0.28
 def generate_forecast_compile(cases, block_instances, calendar, rng):
     inst_by_key = {(b['date'], b['block'], b['room']): b for b in block_instances}
     day_meta = {d['date']: d for d in calendar}
+    # ST-7: how far along each block's forward book is at a given lead time.
+    # Applied only to future rows, so nothing measured on history moves.
+    pace = C.STORYLINES['st7']['booking_pace']
 
     # Aggregate the generated cases to the forecast grain.
     agg = {}
@@ -736,9 +739,10 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
         budget_op = round(bud_op * float(rng.uniform(0.94, 1.08)), 2)
 
         if meta['is_future']:
-            frac = _booked_fraction(meta['days_ahead'])
+            frac = _booked_fraction(meta['days_ahead']) * pace.get(block, 1.0)
             if service == 'Spine':
                 frac = min(1.0, frac + SURGING_BOOKING_LEAD)
+            frac = max(0.05, min(1.0, frac))
             sched_ip,  sched_op  = a['ip'] * frac,     a['op'] * frac
             sched_ipm, sched_opm = a['ip_min'] * frac, a['op_min'] * frac
             rest = (1.0 - frac) * FORECAST_CAPTURE
