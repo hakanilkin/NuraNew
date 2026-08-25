@@ -23,6 +23,14 @@ import argparse
 
 
 # ── Tenant definitions ────────────────────────────────────────────────────────
+#
+# IMPORTANT: a tenant's key here (and the last segment of its 'output_dir') must
+# equal its TenantName from the Tenants table, lowercased with every
+# non-alphanumeric character stripped -- that is exactly how routes/atlas.js
+# derives the Atlas data directory:
+#     'Bright Memorial Health' -> 'brightmemorialhealth'
+# If these drift apart the server looks in a directory the pipelines never wrote
+# and every Atlas tab renders "No Atlas data for this organization".
 
 TENANTS = {
     'nhs': {
@@ -95,6 +103,51 @@ TENANTS = {
         'first_case_strategy': 'derived',
         # CaseLogStatus filter value (OHS stores '2' for Posted, not the label)
         'case_posted_value': '2',
+        # Performance Briefs: status classification thresholds (first-match wins)
+        'brief_status_rules': {
+            'misaligned':      {'inblock_util_lt': 65,  'primetime_util_gt': 75},
+            'under_allocated': {'inblock_util_gt': 75,  'primetime_util_gt': 75},
+            'right_sized':     {'inblock_util_min': 70, 'inblock_util_max': 80,
+                                'primetime_util_min': 70, 'primetime_util_max': 80},
+            'over_allocated':  {'inblock_util_lt': 60,  'primetime_util_lt': 65},
+        },
+    },
+    'brightmemorialhealth': {
+        # Demo tenant.  TenantName is 'Bright Memorial Health', which sanitizes
+        # to 'brightmemorialhealth' -- hence this key and the output_dir below.
+        #
+        # Same Azure SQL server as the other tenants, but a separate 'Demo'
+        # database.  env_prefix 'DEMO_' is optional: get_db_params() falls back
+        # to the unprefixed DB_SERVER/DB_USER/DB_PASSWORD when the DEMO_ vars
+        # are absent, so no new env vars are required unless the Demo database
+        # needs its own credentials.
+        'env_prefix':        'DEMO_',
+        'database':          'Demo',
+        'output_dir':        os.path.join('public', 'data', 'brightmemorialhealth'),
+        # No hospital filter: unlike Virtua/OLLH the Demo database is not known
+        # to contain that hospital name, and a non-matching filter would
+        # silently train every model on zero rows.  Set this once the Demo
+        # data's hospital values are confirmed.
+        'hospital_filter':   None,
+        # Column and vocabulary settings below mirror NHS on the assumption that
+        # Demo is a copy of that schema.  Verify against the real Demo database
+        # before trusting pipeline output.
+        'service_line_col':  'SERVICE_LINE',
+        'service_line_2_col': 'SERVICE_LINE_2',
+        'or_combo_locs':     None,      # None = no location filter
+        'rf_exclude_locs':   set(),     # nothing to exclude
+        # Disposition matching for do_los / do_dc / los_segments pipelines
+        'dispo_selfcare_exact':      'Disch to Home or Self Care',
+        'dispo_homehealth_contains': ['Home-Health Care'],
+        'dispo_facility_contains':   ['SNF', 'Skilled', 'Rehab', 'LTACH'],
+        'dispo_exclusions_contains': [
+            'Expired', 'Left AMA', 'Court', 'Elopement', 'Transfer to Short Term',
+        ],
+        # Date ranges for OR pipelines
+        'fcot_date_range':  ('2023-01-01', '2025-12-31'),
+        'case_date_range':  ('2023-01-01', '2025-12-31'),
+        'first_case_strategy': 'column',
+        'case_posted_value': 'Posted',
         # Performance Briefs: status classification thresholds (first-match wins)
         'brief_status_rules': {
             'misaligned':      {'inblock_util_lt': 65,  'primetime_util_gt': 75},

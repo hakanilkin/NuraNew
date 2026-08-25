@@ -32,7 +32,11 @@ CREATE TABLE UserTenants (
 INSERT INTO Tenants (TenantName, DBServer, DBName, DBUser, DBPassword)
 VALUES
   ('NHS', 'brighthospital.database.windows.net', 'Virtua', 'hakantest@brighthospital', 'YOUR_PASSWORD'),
-  ('OHS', 'brighthospital.database.windows.net', 'OHS',    'hakantest@brighthospital', 'YOUR_PASSWORD');
+  ('OHS', 'brighthospital.database.windows.net', 'OHS',    'hakantest@brighthospital', 'YOUR_PASSWORD'),
+  -- Demo tenant. TenantName must stay exactly 'Bright Memorial Health': it
+  -- sanitizes to 'brightmemorialhealth', which is the Atlas data directory
+  -- routes/atlas.js looks for and the tenant key in pipeline_config.py.
+  ('Bright Memorial Health', 'brighthospital.database.windows.net', 'Demo', 'hakantest@brighthospital', 'YOUR_PASSWORD');
 
 -- ----------------------------------------------------------------
 -- Assign admin user to all tenants (run after seeding)
