@@ -152,14 +152,32 @@ module.exports = function smoothingRoutes(getTenantPool, sql, requireTenant) {
         GROUP BY ct.Unit, DATEPART(WEEKDAY, ct.Datehour)
       `);
 
-      const admitMap = new Map();
-      for (const a of admits.recordset) {
-        const days = Math.max(1, num(a.Days));
-        admitMap.set(`${a.Unit}|${sqlDowToJs(a.Wd)}`, {
-          or: (num(a.OrAdmits) / days) * avgLos,
-          ed: (num(a.EdAdmits) / days) * avgLos,
+      // Occupancy shares, applied to the average census the same cell shows.
+      const shareMap = new Map();
+      for (const a of occupants.recordset) {
+        const total = num(a.Occupants);
+        if (!total) continue;
+        shareMap.set(`${a.Unit}|${sqlDowToJs(a.Wd)}`, {
+          or: num(a.OrOccupants) / total,
+          ed: num(a.EdOccupants) / total,
         });
       }
+
+      // Crunch unit-days counts actual days over the threshold, not averaged
+      // cells: averaging a weekday first smooths the peaks away, and the peaks
+      // are the thing being counted.
+      const crunchDays = await db.request()
+        .input('weeks', sql.Int, weeks)
+        .input('pct', sql.Float, threshold / 100)
+        .query(`
+          SELECT COUNT(*) AS N
+          FROM DS_Occupancy o
+          JOIN UnitCapacity c ON c.Unit = o.DEP_NAME
+          WHERE DATEPART(HOUR, o.Datehour) = 7
+            AND DATEPART(WEEKDAY, o.Datehour) NOT IN (1, 7)
+            AND o.Datehour >= DATEADD(week, -@weeks, CAST(GETDATE() AS DATE))
+            AND CAST(o.Occupancy AS FLOAT) >= @pct * c.StaffedBeds
+        `);
 
       const byUnit = new Map();
       const cells = [];
