@@ -114,8 +114,10 @@ module.exports = function briefsRoutes(getTenantPool, sql, requireTenant) {
           SELECT
             ISNULL(Caseblock, 'Unknown')          AS CaseBlock,
             SUM(ISNULL(BLOCKTIME, 0))             AS FwdBlockMins,
-            SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)
-              + ISNULL(FORECAST_INPATIENT_DURwTurn, 0)  + ISNULL(FORECAST_OUTPATIENT_DURwTurn, 0))
+            -- Booked so far, matching the Radar. "How much of the next four
+            -- weeks is on the books" is a different question from "how much
+            -- will this day eventually run".
+            SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0))
                                                   AS FwdBookedMins
           FROM V4_FORECAST_COMPILE
           WHERE DaysAhead BETWEEN 1 AND @horizonDays

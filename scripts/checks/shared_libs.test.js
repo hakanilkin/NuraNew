@@ -220,9 +220,10 @@ test('flexing down past the peak degrades harder still', () => {
   assert.equal(r.pillars.staffing.status, E.DEGRADES);
 });
 
-test('the recommendation keeps a room in hand rather than staffing to the peak', () => {
-  assert.equal(S.recommendedRooms(6, 9), 7);
-  assert.equal(S.recommendedRooms(8, 9), 9, 'never recommends more than the plan');
+test('the recommendation keeps a room in hand, in both directions', () => {
+  assert.equal(S.recommendedRooms(6, 9), 7, 'flexing down still leaves a room spare');
+  // Clamping to the plan here would make a genuine flex-up unquantifiable.
+  assert.equal(S.recommendedRooms(11, 9), 12, 'a day needing more rooms says so');
 });
 
 test('a day-of-week shift moves beds and room-time without claiming a utilisation gain', () => {

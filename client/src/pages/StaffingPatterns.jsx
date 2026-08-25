@@ -1,12 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
-import { AlertCircle, Scale, TrendingDown, TrendingUp } from 'lucide-react'
-import ScenarioPanel from '../components/ScenarioPanel'
+import { AlertCircle } from 'lucide-react'
 
-/* ─── Demand–Staffing Alignment (StaffingAlignment.md) ────────────────────────
-   OR staffing is planned as a static rectangle — all rooms, one shift, five
-   days. Demand has a shape by hour and day. The gap leaks money in both
-   directions at once, and the two names for it are the product:
-   idle staffed hours, and overtime exposure.
+/* ─── Staffing Patterns (StaffingAlignment.md rev 2) ──────────────────────────
+   The structural half: over a trailing quarter, does the staffing template fit
+   the demand pattern at all? Staffing is planned as a static rectangle — all
+   rooms, one shift, five days — and demand has a shape by hour and day. The gap
+   leaks money in both directions at once, and the two names for it are the
+   product: idle staffed hours, and overtime exposure.
+
+   No forward view here. Flexing a specific Tuesday is a weekly decision for a
+   charge nurse and lives on Volume & Staffing Outlook; this page is the
+   quarterly one — stop staffing Fridays that way.
 
    The numbers come from /api/staffing, which computes them through
    lib/staffingShape.js — the same module the ISSCM panel's Pillar 2 uses. This
@@ -90,21 +94,6 @@ const TH = { padding: '8px 12px', fontSize: 12, fontWeight: 600, textAlign: 'lef
 const TD = { padding: '9px 12px', fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)',
              borderBottom: '1px solid var(--surface-border)' }
 
-/* Flags carry a glyph as well as a colour — projector rule. */
-function FlexChip({ flag }) {
-  if (!flag) return <span style={{ color: 'var(--color-gray-300)' }}>—</span>
-  const down = flag === 'FLEX_DOWN'
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px',
-                   borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 700,
-                   background: down ? 'rgba(59,130,246,0.12)' : 'rgba(234,179,8,0.14)',
-                   color: down ? '#2563eb' : '#b45309' }}>
-      {down ? <TrendingDown size={11} /> : <TrendingUp size={11} />}
-      {down ? 'Flex down' : 'Flex up'}
-    </span>
-  )
-}
-
 export function Ledger({ ledger }) {
   if (!ledger) return null
   const s = ledger.summary
@@ -164,69 +153,12 @@ export function Ledger({ ledger }) {
   )
 }
 
-export function ForwardPlan({ forward, onEvaluate }) {
-  if (!forward) return null
-  const flagged = forward.days.filter(d => d.flag)
-  return (
-    <div className="card" style={{ marginTop: 'var(--space-5)' }}>
-      <div className="card-header">
-        <div>
-          <div className="card-title">Forward flex plan — next {forward.weeks} weeks</div>
-          <div className="card-subtitle">
-            {flagged.length === 0 ? 'No days need a flex in this window.'
-              : `${flagged.length} day${flagged.length === 1 ? '' : 's'} where the plan and the booked volume disagree.`}
-          </div>
-        </div>
-      </div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>
-            <th style={TH}>Date</th><th style={TH}>Day</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Booked rm-hrs</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Implied</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Planned</th>
-            <th style={TH}>Flag</th><th style={TH}>Why</th><th style={TH}></th>
-          </tr></thead>
-          <tbody>
-            {forward.days.map(d => (
-              <tr key={d.date} style={{ background: d.flag ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
-                <td style={TD}>{d.date}</td>
-                <td style={TD}>{d.label}</td>
-                <td style={{ ...TD, textAlign: 'right' }}>{fmt1(d.bookedRoomHours)}</td>
-                <td style={{ ...TD, textAlign: 'right', fontWeight: 600 }}>{d.impliedRooms}</td>
-                <td style={{ ...TD, textAlign: 'right' }}>{d.plannedRooms}</td>
-                <td style={TD}><FlexChip flag={d.flag} /></td>
-                <td style={{ ...TD, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)', maxWidth: 340 }}>
-                  {/* The reasoning is the API's, rendered as it arrived. */}
-                  {(d.drivers ?? []).map(x => x.detail).join(' ')}
-                </td>
-                <td style={TD}>
-                  {d.flag && onEvaluate && (
-                    <button type="button" onClick={() => onEvaluate(d)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
-                               border: '1px solid var(--color-blue)', background: 'var(--color-blue)',
-                               color: '#fff', borderRadius: 'var(--radius-md)', padding: '5px 10px',
-                               fontSize: 'var(--font-size-xs)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                      <Scale size={12} /> Evaluate flex
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-export default function Staffing() {
+export default function StaffingPatterns() {
   const [sites, setSites] = useState([])
   const [site, setSite] = useState('')
-  const [data, setData] = useState({ shape: null, ledger: null, forward: null })
+  const [data, setData] = useState({ shape: null, ledger: null })
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [decision, setDecision] = useState(null)
 
   useEffect(() => {
     fetch('/api/sites').then(r => r.json())
@@ -241,11 +173,10 @@ export default function Staffing() {
     Promise.all([
       fetch(`/api/staffing/shape?${q}&weeks=8`).then(r => r.json()),
       fetch(`/api/staffing/ledger?${q}&weeks=8`).then(r => r.json()),
-      fetch(`/api/staffing/forward?${q}&weeks=4`).then(r => r.json()),
     ])
-      .then(([shape, ledger, forward]) => {
+      .then(([shape, ledger]) => {
         if (shape?.error || ledger?.error) throw new Error(ledger?.error || shape.error)
-        setData({ shape, ledger, forward })
+        setData({ shape, ledger })
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -257,11 +188,11 @@ export default function Staffing() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1 className="page-title">Demand–Staffing Alignment</h1>
+        <h1 className="page-title">Staffing Patterns</h1>
         <p className="page-subtitle">
-          Staffing is a rectangle; demand has a shape. The gap costs money in both
-          directions — idle staffed hours where the rectangle is too big, overtime
-          exposure where demand runs past its edge.
+          Staffing is a rectangle; demand has a shape. Over a trailing quarter, the
+          gap costs money in both directions — idle staffed hours where the rectangle
+          is too big, overtime exposure where demand runs past its edge.
         </p>
       </div>
 
@@ -310,19 +241,9 @@ export default function Staffing() {
 
           <Ledger ledger={data.ledger} />
 
-          <ForwardPlan
-            forward={data.forward}
-            onEvaluate={d => setDecision({
-              kind: 'FLEX_STAFFING',
-              rooms: (d.recommendedRooms ?? d.impliedRooms) - d.plannedRooms,
-              dayOfWeek: d.dow, dayOfWeekLabel: d.label,
-              fromBlock: site, toService: null,
-            })}
-          />
         </>
       )}
 
-      <ScenarioPanel open={decision !== null} decision={decision} onClose={() => setDecision(null)} />
     </div>
   )
 }

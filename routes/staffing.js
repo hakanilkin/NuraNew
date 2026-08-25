@@ -3,14 +3,19 @@ const express = require('express');
 const S = require('../lib/staffingShape');
 const { getFeatures } = require('../utils/tenantColumns');
 
-// Demand–Staffing Alignment (StaffingAlignment.md).
+// Staffing Patterns (StaffingAlignment.md rev 2).
 //
-// OR staffing is planned as a static rectangle — all rooms, one shift, five
-// days. Demand has a shape by hour and day. The gap leaks money in both
-// directions at once: idle staffed hours where the rectangle exceeds demand,
-// overtime exposure where demand runs past its edge. This router supplies the
-// shape; lib/staffingShape.js does the arithmetic, and the ISSCM engine's
-// Pillar 2 computes from that same module.
+// The structural half: over a trailing quarter, does the staffing template fit
+// the demand pattern at all? OR staffing is planned as a static rectangle — all
+// rooms, one shift, five days — and demand has a shape by hour and day. The gap
+// leaks money in both directions at once: idle staffed hours where the
+// rectangle exceeds demand, overtime exposure where demand runs past its edge.
+//
+// The forward, week-to-week half lives on Volume & Staffing Outlook. This page
+// says stop staffing Fridays that way; the Outlook says flex this Friday.
+//
+// lib/staffingShape.js does the arithmetic here, on the Outlook, and in the
+// ISSCM engine's Pillar 2 — one room-hour everywhere.
 
 const DOW_LABEL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
                    'Saturday', 'Sunday'];
@@ -162,72 +167,9 @@ module.exports = function staffingRoutes(getTenantPool, sql, requireTenant) {
     }
   });
 
-  // ── GET /api/staffing/forward ─────────────────────────────────────────────
-  // Booked minutes per day over the shift length, rounded up: the rooms the
-  // schedule already implies, against the rooms the plan staffs.
-  router.get('/forward', async (req, res) => {
-    try {
-      const site = String(req.query.site || '');
-      if (!site) return res.status(400).json({ error: 'site is required' });
-      const weeks = Math.min(Math.max(parseInt(req.query.weeks, 10) || 4, 1), 12);
-      const db = await getTenantPool(req.session.tenantId);
-
-      const [fwd, plans] = await Promise.all([
-        db.request()
-          .input('site', sql.NVarChar, site)
-          .input('days', sql.Int, weeks * 7)
-          .query(`
-            SELECT CONVERT(VARCHAR(10), Date, 23)      AS Date,
-                   MIN(DATEPART(WEEKDAY, Date))        AS Wd,
-                   MIN(DaysAhead)                      AS DaysAhead,
-                   SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn,0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn,0)
-                     + ISNULL(FORECAST_INPATIENT_DURwTurn,0)  + ISNULL(FORECAST_OUTPATIENT_DURwTurn,0))
-                                                       AS BookedMins
-            FROM V4_FORECAST_COMPILE
-            WHERE ISNULL(ORGRP2, 'Unknown') = @site
-              AND DaysAhead BETWEEN 1 AND @days
-            GROUP BY Date
-            ORDER BY Date
-          `),
-        plansFor(db, site),
-      ]);
-
-      const days = fwd.recordset.map(row => {
-        const dow = sqlDowToJs(row.Wd);
-        const plan = plans.get(dow);
-        if (!plan) return null;
-        const implied = S.impliedRooms(num(row.BookedMins), plan);
-        const flag = S.flexFlag(plan.staffedRooms, implied);
-        const shiftMins = S.hhmmToMinutes(plan.shiftEnd) - S.hhmmToMinutes(plan.shiftStart);
-        return {
-          date: row.Date, dow, label: DOW_LABEL[dow], daysAhead: num(row.DaysAhead),
-          plannedRooms: plan.staffedRooms,
-          impliedRooms: implied,
-          recommendedRooms: S.recommendedRooms(implied, plan.staffedRooms),
-          bookedRoomHours: round1(num(row.BookedMins) / 60),
-          flag,
-          // The reasoning is the figures it was derived from, in the house idiom.
-          drivers: [
-            { key: 'booked', label: 'Booked room-time',
-              detail: `${round1(num(row.BookedMins) / 60)} room-hours booked including turnover.` },
-            { key: 'implied', label: 'Implied rooms',
-              detail: `Over a ${round1(shiftMins / 60)}-hour shift that needs ${implied} rooms; `
-                    + `the plan staffs ${plan.staffedRooms}.` },
-            ...(flag === 'FLEX_DOWN' ? [{ key: 'flex', label: 'Flex down',
-              detail: `Staffing ${S.recommendedRooms(implied, plan.staffedRooms)} keeps a room in `
-                    + 'hand and retires the rest.' }] : []),
-            ...(flag === 'FLEX_UP' ? [{ key: 'flex', label: 'Flex up',
-              detail: 'The booked volume needs more rooms than the plan staffs.' }] : []),
-          ],
-        };
-      }).filter(Boolean);
-
-      res.json({ site, weeks, days });
-    } catch (err) {
-      console.error('/api/staffing/forward error:', err.message);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
+  // The forward flex plan moved to /api/outlook/flex, together with the demand
+  // forecast that drives it. A boundary whose fix was "make sure these two pages
+  // always agree" was two halves of one page; see VolumeOutlook.md rev 2.
 
   return router;
 };

@@ -19,26 +19,21 @@ export const OR_NAV = [
   },
   { id: 'ask-nura', label: 'Ask Nura', icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
   {
-    // what's coming. Kept as its own group rather than folded into Analytics: a
-    // forward view inside the retrospective group is a category error, and the
-    // group name itself advertises the claim for the whole demo.
-    id: 'forecasts', label: 'Forecasts', icon: 'TrendingUp', type: 'expander',
-    children: [
-      { id: 'sf-daily',  label: 'Daily Summary',   type: 'link', path: '/schedule-forecast/daily' },
-      { id: 'sf-detail', label: 'Daily Detail',    type: 'link', path: '/schedule-forecast/detail' },
-      { id: 'sf-cases',  label: 'Actual vs Budget', type: 'link', path: '/schedule-forecast/cases' },
-    ],
-  },
-  {
-    // what to do about it. "ISSCM" stays the methodology name in positioning
-    // material and never appears on screen.
+    // what to do about it. The Forecasts group is gone: once a page's centre of
+    // gravity is "where should I adjust staffing", it is a decision surface, and
+    // every item in this group is forward-looking — so the group advertises the
+    // claim rather than one label. "ISSCM" stays the methodology name in
+    // positioning material and never appears on screen.
     id: 'capacity-decisions', label: 'Capacity Decisions', icon: 'Scale', type: 'expander',
     children: [
       // A work queue now, not a model page — which is why it left Atlas.
       { id: 'atlas-performance-briefs', label: 'Performance Briefs', type: 'link', path: '/atlas/performance-briefs' },
+      { id: 'outlook',      label: 'Volume & Staffing Outlook', type: 'link', path: '/outlook' },
       { id: 'open-time',    label: 'Release Time Mgmt', type: 'link', path: '/open-time' },
-      { id: 'or-smoothing', label: 'OR Smoothing',      type: 'link', path: '/or-smoothing', feature: 'smoothing' },
-      { id: 'staffing',     label: 'Staffing',          type: 'link', path: '/staffing',     feature: 'staffing' },
+      { id: 'or-smoothing', label: 'OR Smoothing',      type: 'link', path: '/or-smoothing',      feature: 'smoothing' },
+      // The structural half: quarterly, VP-facing. Its forward sibling is the
+      // Outlook above.
+      { id: 'staffing',     label: 'Staffing Patterns', type: 'link', path: '/staffing-patterns', feature: 'staffing' },
     ],
   },
 ]
@@ -76,7 +71,6 @@ const navConfig = [
   { id: 'atlas', type: 'expander',
     children: [...childrenOf(OR_NAV, 'atlas'), ...childrenOf(IP_NAV, 'atlas')] },
   { id: 'ask-nura', type: 'link', path: '/ask-nura' },
-  { id: 'forecasts', type: 'expander', children: childrenOf(OR_NAV, 'forecasts') },
   { id: 'capacity-decisions', type: 'expander', children: childrenOf(OR_NAV, 'capacity-decisions') },
   { id: 'ip-forecast', type: 'link', path: '/ip/forecast', label: 'Forecasts' },
 ]

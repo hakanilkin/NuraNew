@@ -112,10 +112,9 @@ def forward_fill(forecast_rows, horizon_days):
             continue
         a = agg.setdefault(r['Caseblock'] or 'Unknown', {'blk': 0.0, 'booked': 0.0})
         a['blk'] += r['BLOCKTIME'] or 0
+        # Booked so far, matching routes/briefs.js.
         a['booked'] += ((r['SCHEDULED_INPATIENT_DURwTurn'] or 0)
-                        + (r['SCHEDULED_OUTPATIENT_DURwTurn'] or 0)
-                        + (r['FORECAST_INPATIENT_DURwTurn'] or 0)
-                        + (r['FORECAST_OUTPATIENT_DURwTurn'] or 0))
+                        + (r['SCHEDULED_OUTPATIENT_DURwTurn'] or 0))
     return {k: (100.0 * v['booked'] / v['blk'] if v['blk'] > 0 else None)
             for k, v in agg.items()}
 

@@ -61,12 +61,32 @@ function stubPool(overrides = {}) {
           for (const [frag, rows] of Object.entries(overrides)) {
             if (has(frag)) return { recordset: rows };
           }
+          // The Outlook selects Site as well, and keys its map on it.
+          if (has('FROM StaffingPlan') && has('Site, DayOfWeek')) return { recordset:
+            [0, 1, 2, 3, 4].map(d => ({ Site: SITE, DayOfWeek: d + 1, StaffedRooms: 9,
+              CoverageRatio: 1, ShiftStart: new Date(Date.UTC(1970, 0, 1, 7, 0)),
+              ShiftEnd: new Date(Date.UTC(1970, 0, 1, 15, 30)) })) };
           if (has('FROM StaffingPlan')) return { recordset: PLAN };
           // Two different DS_RR queries: the staffing page wants the whole
           // shape, the ISSCM baseline wants only the peak.
           if (has('AS Peak')) return { recordset: [{ Peak: 8.2 }] };
           if (has('FROM DS_RR')) return { recordset: rrRows() };
           if (has('AS AvgRoomHours')) return { recordset: [{ AvgRoomHours: 66.4, Days: 8 }] };
+          // Outlook: totals per date, mix per date, trailing durations.
+          if (has('AS Scheduled') && has('AS BookedMins')) return { recordset: [
+            { Date: '2026-09-09', Site: SITE, Wd: 4, DaysAhead: 15, Scheduled: 30, Forecast: 38, Budget: 31, BookedMins: 510 * 8.2 },
+            { Date: '2026-09-15', Site: SITE, Wd: 3, DaysAhead: 21, Scheduled: 20, Forecast: 23, Budget: 30, BookedMins: 510 * 5.4 },
+            { Date: '2026-09-11', Site: SITE, Wd: 6, DaysAhead: 17, Scheduled: 18, Forecast: 20, Budget: 20, BookedMins: 510 * 5.0 },
+          ] };
+          if (has('AS Service') && has('AS Forecast')) return { recordset: [
+            { Date: '2026-09-09', Site: SITE, Service: 'Orthopedics', Forecast: 14, Budget: 9 },
+            { Date: '2026-09-09', Site: SITE, Service: 'ENT', Forecast: 6, Budget: 5 },
+            { Date: '2026-09-15', Site: SITE, Service: 'General Surgery', Forecast: 5, Budget: 11 },
+          ] };
+          if (has('AS AvgMins')) return { recordset: [
+            { Service: 'Orthopedics', AvgMins: 101 }, { Service: 'ENT', AvgMins: 52 },
+            { Service: 'General Surgery', AvgMins: 80 },
+          ] };
           if (has('AS BookedMins')) return { recordset: [
             { Date: '2026-08-28', Wd: 6, DaysAhead: 4, BookedMins: 510 * 5.4 },
             { Date: '2026-08-27', Wd: 5, DaysAhead: 3, BookedMins: 510 * 8.1 },
@@ -113,7 +133,11 @@ async function call(routerFile, tenant, method, url, body, overrides) {
   try {
     const res = await fetch(`http://127.0.0.1:${server.address().port}/api${url}`,
       body ? { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { method });
-    return { status: res.status, body: await res.json() };
+    // An unmatched route is Express's own HTML 404, not JSON.
+    const text = await res.text();
+    let parsed;
+    try { parsed = JSON.parse(text) } catch { parsed = { _html: text.slice(0, 60) } }
+    return { status: res.status, body: parsed };
   } finally {
     server.close();
   }
@@ -152,13 +176,17 @@ test('smoothing: footprint, scenarios and preview all respond', async () => {
   }
 });
 
-test('staffing: shape, ledger and forward all respond', async () => {
+test('staffing: shape and ledger respond', async () => {
   for (const url of [`/shape?site=${encodeURIComponent(SITE)}`,
-                     `/ledger?site=${encodeURIComponent(SITE)}`,
-                     `/forward?site=${encodeURIComponent(SITE)}`]) {
+                     `/ledger?site=${encodeURIComponent(SITE)}`]) {
     const r = await call('staffing.js', DEMO, 'GET', url);
     assert.equal(r.status, 200, `${url}: ${JSON.stringify(r.body)}`);
   }
+});
+
+test('staffing has no forward surface — that moved to the Outlook', async () => {
+  const r = await call('staffing.js', DEMO, 'GET', `/forward?site=${encodeURIComponent(SITE)}`);
+  assert.equal(r.status, 404, 'Staffing Patterns is the structural page only');
 });
 
 test('staffing: the ledger reports both directions of the gap', async () => {
@@ -169,13 +197,37 @@ test('staffing: the ledger reports both directions of the gap', async () => {
   assert.equal(body.summary.costPerRoomHour, null, 'financials stay dormant until priced');
 });
 
-test('staffing: the forward plan flags a day the plan over-staffs', async () => {
-  const { body } = await call('staffing.js', DEMO, 'GET', `/forward?site=${encodeURIComponent(SITE)}`);
+test('outlook: the flex plan flags a day the plan over-staffs', async () => {
+  const { status, body } = await call('outlook.js', DEMO, 'GET', '/flex?weeks=4');
+  assert.equal(status, 200, JSON.stringify(body));
   const flagged = body.days.filter(d => d.flag);
   assert.ok(flagged.length, 'no day flagged');
   assert.ok(flagged[0].drivers.length, 'a flag must carry its reasoning');
   assert.ok(flagged[0].recommendedRooms > flagged[0].impliedRooms,
     'the recommendation keeps a room in hand');
+});
+
+test('outlook: calendar, exceptions, daily and mix all respond', async () => {
+  for (const url of ['/calendar?weeks=4', '/exceptions?weeks=4', '/daily?weeks=4',
+                     '/daily/2026-09-09/mix']) {
+    const r = await call('outlook.js', DEMO, 'GET', url);
+    assert.equal(r.status, 200, `${url}: ${JSON.stringify(r.body)}`);
+  }
+});
+
+test('outlook: every exception carries a driver, an implication and a tier', async () => {
+  const { body } = await call('outlook.js', DEMO, 'GET', '/exceptions?weeks=4');
+  assert.ok(body.exceptions.length, 'no exceptions returned');
+  for (const e of body.exceptions) {
+    assert.ok(['POTENTIAL', 'RECOMMENDED'].includes(e.tier));
+    assert.ok(e.implication && e.implication.length > 10, 'the column is never blank');
+    assert.ok(Array.isArray(e.considerations) && e.considerations.length);
+  }
+});
+
+test('outlook: a malformed date is rejected rather than interpolated', async () => {
+  const r = await call('outlook.js', DEMO, 'GET', "/daily/2026-09-09'; DROP/mix");
+  assert.equal(r.status, 400);
 });
 
 test('isscm: scenarios, baseline and evaluate all respond', async () => {

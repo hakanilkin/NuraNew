@@ -1,8 +1,19 @@
-# Staffing — "Demand–Staffing Alignment"
+# Staffing Patterns — does the template fit the demand?
 
-> **Status:** Spec — ready to build
+> **Status:** Spec — rev 2, ready to build
 > **Owner:** Kartheek (product)
 > **Last updated:** 2026-08-24
+>
+> **Rev 2 — scope reduced. V3 (Forward Flex Plan) has moved out** to
+> `VolumeOutlook.md` (now *Volume & Staffing Outlook*), which merges the forward
+> demand view with the forward staffing response so the chain
+> `Forecast → Demand Signal → Staffing Implication → Recommended Action` reads in
+> a single row. Page renamed from "Staffing" to **"Staffing Patterns."**
+>
+> **What this page is now:** the *structural* half — trailing 8+ weeks, asking
+> whether the staffing template fits the demand pattern at all. Different horizon
+> (quarterly, not weekly), different decision (redesign the plan, not flex
+> Tuesday), different audience (VP + finance, not charge nurse). V1 and V2 only.
 > **Purpose:** the page that answers *"are you paying for staffed rooms when
 > demand isn't there, and paying overtime when it is?"* OR staffing is planned as
 > a static rectangle (all rooms, 07:00–15:30, five days); demand has a shape by
@@ -43,17 +54,16 @@ trended by week.
   financials unpark, it shows an em-dash with tooltip "pricing arrives with
   Financial Analysis." The dangling hook is deliberate — it previews S1's beat.
 
-### V3 — Forward Flex Plan (the action)
-Next 2–4 weeks from `V4_FORECAST_COMPILE`: predicted rooms needed per day
-(booked minutes incl. turnover ÷ shift length, ceil) vs. planned staffed rooms →
-flag days to **flex down** (Friday: plan 9, need 6) or **flex up**.
+### V3 — MOVED
+The Forward Flex Plan now lives on **Volume & Staffing Outlook**
+(`VolumeOutlook.md` §3 and §6), together with the demand forecast that drives
+it. Do not build a forward view here; this page has no 2–4 week surface and no
+ScenarioPanel entry point.
 
-- Each flagged day carries the reasoning inline (booked minutes, implied rooms,
-  plan) in the house driver idiom.
-- "Evaluate flex" button per flagged day → ScenarioPanel with a `FLEX_STAFFING`
-  decision (third host page per the panel spec). The panel judges the flex
-  against all three pillars — e.g. flexing down a day that Smoothing wants to
-  shift volume *into* should surface as a conflict, not pass silently.
+The structural finding this page produces — *"the template systematically
+over-staffs Friday"* — is the durable version of what the Outlook flags week to
+week. That's the intended relationship: the Outlook says flex this Friday;
+Staffing Patterns says stop staffing Fridays that way.
 
 ---
 
@@ -70,11 +80,9 @@ GET /api/staffing/ledger?site&weeks=8
       → { weeks: [...], byDow: [ { dow, idleRoomHours, overtimeRoomHours } ],
           summary: { idleWk, overtimeWk, alignmentPct, worstIdleDow,
                      worstOvertimeDow } }
-
-GET /api/staffing/forward?site&weeks=4
-      → { days: [ { date, dow, plannedRooms, impliedRooms, flag:
-          'FLEX_DOWN'|'FLEX_UP'|null, drivers: [...] } ] }
 ```
+
+`/api/staffing/forward` moves to `/api/outlook/flex` (`VolumeOutlook.md` §8).
 
 Computation rules — one lib module (`lib/staffingShape.js`), **shared with the
 ISSCM engine's Pillar 2** (same hard requirement as Smoothing's shared lib: the
@@ -87,10 +95,11 @@ panel's coverage-delta numbers and this page's ledger must be the same function)
 
 ## 3. Frontend
 
-- `client/src/pages/Staffing.jsx`, route `/staffing`, feature flag `staffing`.
+- `client/src/pages/StaffingPatterns.jsx`, route `/staffing-patterns` (redirect
+  `/staffing`), nav label **"Staffing Patterns"**, feature flag `staffing`.
 - Conventions: `MultiSelect`, card tables, tokens; charts follow the existing
   recharts idioms. Encode flags by shape + color (projector rule).
-- V1's charts are the page's identity — invest the care there; V2/V3 are tables.
+- V1's charts are the page's identity — invest the care there; V2 is a table.
 
 ## 4. Tenant reality
 
@@ -110,16 +119,16 @@ panel's coverage-delta numbers and this page's ledger must be the same function)
       visible in V1.
 - [ ] V1's demand shape agrees with the Room Running page for the same site and
       window (same `DS_RR` source, same numbers).
-- [ ] V3 flags Friday as FLEX_DOWN with plan 9 / implied ≈6, and its "Evaluate
-      flex" opens the panel; Pillar 2's coverage delta uses the same lib output.
+- [ ] No forward/2–4-week surface exists on this page and no ScenarioPanel
+      entry point — those live on Volume & Staffing Outlook.
 - [ ] `$` cells render only when `staffed_room_hour_cost` is set; em-dash + 
       tooltip otherwise.
 - [ ] NHS/OHS: flag off → no nav entry, `/api/staffing/*` 404, nothing breaks.
 - [ ] Unit tests on `lib/staffingShape.js`: idle/overtime arithmetic, forward
-      implied-rooms, flag thresholds; engine Pillar 2 imports the same fns.
+      implied-rooms, flag thresholds. The same module serves this page, the
+      Outlook's flex signals, and Pillar 2 — one room-hour everywhere.
 
 ## 6. Out of scope (v1)
 
-FTE/skill-mix modeling; per-role rosters; anesthesia coverage; editing the
-StaffingPlan in-app (admin CRUD is Phase 2); auto-applied flexes — the page
-recommends, the panel judges, humans act.
+Anything forward-looking (see Rev 2); FTE/skill-mix modeling; per-role rosters;
+anesthesia coverage; editing the StaffingPlan in-app (admin CRUD is Phase 2).

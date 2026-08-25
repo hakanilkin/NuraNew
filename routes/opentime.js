@@ -62,8 +62,11 @@ module.exports = function openTimeRoutes(getTenantPool, sql, requireTenant) {
           MIN(DaysAhead)                      AS DaysAhead,
           SUM(ISNULL(SCHEDULED_INPATIENT, 0) + ISNULL(SCHEDULED_OUTPATIENT, 0))  AS ScheduledCases,
           SUM(ISNULL(FORECAST_INPATIENT, 0)  + ISNULL(FORECAST_OUTPATIENT, 0))   AS ForecastAddition,
-          SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)
-            + ISNULL(FORECAST_INPATIENT_DURwTurn, 0)  + ISNULL(FORECAST_OUTPATIENT_DURwTurn, 0)) AS TotalDurwTurn,
+          -- Booked room-time, not the projection: a block that a forecast says
+          -- will fill itself still has nothing in it today, and the release
+          -- decision is about what is on the books. The projection is the
+          -- Volume Outlook's question.
+          SUM(ISNULL(SCHEDULED_INPATIENT_DURwTurn, 0) + ISNULL(SCHEDULED_OUTPATIENT_DURwTurn, 0)) AS TotalDurwTurn,
           SUM(ISNULL(BLOCKTIME, 0))           AS BlockTime
         FROM V4_FORECAST_COMPILE
         WHERE Date >= @from

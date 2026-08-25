@@ -289,6 +289,7 @@ const briefsRouter         = require('./routes/briefs')(getTenantPool, sql, requ
 const isscmRouter          = require('./routes/isscm')(getTenantPool, sql, requireTenant);
 const staffingRouter       = require('./routes/staffing')(getTenantPool, sql, requireTenant);
 const smoothingRouter      = require('./routes/smoothing')(getTenantPool, sql, requireTenant);
+const outlookRouter        = require('./routes/outlook')(getTenantPool, sql, requireTenant);
 
 app.use('/api/auth',           authRouter);
 app.use('/api/admin',          adminRouter);
@@ -302,6 +303,7 @@ app.use('/api/briefs',         briefsRouter);
 app.use('/api/isscm',          isscmRouter);
 app.use('/api/staffing',       staffingRouter);
 app.use('/api/smoothing',      smoothingRouter);
+app.use('/api/outlook',        outlookRouter);
 app.use('/api',        analyticsRouter);
 app.use('/api',        askNuraRouter);
 

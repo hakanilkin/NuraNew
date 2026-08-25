@@ -36,7 +36,8 @@ import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
 import RoomRunning           from './pages/RoomRunning'
 import ORSmoothing  from './pages/ORSmoothing'
-import Staffing     from './pages/Staffing'
+import StaffingPatterns from './pages/StaffingPatterns'
+import VolumeOutlook    from './pages/VolumeOutlook'
 import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
@@ -601,10 +602,15 @@ function Shell() {
           <Route path="/block-utilization" element={<BlockUtilization />} />
           <Route path="/room-running"                  element={<RoomRunning />} />
           <Route path="/or-smoothing"                  element={<ORSmoothing />} />
-          <Route path="/staffing"                      element={<Staffing />} />
-          <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
-          <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
-          <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />
+          <Route path="/staffing-patterns"             element={<StaffingPatterns />} />
+          <Route path="/staffing"                      element={<Navigate to="/staffing-patterns" replace />} />
+          {/* One page, three tabs. The old /schedule-forecast URLs are the tab
+              parameter now, so deep links keep resolving. */}
+          <Route path="/outlook"                       element={<VolumeOutlook />} />
+          <Route path="/outlook/:tab"                  element={<VolumeOutlook />} />
+          <Route path="/schedule-forecast/cases"     element={<Navigate to="/outlook/budget" replace />} />
+          <Route path="/schedule-forecast/daily"     element={<Navigate to="/outlook/planning" replace />} />
+          <Route path="/schedule-forecast/detail"    element={<Navigate to="/outlook/detail" replace />} />
           {/* One page, four tabs. The old per-view URLs still resolve — they
               are now the tab parameter, so deep links and the Briefs hand-offs
               land on the right tab with their query intact. */}
@@ -625,7 +631,7 @@ function Shell() {
           <Route path="/ip/discharges"       element={<IPDischarges />} />
           <Route path="/ip/forecast"         element={<IPForecast />} />
           <Route path="/ask-nura"          element={<AskNura />} />
-          <Route path="/forecasts"         element={<Navigate to="/schedule-forecast/daily" replace />} />
+          <Route path="/forecasts"         element={<Navigate to="/outlook/planning" replace />} />
           <Route path="/admin"             element={<RequireAdmin><Admin /></RequireAdmin>} />
         </Routes>
       </div>

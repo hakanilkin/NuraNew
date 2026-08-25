@@ -322,7 +322,9 @@ STORYLINES = {
         # What the gradient actually delivers, measured on forward fill rather
         # than on the badge: a band of blocks worth a scheduler's attention,
         # spread across services and sites, over a healthy floor.
-        'attention_fill_pct': 50,
+        # Measured on booked fill, which is what the radar shows: a block at
+        # 40% booked two to five weeks out is worth a scheduler's attention.
+        'attention_fill_pct': 40,
         'attention_rows': (5, 25),
         'attention_services': 3,
         'top_ranked_block': 'Ortho A',

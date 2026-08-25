@@ -673,7 +673,13 @@ def _booked_fraction(days_ahead):
     return float(0.28 + 0.72 * math.exp(-0.055 * max(0, days_ahead)))
 
 
-FORECAST_CAPTURE = 0.15   # share of the not-yet-booked remainder the model claims
+# A forecast projects what the day will actually run, so scheduled plus
+# forecast additions lands on the eventual total. It was 0.15 — deliberately
+# pessimistic, which made every forward day read ~28% under budget on the
+# Volume Outlook even though those days run dead on plan. The Radar's "how full
+# is this block" question is answered by SCHEDULED_* (what is booked so far),
+# not by the projection; see routes/opentime.js.
+FORECAST_CAPTURE = 1.0
 
 # A service whose pipeline is surging books further ahead than everyone else, so
 # at any given lead time more of its block is already on the books. Without this

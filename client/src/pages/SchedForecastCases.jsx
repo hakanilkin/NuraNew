@@ -130,7 +130,13 @@ function KpiCard({ site, actual, budget, diff, pct, emphasis = false }) {
 
 /* ── Main page ────────────────────────────────────────────────────────── */
 
-export default function SchedForecastCases() {
+/* Rendered standalone, or as the Actual vs Budget tab of Volume & Staffing
+   Outlook. Embedded, the tabbed host owns the page frame and the heading. */
+function Shell({ embedded, children }) {
+  return embedded ? <>{children}</> : <div className="page">{children}</div>
+}
+
+export default function SchedForecastCases({ embedded = false }) {
   const [sites,       setSites]       = useState([])
   const [services,    setServices]    = useState([])
   const [selSites,    setSelSites]    = useState([])
@@ -250,8 +256,8 @@ export default function SchedForecastCases() {
   })
 
   return (
-    <div className="page">
-      <div className="page-header">
+    <Shell embedded={embedded}>
+      <div className="page-header" style={embedded ? { display: 'none' } : undefined}>
         <h1 className="page-title">Actual vs Budget</h1>
         <p className="page-subtitle">Actual cases compared to budget by site and surgeon service — variance above zero (green) beats budget</p>
       </div>
@@ -444,6 +450,6 @@ export default function SchedForecastCases() {
           )}
         </div>
       </div>
-    </div>
+    </Shell>
   )
 }

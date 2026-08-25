@@ -8,12 +8,13 @@
     "dev": "nodemon server.js",
     "build": "cd client && npm install && npm run build",
     "check:unit-categories": "node scripts/checks/unit_category_regression.js",
-    "check": "npm run check:unit-categories && npm run check:briefs-focus && npm run check:isscm && npm run check:shared-libs && npm run check:routes && npm run check:fulfillment",
+    "check": "npm run check:unit-categories && npm run check:briefs-focus && npm run check:isscm && npm run check:shared-libs && npm run check:routes && npm run check:fulfillment && npm run check:demand-signal",
     "check:briefs-focus": "node --test scripts/checks/briefs_focus_classifier.test.js",
     "check:isscm": "node --test scripts/checks/isscm_scenario.test.js",
     "check:shared-libs": "node --test scripts/checks/shared_libs.test.js",
     "check:routes": "node --test scripts/checks/routes_smoke.test.js",
-    "check:fulfillment": "node --test scripts/checks/opentime_fulfillment.test.js"
+    "check:fulfillment": "node --test scripts/checks/opentime_fulfillment.test.js",
+    "check:demand-signal": "node --test scripts/checks/demand_signal.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

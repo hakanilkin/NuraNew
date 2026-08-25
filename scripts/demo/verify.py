@@ -132,8 +132,8 @@ def _st1(tables, ctx):
         if not (14 <= r['DaysAhead'] <= 35) or r['Date'].weekday() != s['weekday']:
             continue
         f = fwd.setdefault(r['Date'], {'dur': 0.0, 'blk': 0.0})
-        f['dur'] += (r['SCHEDULED_INPATIENT_DURwTurn'] + r['SCHEDULED_OUTPATIENT_DURwTurn']
-                     + r['FORECAST_INPATIENT_DURwTurn'] + r['FORECAST_OUTPATIENT_DURwTurn'])
+        # Booked so far, as the radar measures it.
+        f['dur'] += r['SCHEDULED_INPATIENT_DURwTurn'] + r['SCHEDULED_OUTPATIENT_DURwTurn']
         f['blk'] += r['BLOCKTIME']
     fills = [100.0 * v['dur'] / v['blk'] for _, v in sorted(fwd.items()) if v['blk']]
     lo, hi = s['forward_fill_pct_range']
@@ -383,8 +383,7 @@ def _st7(tables, ctx):
         a = fwd.setdefault(key, {'Date': str(r['Date']), 'Site': r['ORGRP2'],
                                  'CaseBlock': r['Caseblock'], 'Service': r['SurgeonService'],
                                  'DaysAhead': r['DaysAhead'], 'TotalDurwTurn': 0.0, 'BlockTime': 0.0})
-        a['TotalDurwTurn'] += (r['SCHEDULED_INPATIENT_DURwTurn'] + r['SCHEDULED_OUTPATIENT_DURwTurn']
-                               + r['FORECAST_INPATIENT_DURwTurn'] + r['FORECAST_OUTPATIENT_DURwTurn'])
+        a['TotalDurwTurn'] += r['SCHEDULED_INPATIENT_DURwTurn'] + r['SCHEDULED_OUTPATIENT_DURwTurn']
         a['BlockTime'] += r['BLOCKTIME']
     fwd_rows = [v for v in fwd.values() if v['BlockTime'] > 0]
 

@@ -11,7 +11,8 @@
     "check:briefs-render": "node scripts/check-briefs-render.mjs",
     "check:scenario-panel": "node scripts/check-scenario-panel.mjs",
     "check:smoothing-staffing": "node scripts/check-smoothing-staffing-render.mjs",
-    "check:release-time-mgmt": "node scripts/check-release-time-mgmt.mjs"
+    "check:release-time-mgmt": "node scripts/check-release-time-mgmt.mjs",
+    "check:volume-outlook": "node scripts/check-volume-outlook.mjs"
   },
   "dependencies": {
     "dompurify": "^3.4.9",

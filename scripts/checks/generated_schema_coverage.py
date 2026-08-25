@@ -75,8 +75,12 @@ POWER SQRT EXP LOG WEEKDAY
 
 def columns_referenced(sql, table):
     """Columns a SQL block selects from `table`, best-effort but conservative."""
+    # Drop SQL comments first: prose about the query is not part of it, and a
+    # comment mentioning "will" was read as a column named will.
+    s = re.sub(r'--[^\n]*', ' ', sql)
+    s = re.sub(r'/\*.*?\*/', ' ', s, flags=re.S)
     # Drop JS interpolations and string literals — neither contains a column.
-    s = re.sub(r'\$\{[^}]*\}', ' ', sql)
+    s = re.sub(r'\$\{[^}]*\}', ' ', s)
     s = re.sub(r"'[^']*'", ' ', s)
     # A table alias is not a column: collect the aliases, unqualify the columns
     # they introduce, then drop the alias names themselves.

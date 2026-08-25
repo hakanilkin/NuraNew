@@ -66,6 +66,10 @@
       "case_posted_value": "Posted",
       "block_fill_target": 75,
       "crunch_occupancy_pct": 92,
+      "outlook_on_plan_pct": 5,
+      "outlook_exception_pct": 15,
+      "outlook_min_cases": 4,
+      "turnover_minutes": 33,
       "data_dir": "demo",
       "isscm": {
         "packingCeiling": 0.85,
