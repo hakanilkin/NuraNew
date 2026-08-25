@@ -58,6 +58,9 @@ module.exports = function outlookRoutes(getTenantPool, sql, requireTenant) {
     r.input('days', sql.Int, days);
     const filter = siteFilter(r, sites);
     const siteCol = bySite ? "ISNULL(ORGRP2, 'Unknown')" : "'All sites'";
+    // A constant cannot appear in GROUP BY, so the all-sites view selects the
+    // literal and groups by date alone.
+    const groupBy = bySite ? `Date, ${siteCol}` : 'Date';
     const res = await r.query(`
       SELECT CONVERT(VARCHAR(10), Date, 23)  AS Date,
              ${siteCol}                      AS Site,
@@ -69,7 +72,7 @@ module.exports = function outlookRoutes(getTenantPool, sql, requireTenant) {
              SUM(${BOOKED_MINS})             AS BookedMins
       FROM V4_FORECAST_COMPILE
       WHERE DaysAhead BETWEEN 1 AND @days${filter}
-      GROUP BY Date, ${siteCol}
+      GROUP BY ${groupBy}
       ORDER BY Date
     `);
     return res.recordset.map(x => ({
@@ -87,6 +90,7 @@ module.exports = function outlookRoutes(getTenantPool, sql, requireTenant) {
     r.input('days', sql.Int, days);
     const filter = siteFilter(r, sites);
     const siteCol = bySite ? "ISNULL(ORGRP2, 'Unknown')" : "'All sites'";
+    const groupBy = bySite ? `Date, ${siteCol}, SurgeonService` : 'Date, SurgeonService';
     const res = await r.query(`
       SELECT CONVERT(VARCHAR(10), Date, 23)          AS Date,
              ${siteCol}                              AS Site,
@@ -95,7 +99,7 @@ module.exports = function outlookRoutes(getTenantPool, sql, requireTenant) {
              SUM(${BUDGET_CASES})                    AS Budget
       FROM V4_FORECAST_COMPILE
       WHERE DaysAhead BETWEEN 1 AND @days${filter}
-      GROUP BY Date, ${siteCol}, SurgeonService
+      GROUP BY ${groupBy}
     `);
     const byKey = new Map();
     for (const x of res.recordset) {

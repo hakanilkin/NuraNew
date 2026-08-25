@@ -28,6 +28,31 @@ const fmt1 = v => (v == null ? '—' : Number(v).toFixed(1))
 const signed = v => (v == null ? '—' : `${v > 0 ? '+' : ''}${Math.round(v)}`)
 const signedPct = v => (v == null ? '—' : `${v > 0 ? '+' : ''}${Math.round(v)}%`)
 
+/**
+ * Read a response without assuming it is JSON.
+ *
+ * `r.json()` on an empty body throws "Unexpected end of JSON input", and on an
+ * HTML error page throws "Unexpected token '<'" — both of which hide what
+ * actually happened. An empty body usually means the request never completed:
+ * the tenant's database is a serverless instance and a cold start can outlast
+ * the proxy's patience.
+ */
+async function readJson(res) {
+  const text = await res.text()
+  if (!text) {
+    throw new Error(res.ok
+      ? 'The server returned an empty response. If the database was idle it may still be waking — try again in a moment.'
+      : `The server returned an empty response (HTTP ${res.status}).`)
+  }
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(text.trimStart().startsWith('<')
+      ? 'The server returned a page instead of data — the API route is not responding. Restart the server if it is running older code.'
+      : `The server returned something unreadable (HTTP ${res.status}).`)
+  }
+}
+
 const TH = { padding: '8px 11px', fontSize: 12, fontWeight: 600, textAlign: 'left',
              color: 'var(--color-text-primary)', borderBottom: '1px solid var(--color-border-secondary)' }
 const TD = { padding: '9px 11px', fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)',
@@ -334,9 +359,9 @@ export default function VolumeOutlook() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/outlook/calendar?weeks=4').then(r => r.json()),
-      fetch('/api/outlook/exceptions?weeks=4').then(r => r.json()),
-      fetch('/api/outlook/daily?weeks=4').then(r => r.json()),
+      fetch('/api/outlook/calendar?weeks=4').then(readJson),
+      fetch('/api/outlook/exceptions?weeks=4').then(readJson),
+      fetch('/api/outlook/daily?weeks=4').then(readJson),
     ])
       .then(([cal, exc, day]) => {
         if (cal?.error) throw new Error(cal.error)
@@ -352,7 +377,7 @@ export default function VolumeOutlook() {
   const loadMix = useCallback(row => {
     setMix(null)
     fetch(`/api/outlook/daily/${encodeURIComponent(row.date)}/mix?site=${encodeURIComponent(row.site)}`)
-      .then(r => r.json()).then(d => setMix(d?.error ? null : d)).catch(() => setMix(null))
+      .then(readJson).then(d => setMix(d?.error ? null : d)).catch(() => setMix(null))
   }, [])
 
   function drillTo(date) {
