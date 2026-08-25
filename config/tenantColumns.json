@@ -26,6 +26,21 @@
       "service_line_drill": true
     }
   },
+  "Bright Memorial Health": {
+    "columns": {
+      "SERVICE_LINE":   "SERVICE_LINE",
+      "SERVICE_LINE_2": "SERVICE_LINE_2",
+      "SERVICE_LINE_3": "SERVICE_LINE_3"
+    },
+    "params": {
+      "hospital_filter": null,
+      "case_posted_value": "Posted"
+    },
+    "features": {
+      "tdc": true,
+      "service_line_drill": true
+    }
+  },
   "OHS": {
     "columns": {
       "SERVICE_LINE":   "ENC_HOSPITALSERVICE",
