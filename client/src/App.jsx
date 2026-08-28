@@ -30,12 +30,12 @@ import IPLengthOfStay         from './pages/IPLengthOfStay'
 import IPBedPlacement         from './pages/IPBedPlacement'
 import IPDischarges           from './pages/IPDischarges'
 import IPForecast             from './pages/IPForecast'
-import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
 import ORServiceLines    from './pages/ORServiceLines'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
 import RoomRunning           from './pages/RoomRunning'
 import VolumeImpact     from './pages/VolumeImpact'
+import BlockAllocations from './pages/BlockAllocations'
 import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
@@ -601,6 +601,8 @@ function Shell() {
           <Route path="/room-running"                  element={<RoomRunning />} />
           {/* One page, four tabs. Every page that used to answer a slice of
               "what does the forecast do to us" redirects into its tab. */}
+          <Route path="/block-allocations"             element={<BlockAllocations />} />
+          <Route path="/atlas/performance-briefs"      element={<Navigate to="/block-allocations" replace />} />
           <Route path="/impact"                        element={<VolumeImpact />} />
           <Route path="/impact/:tab"                   element={<VolumeImpact />} />
           <Route path="/or-smoothing"                  element={<Navigate to="/impact/inpatient" replace />} />
@@ -622,7 +624,6 @@ function Shell() {
           <Route path="/or/service-lines" element={<ORServiceLines />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
-          <Route path="/atlas/performance-briefs" element={<AtlasPerformanceBriefs />} />
           <Route path="/atlas/fcot"        element={<AtlasFCOT />} />
           <Route path="/atlas/turnover"    element={<AtlasTurnover />} />
           <Route path="/atlas/do-dc"            element={<AtlasDODC />} />

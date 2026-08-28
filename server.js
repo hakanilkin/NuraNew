@@ -285,9 +285,10 @@ const ipbedplacementRouter = require('./routes/ipbedplacement')(getTenantPool, s
 const ipdischargesRouter   = require('./routes/ipdischarges')(getTenantPool, sql, requireTenant);
 const orservicelineRouter  = require('./routes/orserviceline')(getTenantPool, sql, requireTenant);
 const openTimeRouter       = require('./routes/opentime')(getTenantPool, sql, requireTenant);
-const briefsRouter         = require('./routes/briefs')(getTenantPool, sql, requireTenant);
 const isscmRouter          = require('./routes/isscm')(getTenantPool, sql, requireTenant);
 const impactRouter         = require('./routes/impact')(getTenantPool, sql, requireTenant);
+const blocksRouter         = require('./routes/blocks')(getTenantPool, sql, requireTenant,
+                               require('./lib/openTimeStore'));
 
 app.use('/api/auth',           authRouter);
 app.use('/api/admin',          adminRouter);
@@ -297,9 +298,9 @@ app.use('/api/ipbedplacement', ipbedplacementRouter);
 app.use('/api/ipdischarges',   ipdischargesRouter);
 app.use('/api/orserviceline',  orservicelineRouter);
 app.use('/api/opentime',       openTimeRouter);
-app.use('/api/briefs',         briefsRouter);
 app.use('/api/isscm',          isscmRouter);
 app.use('/api/impact',         impactRouter);
+app.use('/api/blocks',         blocksRouter);
 app.use('/api',        analyticsRouter);
 app.use('/api',        askNuraRouter);
 

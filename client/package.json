@@ -8,10 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check:briefs-render": "node scripts/check-briefs-render.mjs",
     "check:scenario-panel": "node scripts/check-scenario-panel.mjs",
     "check:release-time-mgmt": "node scripts/check-release-time-mgmt.mjs",
-    "check:volume-impact": "node scripts/check-volume-impact.mjs"
+    "check:volume-impact": "node scripts/check-volume-impact.mjs",
+    "check:block-allocations": "node scripts/check-block-allocations.mjs"
   },
   "dependencies": {
     "dompurify": "^3.4.9",

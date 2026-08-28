@@ -24,7 +24,7 @@ STD_TURNOVER_SCHED = 33        # minutes the scheduler assumes between cases
 # How far past the end of the staffed shift a room may be booked, by weekday.
 # ST-3's cliff is a Tue-Thu phenomenon, so that is where the late finishes live;
 # Monday runs to the whistle and Friday is deliberately short.
-WEEKDAY_LATE_FINISH = {0: -30, 1: 13, 2: 13, 3: 13, 4: -45}
+WEEKDAY_LATE_FINISH = {0: -30, 1: 26, 2: 26, 3: 26, 4: -45}
 OPEN_ROOM_AVAILABLE_MIN = 400  # a flex room is staffed for part of the prime window
 ASC_TURNOVER_FACTOR = 0.52     # surgery-centre turnovers run about half a hospital OR's
 ASC_SCHED_TURNOVER = 18        # and the scheduler books them that way
@@ -123,7 +123,7 @@ def _weighted_choice(rng, items, weights):
 # Thursday runs tight — that is what makes ST-6's Thursday reallocation conflict
 # and the Tuesday one clear. Tuesday keeps the inpatient-heavy service mix that
 # stacks ST-2's Wednesday census without also consuming Tuesday's room headroom.
-WEEKDAY_FILL_FACTOR    = {0: 1.02, 1: 0.90, 2: 1.08, 3: 1.18, 4: 0.70}
+WEEKDAY_FILL_FACTOR    = {0: 1.02, 1: 0.90, 2: 1.10, 3: 1.22, 4: 0.70}
 WEEKDAY_OPEN_ROOM_FILL = {0: 0.74, 1: 0.56, 2: 0.76, 3: 0.86, 4: 0.24}
 # Probability an unblocked room simply does not run that weekday.
 WEEKDAY_DARK_PROB      = {0: 0.18, 1: 0.38, 2: 0.14, 3: 0.05, 4: 0.66}
@@ -143,6 +143,11 @@ RECOVERY_HEAVY_WEEKDAY = 3
 # ST-1's counterweight has to show up as cases, and a blocked room is already
 # near its ceiling, so most of the surge lands in open time.
 SPINE_OPEN_TIME_SURGE = 1.32
+
+# ST-8: how much of the wrong-day owner's work lands in open time on the day
+# they do not hold. This is what makes the finding visible on the week-shape
+# without reading a number.
+WRONG_DAY_OPEN_TIME_SURGE = 6.0
 
 # Share of a blocked room's cases that belong to someone outside the block.
 OUT_OF_BLOCK_SHARE = 0.02
@@ -166,7 +171,7 @@ ST1_CONTROLLER_GAIN = 2.5
 # instances are the ones the radar puts on screen three at a time, so bias them
 # a little low: a block that reads light every week tells the story the block
 # actually has.
-ST1_FUTURE_BIAS = -0.02
+ST1_FUTURE_BIAS = 0.12
 
 
 def _service_weights(weekday, is_future=False, spine_surge=1.0):
@@ -177,6 +182,13 @@ def _service_weights(weekday, is_future=False, spine_surge=1.0):
     if weekday == RECOVERY_HEAVY_WEEKDAY:
         for svc, mult in RECOVERY_HEAVY.items():
             w[svc] *= mult
+    # ST-8: the wrong-day owner's volume concentrates on the day they do not
+    # hold, which is what makes the finding visible without reading a number.
+    st8 = C.STORYLINES['st8']
+    if weekday == st8['wrong_day_actual']:
+        w[st8['wrong_day_service']] *= WRONG_DAY_OPEN_TIME_SURGE
+    elif weekday == st8['wrong_day_held']:
+        w[st8['wrong_day_service']] *= 0.25
     # ST-1 counterweight: the forward Spine pipeline is surging, which is what
     # gives the radar's reallocation ranking an obvious number one.
     if is_future:
@@ -192,6 +204,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
     at generation time — nothing downstream patches a number.
     """
     st1, st3, st4, st5 = (C.STORYLINES[k] for k in ('st1', 'st3', 'st4', 'st5'))
+    st8 = C.STORYLINES['st8']
     cast = roster['cast']
     spine_surge = 1.0 + st1['spine_forward_surge_pct'] / 100.0
     # The controller steers the trailing window it can see, which lags the window
@@ -268,6 +281,15 @@ def generate_cases(calendar, roster, params, rng, anchor):
                                               + float(rng.normal(0, 0.02)))
                         else:
                             util_target = float(rng.normal(st1['healthy_day_util_pct'] / 100, 0.07))
+                    elif (block_name == 'Vascular'
+                          and wd == st8['wrong_day_held']):
+                        # ST-8: the held day runs nearly empty, because the work
+                        # is happening on a day this owner does not hold.
+                        util_target = float(rng.normal(st8['held_util_pct'] / 100, 0.05))
+                    elif block_name == st8['over_allocated_block']:
+                        # ST-8: the volume simply is not there, and little of it
+                        # is booking elsewhere either.
+                        util_target = float(rng.normal(st8['over_allocated_util_pct'] / 100, 0.05))
                     elif block_service == 'Spine':
                         # ST-1's counterweight: bursting its own block, which is
                         # what makes "grow this service" the obvious read.

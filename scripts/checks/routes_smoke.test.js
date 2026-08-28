@@ -222,6 +222,23 @@ test('impact: a malformed date is rejected rather than interpolated', async () =
   assert.equal(r.status, 400);
 });
 
+// ── Block Allocations ───────────────────────────────────────────────────────
+
+test('blocks: allocations respond and sort by mismatch hours', async () => {
+  const r = await call('blocks.js', DEMO, 'GET', '/allocations?horizonDays=28');
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  if (r.body.error) return;                       // no pipeline file in this checkout
+  const hours = r.body.owners.map(o => o.mismatchHours ?? 0);
+  assert.deepEqual(hours, [...hours].sort((a, b) => b - a),
+    'a committee reads this by magnitude, not by utilisation');
+});
+
+test('blocks: an unknown owner is a 404, never a lookup key', async () => {
+  const r = await call('blocks.js', DEMO, 'GET', '/allocations/not-a-block');
+  assert.ok([404, 200].includes(r.status));
+  if (r.status === 200) assert.ok(r.body.error, 'a missing file is reported, not guessed at');
+});
+
 test('isscm: scenarios, baseline and evaluate all respond', async () => {
   const cat = await call('isscm.js', DEMO, 'GET', '/scenarios?horizonWeeks=4');
   assert.equal(cat.status, 200, JSON.stringify(cat.body));

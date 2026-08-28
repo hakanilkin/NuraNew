@@ -211,7 +211,7 @@ BLOCK_TEMPLATE = [
     ('Robotics 1',   MAIN_SITE, 'BMH OR 06', 4, 'Robotics-General'),
     ('Uro/Gyn',      MAIN_SITE, 'BMH OR 07', 1, 'Urology'),
     ('Uro/Gyn',      MAIN_SITE, 'BMH OR 07', 3, 'GYN'),
-    ('Vascular',     MAIN_SITE, 'BMH OR 08', 2, 'Vascular'),
+    ('Vascular',     MAIN_SITE, 'BMH OR 08', 1, 'Vascular'),   # ST-8 wrong day
     ('Colorectal',   MAIN_SITE, 'BMH OR 08', 0, 'Colorectal'),
     ('Colorectal',   MAIN_SITE, 'BMH OR 08', 4, 'Colorectal'),
     ('ENT',          MAIN_SITE, 'BMH OR 09', 1, 'ENT'),
@@ -310,7 +310,11 @@ STORYLINES = {
         'trailing_block_util_pct': 58.0,  # +/- tolerance below
         'trailing_true_util_pct': 61.0,
         'forward_fill_pct_range': (35.0, 55.0),
-        'release_instance_rate': 0.25,    # ~1 in 4 historical instances released
+        # Raised from ~1 in 4 by BlockAllocations.md section 10: Ortho A has to
+        # classify ABANDONED there, which needs releases on at least half its
+        # instances, so the Radar and the allocation review tell one story about
+        # the same block instead of two.
+        'release_instance_rate': 0.55,
         'healthy_day_util_pct': 78.0,     # Ortho A on Monday is fine
         # The counterweight runs hot in its own block as well as booking ahead:
         # the briefs pipeline calls a block under-allocated above 75% in-block,
@@ -380,6 +384,13 @@ STORYLINES = {
         'attention_rows': (5, 25),
         'attention_services': 3,
         'top_ranked_block': 'Ortho A',
+        # ST-8's wrong-day block runs at 32% on the day it holds, so it scores
+        # higher on release risk than ST-1's chronically light one — correctly,
+        # since the scorer ranks on how little is booked. That is the very
+        # reframing Block Allocations exists for: it is not a release problem,
+        # it is an allocation problem. So ST-1 is required near the top rather
+        # than at it.
+        'top_ranked_within': 3,
         # lib/releaseRisk.js scores risk as a weighted mean of three features.
         # Two of them — trailing utilisation against a 75% target, and share of
         # block time previously released — sit near zero for any block that runs
@@ -413,12 +424,35 @@ STORYLINES = {
             'ASC General':  1.00,
             'Ortho B':      1.02,
             'Robotics 1':   1.05,
-            'Vascular':     1.06,
+            'Vascular':     1.22,   # ST-8's finding is historical, not forward
             'ASC Ortho':    1.08,
             'ASC Uro/Gyn':  1.10,
             'Spine B':      1.12,
             'Spine':        1.15,   # the surging counterweight books earliest
         },
+    },
+    # ST-8 The allocation patterns
+    #
+    # A committee needs a legible spread, and the most valuable finding is the
+    # one nobody surfaces: a block held on the wrong day. Vascular holds Tuesday
+    # and books most of its work on Thursdays, which looks over-allocated to any
+    # measure that sums the week.
+    'st8': {
+        'wrong_day_service': 'Vascular',
+        'wrong_day_held': 1,          # Tuesday, held
+        'wrong_day_actual': 3,        # Thursday, where the volume goes
+        'held_util_pct': 32.0,        # the Tuesday block runs nearly empty
+        'outside_share': 0.62,        # of the service's volume, booked Thursday
+        'abandoned_block': 'Ortho A',
+        # The two volume patterns, engineered rather than hoped for. Over- and
+        # under-allocation both need a block clear of the right-sized band, and
+        # under-allocation additionally needs volume visibly spilling outside.
+        'over_allocated_block': 'Plastics',
+        'over_allocated_util_pct': 50.0,
+        # Spine carries this: it is already the growing service, so the
+        # "under-allocated and still growing" row is one story rather than two.
+        'under_allocated_block': 'Spine',
+        'required_patterns': ['WRONG_DAY', 'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'ABANDONED'],
     },
     # ST-9 The Thursday afternoon PACU peak
     #
@@ -452,7 +486,9 @@ BACKGROUND = {
     'median_turnover_min': 45.0,
     'addon_rate':          0.12,
     'cancellation_rate':   0.028,
-    'inblock_util_pct':    (68.0, 78.0),
+    # Widened for ST-8: the demo now contains a block held on the wrong day that
+    # runs nearly empty by design, and it pulls the estate-wide figure down.
+    'inblock_util_pct':    (65.0, 78.0),
 }
 
 # ── Generation window ────────────────────────────────────────────────────────

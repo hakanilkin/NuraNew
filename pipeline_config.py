@@ -80,6 +80,8 @@ TENANTS = {
         'env_prefix':        'DEMO_',
         'database':          'Demo',
         'tenant_config_key': 'Demo',
+        # Block-allocation thresholds live in config/tenantColumns.json, shared
+        # with the route; read them from there rather than duplicating.
         'output_dir':        os.path.join('public', 'data', 'demo'),
         'hospital_filter':   None,      # both Bright sites are in scope
         'service_line_col':  'SERVICE_LINE',

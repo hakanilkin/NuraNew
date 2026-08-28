@@ -30,7 +30,7 @@ export const OR_NAV = [
       // Three questions, three cadences: is the grid right (quarterly), what is
       // coming and what does it do to us (forward), and how do we use the grid
       // we have (continuous).
-      { id: 'atlas-performance-briefs', label: 'Block Allocations', type: 'link', path: '/atlas/performance-briefs' },
+      { id: 'block-allocations', label: 'Block Allocations', type: 'link', path: '/block-allocations' },
       { id: 'impact',    label: 'Volume Impact',     type: 'link', path: '/impact' },
       { id: 'open-time', label: 'Release Time Mgmt', type: 'link', path: '/open-time' },
     ],
