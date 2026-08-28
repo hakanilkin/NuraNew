@@ -131,6 +131,15 @@ WEEKDAY_DARK_PROB      = {0: 0.18, 1: 0.38, 2: 0.14, 3: 0.05, 4: 0.66}
 # Mon/Tue skew toward the inpatient-heavy services — the ST-2 mechanism.
 INPATIENT_HEAVY = {'Orthopedics': 2.4, 'Spine': 2.6, 'Colorectal': 1.5, 'Vascular': 1.4}
 
+# ST-9: Thursday's open time skews toward the long phase I services, so the
+# cases clear the room through the afternoon and stack in recovery. The OR peak
+# is late morning; the PACU peak is hours behind it, which is the whole point.
+# Tuned, not guessed: a stronger skew lengthens the cases, so fewer of them
+# clear the room and the recovery peak actually falls. The peak is arrivals x
+# phase I length, and this sits near its maximum.
+RECOVERY_HEAVY = {'Orthopedics': 2.4, 'Spine': 2.6, 'Vascular': 2.1, 'Colorectal': 2.0}
+RECOVERY_HEAVY_WEEKDAY = 3
+
 # ST-1's counterweight has to show up as cases, and a blocked room is already
 # near its ceiling, so most of the surge lands in open time.
 SPINE_OPEN_TIME_SURGE = 1.32
@@ -157,13 +166,16 @@ ST1_CONTROLLER_GAIN = 2.5
 # instances are the ones the radar puts on screen three at a time, so bias them
 # a little low: a block that reads light every week tells the story the block
 # actually has.
-ST1_FUTURE_BIAS = -0.045
+ST1_FUTURE_BIAS = -0.02
 
 
 def _service_weights(weekday, is_future=False, spine_surge=1.0):
     w = dict(C.SERVICE_VOLUME_WEIGHT)
     if weekday in (0, 1):
         for svc, mult in INPATIENT_HEAVY.items():
+            w[svc] *= mult
+    if weekday == RECOVERY_HEAVY_WEEKDAY:
+        for svc, mult in RECOVERY_HEAVY.items():
             w[svc] *= mult
     # ST-1 counterweight: the forward Spine pipeline is surging, which is what
     # gives the radar's reallocation ranking an obvious number one.
@@ -184,7 +196,12 @@ def generate_cases(calendar, roster, params, rng, anchor):
     spine_surge = 1.0 + st1['spine_forward_surge_pct'] / 100.0
     # The controller steers the trailing window it can see, which lags the window
     # the demo shows by one instance; the offset absorbs that residual.
-    st1_target = st1['trailing_block_util_pct'] / 100 + 0.035
+    #
+    # Held below the target rather than above it: the briefs pipeline classifies
+    # over-allocated at in-block < 60%, and a block steered to 58 with instance
+    # noise lands either side of that line depending on which quarter is
+    # aggregated — which is the difference between ACT and WATCH on the page.
+    st1_target = st1['trailing_block_util_pct'] / 100 + 0.030
     st1_state = {'hist': []}      # (booked minutes, allocated minutes) per instance
 
     # (room, weekday) -> block line
@@ -251,6 +268,10 @@ def generate_cases(calendar, roster, params, rng, anchor):
                                               + float(rng.normal(0, 0.02)))
                         else:
                             util_target = float(rng.normal(st1['healthy_day_util_pct'] / 100, 0.07))
+                    elif block_service == 'Spine':
+                        # ST-1's counterweight: bursting its own block, which is
+                        # what makes "grow this service" the obvious read.
+                        util_target = float(rng.normal(st1['spine_block_util_pct'] / 100, 0.05))
                     else:
                         util_target *= WEEKDAY_FILL_FACTOR.get(wd, 1.0)
 

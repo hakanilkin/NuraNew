@@ -75,6 +75,25 @@ CREATE TABLE dbo.UnitCapacity (
     StaffedBeds INT           NOT NULL
 );
 
+-- ── How long a case occupies a recovery bay, by service ────────────────────
+IF OBJECT_ID('dbo.ServiceRecoveryProfile', 'U') IS NOT NULL DROP TABLE dbo.ServiceRecoveryProfile;
+CREATE TABLE dbo.ServiceRecoveryProfile (
+    Service     NVARCHAR(100) NOT NULL PRIMARY KEY,
+    PreOpMins   INT           NOT NULL,
+    Phase1Mins  INT           NOT NULL,
+    Phase2Mins  INT           NOT NULL,
+    BayType     NVARCHAR(30)  NOT NULL   -- PACU | PHASE2 | BOTH
+);
+
+-- ── Staffed recovery bays per site ─────────────────────────────────────────
+IF OBJECT_ID('dbo.RecoveryCapacity', 'U') IS NOT NULL DROP TABLE dbo.RecoveryCapacity;
+CREATE TABLE dbo.RecoveryCapacity (
+    Site        NVARCHAR(100) NOT NULL PRIMARY KEY,
+    PreOpBays   INT           NOT NULL,
+    PacuBays    INT           NOT NULL,
+    Phase2Bays  INT           NOT NULL
+);
+
 -- ── Case mix -> where it lands. Shares per service sum to 100. ──────────────
 IF OBJECT_ID('dbo.ServiceUnitMap', 'U') IS NOT NULL DROP TABLE dbo.ServiceUnitMap;
 CREATE TABLE dbo.ServiceUnitMap (
@@ -218,6 +237,34 @@ STAFFING_PLAN = (
     [(ASC_SITE,  dow, '07:00', '15:00', 4, 1.00) for dow in range(1, 6)]
 )
 
+# ── Recovery profiles (VolumeImpact.md §6) ───────────────────────────────────
+# How long a case of each service occupies a bay, before and after the room.
+# Joints and spine hold a phase I bay a long time; cataract-style and most ENT
+# work skips phase I entirely and recovers in a recliner.
+#
+# minutes: pre-op, phase I, phase II; bay type PACU | PHASE2 | BOTH
+SERVICE_RECOVERY_PROFILE = {
+    'Orthopedics':      (60,  85, 55, 'BOTH'),
+    'Spine':            (75, 105, 60, 'BOTH'),
+    'General Surgery':  (55,  70, 45, 'BOTH'),
+    'Urology':          (45,  45, 40, 'BOTH'),
+    'GYN':              (50,  55, 45, 'BOTH'),
+    'ENT':              (40,   0, 40, 'PHASE2'),
+    'Plastics':         (45,  35, 45, 'BOTH'),
+    'Vascular':         (65,  95, 50, 'BOTH'),
+    'Colorectal':       (60,  80, 50, 'BOTH'),
+    'Robotics-General': (60,  75, 50, 'BOTH'),
+}
+
+# Staffed bays per site. Deliberately tight at the main site: nine ORs feeding
+# eight phase I bays is an ordinary arrangement, and it is what makes the
+# Thursday afternoon peak (ST-9) a real finding rather than a contrived one.
+RECOVERY_BAYS = {
+    MAIN_SITE: {'preop': 12, 'pacu': 7, 'phase2': 14},
+    ASC_SITE:  {'preop': 6,  'pacu': 4, 'phase2': 8},
+}
+
+
 # ── Vocabularies the app's queries expect (DemoTenant.md 8.2) ────────────────
 
 CASE_LOG_STATUS   = 'Posted'
@@ -265,6 +312,11 @@ STORYLINES = {
         'forward_fill_pct_range': (35.0, 55.0),
         'release_instance_rate': 0.25,    # ~1 in 4 historical instances released
         'healthy_day_util_pct': 78.0,     # Ortho A on Monday is fine
+        # The counterweight runs hot in its own block as well as booking ahead:
+        # the briefs pipeline calls a block under-allocated above 75% in-block,
+        # and ST-1's story needs Spine to land there reliably rather than by
+        # chance, since GROW on the Block Allocations page depends on it.
+        'spine_block_util_pct': 92.0,
         'spine_forward_surge_pct': 38.0,  # counterweight: Spine pipeline +38%
         'tolerance_pct': 4.0,
     },
@@ -344,16 +396,20 @@ STORYLINES = {
         # so any block that books slower than it takes the top row away. The
         # gradient therefore sits above ST-1's block rather than around it.
         'booking_pace': {
-            'Ortho A':      1.00,   # ST-1: pace left alone; its light book is ST-1's own
-            'Uro/Gyn':      0.98,
-            'ASC Plastics': 0.87,
-            'General B':    0.88,
-            'Plastics':     0.90,
-            'Colorectal':   0.92,
-            'ENT':          0.94,
-            'ASC ENT':      0.96,
-            'Ortho C':      0.90,
-            'General A':    0.95,
+            # ST-1's block books slowest by construction, and every other block
+            # is floored above it. Ranking on forward fill means whichever block
+            # books slowest takes the top row, so leaving Ortho A's lead to
+            # emerge from tuning made it flip to whichever block happened to dip
+            # lowest that seed.
+            'Ortho A':      0.80,   # the floor; nothing books slower
+            'General B':    0.90,
+            'Uro/Gyn':      0.92,
+            'ASC Plastics': 0.93,
+            'Plastics':     0.94,
+            'Colorectal':   0.95,
+            'ENT':          0.96,
+            'ASC ENT':      0.97,
+            'Ortho C':      0.98,
             'ASC General':  1.00,
             'Ortho B':      1.02,
             'Robotics 1':   1.05,
@@ -363,6 +419,19 @@ STORYLINES = {
             'Spine B':      1.12,
             'Spine':        1.15,   # the surging counterweight books earliest
         },
+    },
+    # ST-9 The Thursday afternoon PACU peak
+    #
+    # The consequence nobody models: the OR peak is at 10:00, the recovery peak
+    # is at 15:00, and the bays are a different constraint from the rooms.
+    # Thursday concentrates the long phase I services, so its cases clear the
+    # room through the afternoon and stack in PACU.
+    'st9': {
+        'site': MAIN_SITE,
+        'weekday': 3,
+        'peak_window': ('13:00', '17:00'),
+        'min_over_bays': 1,
+        'quiet_weekdays': [4],      # Friday must not also peak, or it is not a finding
     },
     # ST-6 The Tuesday resolution — derived, never seeded. These are the
     # headroom conditions the seeder must leave in place for the ISSCM engine

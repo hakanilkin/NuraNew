@@ -433,6 +433,15 @@ def _st7(tables, ctx):
     _check('ST-7 top-ranked block', top, s['top_ranked_block'],
            PASS if top == s['top_ranked_block'] else FAIL)
 
+    # The top row has to be stable, not merely first this seed. ST-1's block
+    # wins on two features at once — it books slowest and it runs chronically
+    # light — so the margin over the runner-up is what to assert.
+    runner_up = next((r for r in scored if r['CaseBlock'] != s['top_ranked_block']), None)
+    margin = (scored[0]['risk'] - runner_up['risk']) if (scored and runner_up) else None
+    _check(f'ST-7 {s["top_ranked_block"]} lead over the runner-up',
+           margin, '>= 2', PASS if (margin or 0) >= 2 else FAIL, 'pts',
+           f"runner-up {runner_up['CaseBlock'] if runner_up else '—'}")
+
     n_services = len({r['Service'] for r in attention})
     _check('ST-7 spread across services', n_services, f">= {s['attention_services']}",
            PASS if n_services >= s['attention_services'] else FAIL, 'services')
@@ -453,6 +462,71 @@ def _st7(tables, ctx):
            f'{over_medium} row(s) reach the Medium badge; lib/releaseRisk.js cannot '
            f'reach High without a block barely booked AND chronically half-used AND '
            f'often released')
+
+
+def _st9(tables, ctx):
+    """
+    The recovery peak is a different constraint from the room peak, hours later.
+    Scored with lib/recoveryDemand.js — the shipping module, not a copy — over
+    the seeded cases themselves.
+    """
+    import json as _json
+    import os as _os
+    import subprocess as _sp
+
+    s = C.STORYLINES['st9']
+    root = _os.path.abspath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))
+    profiles = {svc: {'preOpMins': pre, 'phase1Mins': p1, 'phase2Mins': p2, 'bayType': bay}
+                for svc, (pre, p1, p2, bay) in C.SERVICE_RECOVERY_PROFILE.items()}
+    bays = C.RECOVERY_BAYS[s['site']]
+
+    by_day = {}
+    for c in ctx['cases']:
+        if c['__is_future'] or c['__cancelled'] or c['Loc_ORGrp2'] != s['site']:
+            continue
+        by_day.setdefault(c['Date_SchedDate'], []).append({
+            'service': c['Case_SurgeonService'],
+            'orInMinutes': c['__start_min'], 'orOutMinutes': c['__end_min'],
+        })
+
+    script = ("const R=require(process.argv[1]);const a=JSON.parse(process.argv[2]);"
+              "const [days,profiles,bays]=a;"
+              "console.log(JSON.stringify(days.map(d=>{const r=R.dayDemand("
+              "{date:d.date,site:'x',cases:d.cases,profiles,bays});"
+              "return {date:d.date,dow:d.dow,peak:r.pacu.bays,over:r.pacu.overBy,"
+              "from:r.pacu.overFrom,to:r.pacu.overTo,tier:r.tier};})));")
+    payload = [{'date': str(d), 'dow': d.weekday(), 'cases': cs}
+               for d, cs in sorted(by_day.items()) if d.weekday() < 5]
+    try:
+        out = _sp.run(['node', '-e', script, _os.path.join(root, 'lib', 'recoveryDemand.js'),
+                       _json.dumps([payload, profiles, bays])],
+                      capture_output=True, text=True, check=True, cwd=root)
+        scored = _json.loads(out.stdout)
+    except Exception as exc:
+        _check('ST-9 PACU peak', f'scorer unavailable ({exc})', '-', FAIL)
+        return
+
+    thu = [r for r in scored if r['dow'] == s['weekday']]
+    over_thu = [r for r in thu if (r['over'] or 0) >= s['min_over_bays']]
+    share = 100.0 * len(over_thu) / len(thu) if thu else 0
+    _check('ST-9 Thursdays whose PACU peak exceeds its bays', share,
+           '>= 40', PASS if share >= 40 else FAIL, '%',
+           f'{len(over_thu)} of {len(thu)}; {bays["pacu"]} bays staffed')
+
+    peak = st.mean([r['peak'] for r in thu]) if thu else 0
+    _check('ST-9 average Thursday PACU peak', peak, f'> {bays["pacu"]}',
+           PASS if peak > bays['pacu'] else FAIL, 'bays')
+
+    # It is only a finding if it is not every day.
+    for wd in s['quiet_weekdays']:
+        quiet = [r for r in scored if r['dow'] == wd]
+        q_over = 100.0 * len([r for r in quiet if (r['over'] or 0) > 0]) / len(quiet) if quiet else 0
+        _check(f'ST-9 {["Mon","Tue","Wed","Thu","Fri"][wd]} stays inside its bays',
+               q_over, '< 40', PASS if q_over < 40 else WARN, '%')
+
+    _check('ST-9 tier', scored[0]['tier'] if scored else None, 'POTENTIAL',
+           PASS if scored and scored[0]['tier'] == 'POTENTIAL' else FAIL, '',
+           'bay demand is modelled; nurse ratios are not')
 
 
 def _st6(tables, ctx):
@@ -511,7 +585,7 @@ def run(tables, ctx):
     print('  Storyline reconciliation — DemoTenant.md section 10')
     print('=' * 72)
 
-    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6, _st7):
+    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6, _st7, _st9):
         try:
             fn(tables, ctx)
         except Exception as exc:                    # a broken check must not hide the rest

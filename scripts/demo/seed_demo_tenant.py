@@ -111,6 +111,16 @@ def generate_isscm_tables(roster):
          'StaffedBeds': u['staffed_beds']}
         for u in roster['units']
     ]
+    recovery = [
+        {'Service': svc, 'PreOpMins': pre, 'Phase1Mins': p1, 'Phase2Mins': p2,
+         'BayType': bay}
+        for svc, (pre, p1, p2, bay) in C.SERVICE_RECOVERY_PROFILE.items()
+    ]
+    bays = [
+        {'Site': site, 'PreOpBays': b['preop'], 'PacuBays': b['pacu'],
+         'Phase2Bays': b['phase2']}
+        for site, b in C.RECOVERY_BAYS.items()
+    ]
     svc_unit = []
     for service, shares in C.SERVICE_UNIT_MAP.items():
         total = sum(shares.values())
@@ -118,7 +128,7 @@ def generate_isscm_tables(roster):
             raise ValueError(f'ServiceUnitMap shares for {service} sum to {total}, not 100')
         for unit, share in shares.items():
             svc_unit.append({'Service': service, 'Unit': unit, 'SharePct': float(share)})
-    return staffing, capacity, svc_unit
+    return staffing, capacity, svc_unit, recovery, bays
 
 
 def generate_financials(roster, cases):
@@ -170,7 +180,7 @@ def generate_all(anchor, seed):
     print('  Generating V4_Inpatient_Forecast_Compile ...')
     ip_forecast = GIP.generate_ip_forecast(encounters, unit_meta, occupancy, anchor, params, rng)
 
-    staffing, capacity, svc_unit = generate_isscm_tables(roster)
+    staffing, capacity, svc_unit, recovery, bays = generate_isscm_tables(roster)
     generate_financials(roster, cases)
 
     tables = {
@@ -185,6 +195,8 @@ def generate_all(anchor, seed):
         'StaffingPlan':                  staffing,
         'UnitCapacity':                  capacity,
         'ServiceUnitMap':                svc_unit,
+        'ServiceRecoveryProfile':        recovery,
+        'RecoveryCapacity':              bays,
     }
     context = {'cases': cases, 'encounters': encounters, 'occupancy': occupancy,
                'block_instances': block_instances, 'forecast': forecast,
