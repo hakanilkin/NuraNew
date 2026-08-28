@@ -72,6 +72,33 @@ function stubPool(overrides = {}) {
           if (has('AS Peak')) return { recordset: [{ Peak: 8.2 }] };
           if (has('FROM DS_RR')) return { recordset: rrRows() };
           if (has('AS AvgRoomHours')) return { recordset: [{ AvgRoomHours: 66.4, Days: 8 }] };
+          // Impact.
+          if (has('SELECT TOP 1 1 AS ok')) return { recordset: [{ ok: 1 }] };
+          if (has('FROM ServiceRecoveryProfile')) return { recordset: [
+            { Service: 'Orthopedics', PreOpMins: 60, Phase1Mins: 85, Phase2Mins: 55, BayType: 'BOTH' },
+          ] };
+          if (has('FROM RecoveryCapacity')) return { recordset: [
+            { Site: SITE, PreOpBays: 12, PacuBays: 7, Phase2Bays: 14 } ] };
+          if (has('AS InMin')) return { recordset: [
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 480, OutMin: 590, N: 1, Days: 1 },
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 500, OutMin: 620, N: 1, Days: 1 },
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 520, OutMin: 640, N: 1, Days: 1 },
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 540, OutMin: 660, N: 1, Days: 1 },
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 560, OutMin: 680, N: 1, Days: 1 },
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 580, OutMin: 700, N: 1, Days: 1 },
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 600, OutMin: 720, N: 1, Days: 1 },
+            { Site: SITE, Wd: 5, Service: 'Orthopedics', InMin: 620, OutMin: 740, N: 1, Days: 1 },
+          ] };
+          if (has('AS BlockMins')) return { recordset: [
+            { Date: '2026-09-11', Site: SITE, CaseBlock: 'Ortho A', BlockMins: 480, BookedMins: 150 } ] };
+          if (has('AS ForecastMins')) return { recordset: [
+            { Date: '2026-09-09', Site: SITE, Wd: 4, Booked: 30, Forecast: 38, Budget: 31,
+              ForecastMins: 510 * 8.2, BookedMins: 510 * 6 },
+            { Date: '2026-09-11', Site: SITE, Wd: 6, Booked: 14, Forecast: 18, Budget: 30,
+              ForecastMins: 510 * 3.0, BookedMins: 510 * 2 } ] };
+          if (has('AS Census') && has('FROM UnitCapacity')) return { recordset:
+            [0, 1, 2, 3, 4].map(d => ({ Unit: '5 Central', StaffedBeds: 32,
+              Wd: ((d + 1) % 7) + 1, Census: d === 2 ? 30 : 25 })) };
           // Outlook: totals per date, mix per date, trailing durations.
           if (has('AS Scheduled') && has('AS BookedMins')) return { recordset: [
             { Date: '2026-09-09', Site: SITE, Wd: 4, DaysAhead: 15, Scheduled: 30, Forecast: 38, Budget: 31, BookedMins: 510 * 8.2 },
@@ -145,88 +172,53 @@ async function call(routerFile, tenant, method, url, body, overrides) {
 
 const DEMO = 'Bright Memorial Health';
 
-test('smoothing: census attribution returns cells and a summary', async () => {
-  const r = await call('smoothing.js', DEMO, 'GET', '/census-attribution?weeks=8');
-  assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.ok(r.body.units.length, 'no units returned');
-  assert.ok(r.body.units[0].byDow.length, 'no cells returned');
-  assert.ok(r.body.summary.orContributionPct > 0, 'OR contribution should be non-zero');
-  assert.ok(r.body.summary.crunchUnitDays != null, 'crunch unit-days missing');
-  assert.ok(r.body.summary.peak, 'peak missing');
-});
+// ── Volume Impact ───────────────────────────────────────────────────────────
 
-test('smoothing: attribution splits a cell into OR, ED and the rest', async () => {
-  const { body } = await call('smoothing.js', DEMO, 'GET', '/census-attribution?weeks=8');
-  const cell = body.units[0].byDow[0];
-  assert.ok(cell.or > 0 && cell.ed > 0, 'both sources should be attributed');
-  // Each part is rounded to a tenth independently, so the sum can drift by up
-  // to half a tenth per part.
-  assert.ok(Math.abs((cell.or + cell.ed + cell.other) - cell.census) <= 0.15,
-    `parts ${cell.or}+${cell.ed}+${cell.other} should sum to census ${cell.census}`);
-});
-
-test('smoothing: footprint, scenarios and preview all respond', async () => {
-  for (const [method, url, body] of [
-    ['GET', '/footprint?service=Spine&weeks=8'],
-    ['GET', '/scenarios?weeks=8'],
-    ['POST', '/preview', { decision: { service: 'Spine', fromDow: 2, toDow: 4, casesPerWeek: 5 } }],
-  ]) {
-    const r = await call('smoothing.js', DEMO, method, url, body);
+test('impact: every endpoint responds', async () => {
+  for (const url of ['/tabs', '/summary', '/budget', '/inpatient', '/staffing',
+                     '/recovery', '/budget/2026-09-09/mix']) {
+    const r = await call('impact.js', DEMO, 'GET', url);
     assert.equal(r.status, 200, `${url}: ${JSON.stringify(r.body)}`);
   }
 });
 
-test('staffing: shape and ledger respond', async () => {
-  for (const url of [`/shape?site=${encodeURIComponent(SITE)}`,
-                     `/ledger?site=${encodeURIComponent(SITE)}`]) {
-    const r = await call('staffing.js', DEMO, 'GET', url);
-    assert.equal(r.status, 200, `${url}: ${JSON.stringify(r.body)}`);
+test('impact: the summary never collapses booked and expected into one figure', async () => {
+  const { body } = await call('impact.js', DEMO, 'GET', '/summary');
+  assert.ok('booked' in body && 'expectedAdds' in body,
+    'the split is the answer to "why not just read the booked schedule"');
+  assert.ok(Math.abs((body.booked + body.expectedAdds) - body.forecast) < 0.2,
+    'the parts must add to the forecast');
+});
+
+test('impact: budget applies both flagging thresholds', async () => {
+  const { body } = await call('impact.js', DEMO, 'GET', '/budget');
+  assert.ok(body.grid.length && body.days.length);
+  for (const d of body.days.filter(x => x.flagged)) {
+    assert.ok(Math.abs(d.variancePct) >= body.thresholds.exceptionPct);
+    assert.ok(Math.abs(d.variance) >= body.thresholds.minCases,
+      'a three-to-four case day must never be flagged');
   }
 });
 
-test('staffing has no forward surface — that moved to the Outlook', async () => {
-  const r = await call('staffing.js', DEMO, 'GET', `/forward?site=${encodeURIComponent(SITE)}`);
-  assert.equal(r.status, 404, 'Staffing Patterns is the structural page only');
-});
-
-test('staffing: the ledger reports both directions of the gap', async () => {
-  const { body } = await call('staffing.js', DEMO, 'GET', `/ledger?site=${encodeURIComponent(SITE)}`);
-  assert.ok(body.byDow.length, 'no ledger rows');
-  assert.ok(body.summary.idleWk > 0, 'idle hours should be non-zero');
-  assert.ok(body.summary.overtimeWk > 0, 'overtime should be non-zero');
-  assert.equal(body.summary.costPerRoomHour, null, 'financials stay dormant until priced');
-});
-
-test('outlook: the flex plan flags a day the plan over-staffs', async () => {
-  const { status, body } = await call('outlook.js', DEMO, 'GET', '/flex?weeks=4');
-  assert.equal(status, 200, JSON.stringify(body));
-  const flagged = body.days.filter(d => d.flag);
-  assert.ok(flagged.length, 'no day flagged');
-  assert.ok(flagged[0].drivers.length, 'a flag must carry its reasoning');
-  assert.ok(flagged[0].recommendedRooms > flagged[0].impliedRooms,
-    'the recommendation keeps a room in hand');
-});
-
-test('outlook: calendar, exceptions, daily and mix all respond', async () => {
-  for (const url of ['/calendar?weeks=4', '/exceptions?weeks=4', '/daily?weeks=4',
-                     '/daily/2026-09-09/mix']) {
-    const r = await call('outlook.js', DEMO, 'GET', url);
-    assert.equal(r.status, 200, `${url}: ${JSON.stringify(r.body)}`);
+test('impact: staffing says release before it says flex down', async () => {
+  const { body } = await call('impact.js', DEMO, 'GET', '/staffing');
+  const spare = body.days.filter(d => d.flag === 'OVER' && d.releasable.length);
+  assert.ok(spare.length, 'the fixture has a light day with sellable block time');
+  for (const d of spare) {
+    assert.match(d.implication, /releasing and re-offering/);
+    assert.ok(d.link, 'and it links to where that happens');
+    assert.ok(!/flex down/i.test(d.implication));
   }
 });
 
-test('outlook: every exception carries a driver, an implication and a tier', async () => {
-  const { body } = await call('outlook.js', DEMO, 'GET', '/exceptions?weeks=4');
-  assert.ok(body.exceptions.length, 'no exceptions returned');
-  for (const e of body.exceptions) {
-    assert.ok(['POTENTIAL', 'RECOMMENDED'].includes(e.tier));
-    assert.ok(e.implication && e.implication.length > 10, 'the column is never blank');
-    assert.ok(Array.isArray(e.considerations) && e.considerations.length);
-  }
+test('impact: recovery is always tiered POTENTIAL', async () => {
+  const { body } = await call('impact.js', DEMO, 'GET', '/recovery');
+  assert.equal(body.tier, 'POTENTIAL');
+  for (const d of body.days) assert.equal(d.tier, 'POTENTIAL');
 });
 
-test('outlook: a malformed date is rejected rather than interpolated', async () => {
-  const r = await call('outlook.js', DEMO, 'GET', "/daily/2026-09-09'; DROP/mix");
+test('impact: a malformed date is rejected rather than interpolated', async () => {
+  const r = await call('impact.js', DEMO, 'GET', "/budget/2026-09-09'; DROP/mix");
   assert.equal(r.status, 400);
 });
 
@@ -264,19 +256,3 @@ test('isscm: a decision missing its required field is rejected at the door', asy
   assert.match(r.body.error, /service/);
 });
 
-test('the gated routers 404 for tenants without the data', async () => {
-  for (const [file, url] of [['smoothing.js', '/scenarios'], ['staffing.js', '/ledger?site=x']]) {
-    for (const tenant of ['NHS', 'OHS']) {
-      const r = await call(file, tenant, 'GET', url);
-      assert.equal(r.status, 404, `${file} should 404 for ${tenant}`);
-    }
-  }
-});
-
-test('an empty result set does not crash a handler', async () => {
-  // A tenant with the tables but no rows yet is a real state, not an error.
-  const r = await call('smoothing.js', DEMO, 'GET', '/census-attribution?weeks=8',
-    null, { 'FROM UnitCapacity': [], 'WITH census_times': [] });
-  assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.deepEqual(r.body.units, []);
-});

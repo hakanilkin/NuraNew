@@ -2,6 +2,14 @@
 """
 ST-1 acceptance for the Briefs forward layer, checked without a database.
 
+SUPERSEDED, PENDING REPLACEMENT. BlockAllocations.md §6 drops the ACT/GROW
+work-queue framing this asserts — that page becomes a quarterly review sorted by
+mismatch hours, not a weekly triage queue — and §10 replaces these criteria with
+storyline ST-8. Until that page is built the endpoint still ships, so this file
+stays as the record of what it used to guarantee; it is not wired into `npm run
+check`, and its failures describe a page that is being retired rather than a
+regression. Delete it with the ACT/GROW UI.
+
 BriefsForwardLayer.md §4 requires that on the demo tenant:
 
   * Ortho A classifies ACT and ranks #1

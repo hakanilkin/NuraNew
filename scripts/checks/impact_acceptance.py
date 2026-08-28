@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Acceptance for Volume & Staffing Outlook against the demo seed (VolumeOutlook.md §10).
+Acceptance for Volume Impact against the demo seed (VolumeImpact.md §9).
 
 Drives lib/demandSignal.js with the generated frames — the same numbers the
 database holds — and checks what the page will show:
@@ -14,7 +14,7 @@ database holds — and checks what the page will show:
   * the Outlook's room numbers are lib/staffingShape.js's, so this page and
     Pillar 2 cannot disagree
 
-Run: python scripts/checks/outlook_acceptance.py
+Run: python scripts/checks/impact_acceptance.py
 """
 
 import datetime as dt
@@ -163,11 +163,11 @@ def main():
 
     print()
     if failures:
-        print(f'  Outlook acceptance: {len(failures)} failure(s)\n')
+        print(f'  Volume Impact acceptance: {len(failures)} failure(s)\n')
         for f in failures:
             print('  - ' + f)
         sys.exit(1)
-    print('  Outlook acceptance: OK')
+    print('  Volume Impact acceptance: OK')
 
 
 if __name__ == '__main__':

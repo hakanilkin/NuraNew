@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """
-ST-2 and ST-3 acceptance for the OR Smoothing and Staffing pages, offline.
+ST-2 and ST-3 acceptance for the census and staffing arithmetic, offline.
 
-ORSmoothing.md §5 and StaffingAlignment.md §5 both anchor their acceptance to
-the figures verify.py measures on the seeded tenant:
+Both pages that used to own these numbers are gone — their forward halves are
+Volume Impact's Inpatient and Staffing tabs now — but the libraries they
+computed through are the same ones those tabs and the ScenarioPanel's pillars
+call, so the figures still have to hold:
 
   ST-2   Wednesday 5 Central ~30/32 at 07:00, ~27% OR-attributed,
          ~3.3 crunch unit-days per week
   ST-3   ~12.7 overtime room-hours/week, Friday idle >= 25 room-hours,
          3.0-3.2 rooms running at 15:30 Tue-Thu, Friday implied ~6 rooms
 
-Those pages compute through lib/censusFootprint.js and lib/staffingShape.js, so
+Volume Impact computes through lib/censusFootprint.js and lib/staffingShape.js, so
 this drives those libraries with the generated frames — the same numbers the
 database holds — and checks what the pages will show. The SQL that feeds them in
 production still needs a live run; this checks the arithmetic and the seed.
 
-Run: python scripts/checks/smoothing_staffing_acceptance.py
+Run: python scripts/checks/census_staffing_acceptance.py
 """
 
 import datetime as dt
@@ -194,11 +196,11 @@ def main():
 
     print()
     if failures:
-        print(f'  Smoothing/Staffing acceptance: {len(failures)} failure(s)\n')
+        print(f'  Census/staffing acceptance: {len(failures)} failure(s)\n')
         for f in failures:
             print('  - ' + f)
         sys.exit(1)
-    print('  Smoothing/Staffing acceptance: OK')
+    print('  Census/staffing acceptance: OK')
 
 
 if __name__ == '__main__':
