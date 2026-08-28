@@ -27,7 +27,7 @@ export const OR_NAV = [
     id: 'capacity-decisions', label: 'Capacity Decisions', icon: 'Scale', type: 'expander',
     children: [
       // A work queue now, not a model page — which is why it left Atlas.
-      { id: 'atlas-performance-briefs', label: 'Performance Briefs', type: 'link', path: '/atlas/performance-briefs' },
+      { id: 'atlas-performance-briefs', label: 'Block Allocations', type: 'link', path: '/atlas/performance-briefs' },
       { id: 'outlook',      label: 'Volume & Staffing Outlook', type: 'link', path: '/outlook' },
       { id: 'open-time',    label: 'Release Time Mgmt', type: 'link', path: '/open-time' },
       { id: 'or-smoothing', label: 'OR Smoothing',      type: 'link', path: '/or-smoothing',      feature: 'smoothing' },

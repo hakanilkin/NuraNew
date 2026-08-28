@@ -186,11 +186,11 @@ function servePerformanceBriefs(req, res) {
     if (err.message === 'not_found') {
       return res.json({
         error:   'no_atlas_data',
-        message: 'Performance briefs have not been generated for this organization yet.',
+        message: 'Block allocations have not been generated for this organization yet.',
       });
     }
     console.error('/api/atlas/performance-briefs read error:', err.message);
-    return res.status(500).json({ error: 'Could not read performance briefs' });
+    return res.status(500).json({ error: 'Could not read block allocations' });
   }
 
   // Merge per-group context by caseblock (best-effort; missing file is fine)

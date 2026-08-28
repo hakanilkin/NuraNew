@@ -673,7 +673,7 @@ export default function AtlasPerformanceBriefs() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', padding: 'var(--space-5)', background: 'rgba(239,68,68,0.06)', border: '1px solid #fecaca', borderRadius: 'var(--radius-lg)', color: '#b91c1c', fontSize: 'var(--font-size-sm)' }}>
           <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 2 }}>Could not load performance briefs</div>
+            <div style={{ fontWeight: 600, marginBottom: 2 }}>Could not load block allocations</div>
             <div>{error}</div>
           </div>
         </div>
@@ -688,10 +688,10 @@ export default function AtlasPerformanceBriefs() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 280, textAlign: 'center', color: 'var(--color-gray-400)' }}>
           <div style={{ fontSize: 40, marginBottom: 'var(--space-4)' }}>📊</div>
           <div style={{ fontWeight: 600, fontSize: 'var(--font-size-base)', color: 'var(--color-gray-600)', marginBottom: 'var(--space-2)' }}>
-            No performance briefs yet
+            No block allocations yet
           </div>
           <div style={{ fontSize: 'var(--font-size-sm)', maxWidth: 420 }}>
-            {data?.message ?? 'Atlas data has not been generated for this organization yet. Run the performance_briefs_pipeline.py to populate this view.'}
+            {data?.message ?? 'Block allocation data has not been generated for this organization yet. Run performance_briefs_pipeline.py to populate this view.'}
           </div>
         </div>
       </div>

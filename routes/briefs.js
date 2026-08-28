@@ -97,7 +97,7 @@ module.exports = function briefsRoutes(getTenantPool, sql, requireTenant) {
         if (err.message === 'not_found') {
           return res.json({
             error: 'no_atlas_data',
-            message: 'Performance briefs have not been generated for this organization yet.',
+            message: 'Block allocations have not been generated for this organization yet.',
           });
         }
         throw err;
