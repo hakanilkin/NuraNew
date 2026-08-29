@@ -49,32 +49,6 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     return { from, to };
   }
 
-  // A matrix click is a filter, and it has to mean the same thing on every tab
-  // or the four consequences stop being of one forecast. Parsed once here;
-  // each tab applies whichever dimensions its own data actually has.
-  function filtersOf(q) {
-    const service = String(q.service || '').trim();
-    return {
-      service: service ? service.slice(0, 128) : null,
-      date: isDate(q.date) ? q.date : null,
-    };
-  }
-
-  // Applied as parameters, never interpolated. The service column itself comes
-  // from tenant config rather than a literal.
-  function forecastFilter(r, tenant, f) {
-    let sqlText = '';
-    if (f.service) {
-      r.input('svc', sql.NVarChar, f.service);
-      sqlText += ` AND ISNULL(${resolveColumn(tenant, 'OR_SERVICE')}, 'Unknown') = @svc`;
-    }
-    if (f.date) {
-      r.input('onDate', sql.Date, f.date);
-      sqlText += ' AND CAST(Date AS DATE) = @onDate';
-    }
-    return sqlText;
-  }
-
   const thresholds = tenant => ({
     onPlanPct:    num(getParam(tenant, 'impact_on_plan_pct'))    || 5,
     exceptionPct: num(getParam(tenant, 'outlook_exception_pct')) || 15,
@@ -94,12 +68,11 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
   // Per date (and optionally site) over the window. The booked/expected split is
   // carried everywhere, because collapsing it is what makes a booked-schedule
   // tool under-count four weeks out.
-  async function dailyTotals(db, { from, to, sites, bySite, tenant, filters }) {
+  async function dailyTotals(db, { from, to, sites, bySite }) {
     const r = db.request();
     r.input('from', sql.Date, from);
     r.input('to', sql.Date, to);
-    const filter = siteFilter(r, sites)
-      + (filters ? forecastFilter(r, tenant || 'default', filters) : '');
+    const filter = siteFilter(r, sites);
     const siteCol = bySite ? "ISNULL(ORGRP2, 'Unknown')" : "'All sites'";
     const groupBy = bySite ? `CAST(Date AS DATE), ${siteCol}` : 'CAST(Date AS DATE)';
     const res = await r.query(`
@@ -127,31 +100,19 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     }));
   }
 
-  // ── The specialty x date matrix (VolumeImpactMatrix.md) ──────────────────
+  // ── Tab 1 — Service Line Breakdown (ServiceLineBreakdown.md) ─────────────
   //
-  // The page's premise is one forecast, four consequences, and until now the
-  // cause was a single summary line. This makes it permanently visible while
-  // you move between effects: when the PACU tab shows a Thursday peak, the
-  // first question is "why that day", and the matrix has already answered it
-  // with the date rather than a tendency.
+  // Tab 1 is the forecast; tabs 2-5 are what it does to you. Specialty by date,
+  // forecast cases, for the selected window.
   //
-  // Dates, never weekday averages. "Thursdays are usually busy" cannot staff a
-  // specific day, which is the only thing PACU, pre-op, sterile processing and
-  // the units actually do with this.
-  const MATRIX_MAX_WEEKS = 4;
-
-  async function matrixOf(db, { from, to, sites, tenant, maxServices }) {
-    // Context, not the analysis: a longer window still shows four weeks, and
-    // says so rather than silently truncating.
-    const start = new Date(`${from}T00:00:00`);
-    const capEnd = new Date(start.getTime() + (MATRIX_MAX_WEEKS * 7 - 1) * 86400000);
-    const end = new Date(`${to}T00:00:00`);
-    const capped = capEnd < end;
-    const matrixTo = (capped ? capEnd : end).toISOString().slice(0, 10);
-
+  // Dates, never weekday averages. The point is to tell a downstream area what
+  // is actually coming on a named day, and "Thursdays are usually busy" cannot
+  // staff Thursday the 18th — which is the only thing PACU, pre-op, sterile
+  // processing and the units do with this.
+  async function breakdownOf(db, { from, to, sites, tenant }) {
     const r = db.request();
     r.input('from', sql.Date, from);
-    r.input('to', sql.Date, matrixTo);
+    r.input('to', sql.Date, to);
     const filter = siteFilter(r, sites);
     const serviceCol = resolveColumn(tenant, 'OR_SERVICE');
     const res = await r.query(`
@@ -172,7 +133,7 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     try {
       const h = db.request();
       h.input('from', sql.Date, from);
-      h.input('to', sql.Date, matrixTo);
+      h.input('to', sql.Date, to);
       const out = await h.query(`
         SELECT DISTINCT CONVERT(VARCHAR(10), CAST(Date_SchedDate AS DATE), 23) AS Date
         FROM DS_CASES
@@ -212,36 +173,22 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
       byService.get(key)[i] += num(x.Cases);
     }
 
-    const rows = [...byService.entries()]
+    // Every service line, sorted by window total. A full tab has the room, so
+    // there is no cap and no Other row to reconcile against.
+    const services = [...byService.entries()]
       .map(([service, byDate]) => ({
         service,
         byDate: byDate.map(v => Math.round(v)),
         total: Math.round(byDate.reduce((t, v) => t + v, 0)),
       }))
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => b.total - a.total || a.service.localeCompare(b.service));
 
-    // Named rows are capped so the header stays compact on every tab; the tail
-    // is summed into Other rather than dropped, or the Total row stops
-    // reconciling to the summary line above it.
-    const cap = Math.max(1, num(maxServices) || 7);
-    const named = rows.slice(0, cap);
-    const tail = rows.slice(cap);
-    if (tail.length) {
-      named.push({
-        service: 'Other',
-        byDate: dates.map((_, i) => tail.reduce((t, s) => t + s.byDate[i], 0)),
-        total: tail.reduce((t, s) => t + s.total, 0),
-        tail: tail.length,
-      });
-    }
-
-    const totals = dates.map((_, i) => named.reduce((t, s) => t + s.byDate[i], 0));
+    const totals = dates.map((_, i) => services.reduce((t, x) => t + x.byDate[i], 0));
     return {
       dates,
-      services: named,
+      services,
       totals: { byDate: totals, window: totals.reduce((t, v) => t + v, 0) },
       weeks: new Set(dates.map(d => d.weekOf)).size,
-      capped, cappedAt: capped ? MATRIX_MAX_WEEKS : null, to: matrixTo,
     };
   }
 
@@ -280,7 +227,8 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
         has('ServiceUnitMap'), has('StaffingPlan'), has('ServiceRecoveryProfile'),
       ]);
       // Budget needs only the forecast, which every tenant has.
-      res.json({ budget: true, inpatient: unitMap, staffing: plan, recovery });
+      // Breakdown and Budget need only the forecast, which every tenant has.
+      res.json({ breakdown: true, budget: true, inpatient: unitMap, staffing: plan, recovery });
     } catch (err) {
       console.error('/api/impact/tabs error:', err.message);
       res.status(500).json({ error: 'Internal server error' });
@@ -293,21 +241,7 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
       const tenant = req.tenantName || 'default';
       const db = await getTenantPool(req.session.tenantId);
       const { from, to } = windowOf(req.query);
-      const filters = filtersOf(req.query);
-      // The summary line reads under the filter, so the header's numbers match
-      // the words beneath the matrix. The matrix itself is never filtered — it
-      // is the selector, and a selector that hides its own options is a trap.
-      const [rows, matrix] = await Promise.all([
-        dailyTotals(db, { from, to, sites: req.query.sites, bySite: false, tenant, filters }),
-        matrixOf(db, {
-          from, to, sites: req.query.sites, tenant,
-          maxServices: getParam(tenant, 'matrix_max_services'),
-        }).catch(err => {
-          // The four tabs do not depend on the matrix; lose it, not the page.
-          console.error('/api/impact/summary matrix unavailable:', err.message);
-          return null;
-        }),
-      ]);
+      const rows = await dailyTotals(db, { from, to, sites: req.query.sites, bySite: false });
       const sum = k => round1(rows.reduce((s, x) => s + num(x[k]), 0));
       const forecast = sum('forecast');
       const budget = sum('budget');
@@ -321,8 +255,6 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
         expectedAdds: sum('expectedAdds'),
         variance: v.variance, variancePct: v.variancePct,
         days: rows.length,
-        filters,
-        matrix,
       });
     } catch (err) {
       console.error('/api/impact/summary error:', err.message);
@@ -330,7 +262,21 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     }
   });
 
-  // ── Tab 1 — Budget ───────────────────────────────────────────────────────
+  // ── GET /api/impact/breakdown ────────────────────────────────────────────
+  router.get('/breakdown', async (req, res) => {
+    try {
+      const tenant = req.tenantName || 'default';
+      const db = await getTenantPool(req.session.tenantId);
+      const { from, to } = windowOf(req.query);
+      const data = await breakdownOf(db, { from, to, sites: req.query.sites, tenant });
+      res.json({ from, to, ...data });
+    } catch (err) {
+      console.error('/api/impact/breakdown error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ── Tab 2 — Budget ───────────────────────────────────────────────────────
   router.get('/budget', async (req, res) => {
     try {
       const tenant = req.tenantName || 'default';
@@ -338,10 +284,8 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
       const db = await getTenantPool(req.session.tenantId);
       const { from, to } = windowOf(req.query);
       const bySite = req.query.bySite === 'true';
-      const filters = filtersOf(req.query);
-      const rows = (await dailyTotals(db, {
-        from, to, sites: req.query.sites, bySite, tenant, filters,
-      })).filter(x => x.dow < 5);
+      const rows = (await dailyTotals(db, { from, to, sites: req.query.sites, bySite }))
+        .filter(x => x.dow < 5);
 
       const byWeek = new Map();
       const days = [];
@@ -367,7 +311,6 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
 
       res.json({
         from, to, thresholds: t,
-        filters, appliedFilters: { service: true, date: true },
         grid: [...byWeek.entries()].sort((a, b) => a[0].localeCompare(b[0]))
           .map(([weekOf, d]) => ({ weekOf, days: d.sort((a, b) => a.dow - b.dow) })),
         days,
@@ -410,7 +353,7 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     }
   });
 
-  // ── Tab 2 — Inpatient ────────────────────────────────────────────────────
+  // ── Tab 3 — Inpatient ────────────────────────────────────────────────────
   // Projected census for the window, from the trailing pattern for that unit
   // and weekday, with the controllable share traced back through
   // DS_Bedplacement. Computed in lib/censusFootprint.js, which Pillar 3 also
@@ -421,7 +364,6 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
       const t = thresholds(tenant);
       const db = await getTenantPool(req.session.tenantId);
       const { from, to } = windowOf(req.query);
-      const filters = filtersOf(req.query);
       const weeks = 8;
 
       const [census, occupants] = await Promise.all([
@@ -471,13 +413,12 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
           { census: num(c.Census), capacity: num(c.StaffedBeds) });
       }
 
-      // Every weekday date in the window, or the single filtered date.
+      // Every weekday date in the window.
       const dates = [];
       for (let d = new Date(`${from}T00:00:00`); d <= new Date(`${to}T00:00:00`);
            d.setDate(d.getDate() + 1)) {
         const dow = (d.getDay() + 6) % 7;
-        const date = d.toISOString().slice(0, 10);
-        if (dow < 5 && (!filters.date || filters.date === date)) dates.push({ date, dow });
+        if (dow < 5) dates.push({ date: d.toISOString().slice(0, 10), dow });
       }
 
       const unitNames = [...new Set(census.recordset.map(c => c.Unit))].sort();
@@ -525,21 +466,14 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
         }
       }
 
-      // Projected census is attributed by unit and weekday from trailing
-      // occupancy, which carries no service dimension at all. Saying so lets
-      // the page tell the user rather than showing an unchanged tab that looks
-      // like a broken filter.
-      res.json({
-        from, to, crunchOccupancyPct: t.crunchPct, units, suggestions,
-        filters, appliedFilters: { service: false, date: true },
-      });
+      res.json({ from, to, crunchOccupancyPct: t.crunchPct, units, suggestions });
     } catch (err) {
       console.error('/api/impact/inpatient error:', err.message);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
 
-  // ── Tab 3 — Staffing ─────────────────────────────────────────────────────
+  // ── Tab 4 — Staffing ─────────────────────────────────────────────────────
   router.get('/staffing', async (req, res) => {
     try {
       const tenant = req.tenantName || 'default';
@@ -547,10 +481,9 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
       const target = num(getParam(tenant, 'block_fill_target')) || 75;
       const db = await getTenantPool(req.session.tenantId);
       const { from, to } = windowOf(req.query);
-      const filters = filtersOf(req.query);
 
       const [rows, plans, releasable] = await Promise.all([
-        dailyTotals(db, { from, to, sites: req.query.sites, bySite: true, tenant, filters }),
+        dailyTotals(db, { from, to, sites: req.query.sites, bySite: true }),
         plansBySiteDow(db),
         // Blocks on a given day that are booked below target — the time that
         // could be sold rather than given up.
@@ -558,7 +491,7 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
           const r = db.request();
           r.input('from', sql.Date, from);
           r.input('to', sql.Date, to);
-          const filter = siteFilter(r, req.query.sites) + forecastFilter(r, tenant, filters);
+          const filter = siteFilter(r, req.query.sites);
           const out = await r.query(`
             SELECT CONVERT(VARCHAR(10), CAST(Date AS DATE), 23) AS Date,
                    ISNULL(ORGRP2, 'Unknown')                    AS Site,
@@ -629,23 +562,19 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
         };
       }).filter(Boolean);
 
-      res.json({
-        from, to, blockFillTarget: target, days,
-        filters, appliedFilters: { service: true, date: true },
-      });
+      res.json({ from, to, blockFillTarget: target, days });
     } catch (err) {
       console.error('/api/impact/staffing error:', err.message);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
 
-  // ── Tab 4 — PACU & ancillary ─────────────────────────────────────────────
+  // ── Tab 5 — PACU & ancillary ─────────────────────────────────────────────
   // Bay demand, not nurse ratios. Always POTENTIAL, and the tier is a field.
   router.get('/recovery', async (req, res) => {
     try {
       const db = await getTenantPool(req.session.tenantId);
       const { from, to } = windowOf(req.query);
-      const filters = filtersOf(req.query);
 
       const [profRes, bayRes] = await Promise.all([
         db.request().query('SELECT Service, PreOpMins, Phase1Mins, Phase2Mins, BayType FROM ServiceRecoveryProfile'),
@@ -697,7 +626,6 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
         const dow = (d.getDay() + 6) % 7;
         if (dow >= 5) continue;
         const date = d.toISOString().slice(0, 10);
-        if (filters.date && filters.date !== date) continue;
         for (const [key, entry] of bySiteDow) {
           const [site, kdow] = key.split('|');
           if (Number(kdow) !== dow) continue;
@@ -706,19 +634,12 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
           const perDay = Math.max(1, entry.days);
           const sample = entry.cases.filter((_, i) => i % perDay === 0);
           days.push(R.dayDemand({
-            date, site,
-            cases: filters.service
-              ? sample.filter(c => c.service === filters.service)
-              : sample,
-            profiles, bays: bays.get(site),
+            date, site, cases: sample, profiles, bays: bays.get(site),
           }));
         }
       }
 
-      res.json({
-        from, to, tier: 'POTENTIAL', days,
-        filters, appliedFilters: { service: true, date: true },
-      });
+      res.json({ from, to, tier: 'POTENTIAL', days });
     } catch (err) {
       console.error('/api/impact/recovery error:', err.message);
       res.status(500).json({ error: 'Internal server error' });

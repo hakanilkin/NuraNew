@@ -99,11 +99,9 @@ try {
   ok('recovery is labelled POTENTIAL', recovery.includes('POTENTIAL'))
   ok('and says why it is only potential', recovery.includes('not nurse ratios'))
 
-  // ── Specialty x date matrix (VolumeImpactMatrix.md) ─────────────────────
-  // Two aligned Mon-Fri bands with a Thursday spike, which is ST-9's cause:
-  // ortho and spine concentrated on the Thursdays, so the PACU tab's Thursday
-  // peak has its source on the same screen and on the same date.
-  const matrix = {
+  // ── Tab 1 — Service Line Breakdown (ServiceLineBreakdown.md) ────────────
+  // Two aligned Mon-Fri bands, a holiday, and a Thursday cluster.
+  const breakdown = {
     dates: [
       { date: '2026-09-01', dow: 1, weekOf: '2026-08-31' },
       { date: '2026-09-02', dow: 2, weekOf: '2026-08-31' },
@@ -117,27 +115,32 @@ try {
     services: [
       { service: 'Orthopedics', byDate: [11, 6, 19, 7, 10, 5, 21, 6], total: 85 },
       { service: 'Spine', byDate: [3, 9, 5, 2, 4, 11, 4, 3], total: 41 },
-      { service: 'Other', byDate: [2, 2, 3, 2, 3, 2, 3, 2], total: 19, tail: 4 },
+      { service: 'Plastics', byDate: [2, 2, 3, 0, 3, 2, 3, 2], total: 17 },
     ],
-    totals: { byDate: [16, 17, 27, 11, 17, 18, 28, 11], window: 145 },
-    weeks: 2, capped: true, cappedAt: 4, to: '2026-09-11',
+    totals: { byDate: [16, 17, 27, 9, 17, 18, 28, 11], window: 143 },
+    weeks: 2,
   }
-  let picked = null
-  const grid = plain(renderToString(React.createElement(m.VolumeMatrix, {
-    matrix, filter: { service: null, date: null }, onFilter(f) { picked = f },
+  const grid = plain(renderToString(React.createElement(m.ServiceLineBreakdownTab, {
+    data: breakdown,
   })))
   ok('columns are actual dates, not weekday averages',
-    grid.includes('>1<') && grid.includes('>10<') && !/average/i.test(grid))
-  ok('dates are grouped into week bands with a week-commencing label',
+    grid.includes('>1<') && grid.includes('>10<')
+    && grid.includes('Actual dates, not weekday averages'))
+  ok('and each column names its own date on hover',
+    grid.includes('title="Tue Sep 1"') && grid.includes('title="Thu Sep 10"'))
+  ok('dates group into week bands with a week-commencing label',
     grid.includes('Aug 31') && grid.includes('Sep 7'))
   ok('the same weekday sits at the same position in every band',
     (grid.match(/>T</g) || []).length >= 4)
-  ok('rows carry a total column', grid.includes('>85<') && grid.includes('>41<'))
-  ok('the Total row is present and named', grid.includes('All specialties') && grid.includes('>145<'))
-  ok('the tail is summed into Other rather than dropped', grid.includes('Other'))
+  ok('every service line is named, with a row total',
+    grid.includes('Orthopedics') && grid.includes('Spine') && grid.includes('Plastics')
+    && grid.includes('>85<') && grid.includes('>41<'))
+  ok('the Total row is present and weighted',
+    grid.includes('All service lines') && grid.includes('>143<'))
   ok('holidays are muted with the reason on hover',
     grid.includes('reduced-volume day (holiday)') && grid.includes('italic'))
-  ok('a capped window says so', grid.includes('First 4 weeks of a longer window'))
+  ok('an empty cell reads as a dot, never a blank',
+    grid.includes('>·<'))
   ok('every value is printed, so the shading survives greyscale',
     ['11', '19', '21', '27'].every(v => grid.includes(`>${v}<`)))
   ok('shading is sequential single-hue, not the Budget tab diverging scale',
@@ -145,59 +148,30 @@ try {
     && !grid.includes('rgba(59,130,246'))
   ok('horizontal scroll is contained rather than on the page body',
     grid.includes('overflow-x:auto') || grid.includes('overflow-x: auto'))
-  ok('row labels and the Total column stay pinned',
+  ok('service labels and the Total column stay pinned',
     grid.includes('position:sticky') || grid.includes('position: sticky'))
-  ok('it invites the click that drives the tabs',
-    grid.includes('Click a specialty, a date or a cell to filter every tab'))
 
-  const filtered = plain(renderToString(React.createElement(m.VolumeMatrix, {
-    matrix, filter: { service: 'Orthopedics', date: '2026-09-10' }, onFilter() {},
+  // ServiceLineBreakdown.md is explicit that the previous iteration comes out.
+  ok('the grid is read-only — nothing on it filters another tab',
+    !grid.includes('<button') && !/Showing:|Clear|filter every tab/i.test(grid))
+
+  const emptyGrid = plain(renderToString(React.createElement(m.ServiceLineBreakdownTab, {
+    data: { dates: [], services: [], totals: { byDate: [], window: 0 } },
   })))
-  ok('an active filter is stated in words',
-    filtered.includes('Showing:') && filtered.includes('Orthopedics')
-    && filtered.includes('Thu Sep 10'))
-  ok('and is clearable', filtered.includes('>Clear<'))
+  ok('an empty window says so rather than drawing an empty grid',
+    emptyGrid.includes('No forecast volume in this window'))
 
-  // The header is where the matrix actually lives, and testing the grid alone
-  // leaves room for it to render perfectly and never reach the page.
-  const headerArgs = {
-    summary: { forecast: 145, booked: 100, expectedAdds: 45, variancePct: 3, matrix },
-    sites: [], site: '', onSite() {}, weeks: 4, onWeeks() {},
-    filter: { service: null, date: null }, onFilter() {},
-  }
-  const withMatrix = plain(renderToString(React.createElement(m.ContextHeader, {
-    ...headerArgs, expanded: true, onToggle() {},
-  })))
-  ok('the matrix reaches the shared header, above the tabs',
-    withMatrix.includes('All specialties') && withMatrix.includes('cases forecast'))
-  ok('and the header offers to collapse it', withMatrix.includes('Hide the volume matrix'))
-
-  const collapsed = plain(renderToString(React.createElement(m.ContextHeader, {
-    ...headerArgs, expanded: false, onToggle() {},
-  })))
-  ok('collapsed, the header falls back to the summary line',
-    !collapsed.includes('All specialties') && collapsed.includes('cases forecast')
-    && collapsed.includes('Show the volume matrix'))
-
-  // A tenant or a stale server without the matrix key loses the matrix, not the
-  // header — and says nothing about a matrix that is not there.
+  // The shared header goes back to what it was.
   const bare = plain(renderToString(React.createElement(m.ContextHeader, {
-    ...headerArgs, summary: { forecast: 145, booked: 100, expectedAdds: 45 },
-    expanded: true, onToggle() {},
+    summary: { forecast: 145, booked: 100, expectedAdds: 45, variancePct: 3 },
+    sites: [], site: '', onSite() {}, weeks: 4, onWeeks() {},
   })))
-  ok('a summary without a matrix still renders the header',
-    bare.includes('cases forecast') && !bare.includes('volume matrix'))
+  ok('the header carries only site, window and the summary line',
+    bare.includes('cases forecast') && bare.includes('All sites')
+    && bare.includes('Next 4 weeks'))
+  ok('and no matrix, filter control or collapse toggle',
+    !bare.includes('All service lines') && !/volume matrix|Showing:/i.test(bare))
 
-  // A tab that cannot honour a filter says so rather than looking broken.
-  const notice = plain(renderToString(React.createElement(m.FilterNotice, {
-    filter: { service: 'Orthopedics', date: null }, applied: { service: false, date: true },
-  })))
-  ok('a tab without a specialty dimension says the filter does not apply',
-    notice.includes('no specialty dimension') && notice.includes('Orthopedics'))
-  const silent = renderToString(React.createElement(m.FilterNotice, {
-    filter: { service: 'Orthopedics', date: null }, applied: { service: true, date: true },
-  }))
-  ok('and stays quiet where the filter does apply', silent === '')
 } finally {
   await server.close()
 }

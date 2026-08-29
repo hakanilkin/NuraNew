@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
 """
-Demo acceptance for the Volume Impact matrix (VolumeImpactMatrix.md section 6).
+Demo acceptance for the Service Line Breakdown tab (ServiceLineBreakdown.md).
 
-The matrix earns its place in the header only if it makes a cause visible. Two
-claims are checked against the generated data rather than asserted in a spec:
+Tab 1 is the forecast; tabs 2-5 are what it does to you. It earns that position
+only if it makes a cause visible. Two claims are checked against the generated
+data rather than asserted in a spec:
 
   * ST-9 — Thursday is the heaviest column in the Total row, and the services
     that drive recovery load concentrate there, so the PACU tab's Thursday peak
-    has its source on the same screen and on the same date.
+    has a source the room can see for itself.
 
-    The spec (section 6) named ortho and spine as the pair forming the stripe.
-    That is not what the data does, and it cannot be: ST-1 makes Ortho A's
-    *Thursday* block deliberately light, and Spine holds Mon/Wed/Fri. Monday is
-    the ortho-and-spine day. The Thursday stripe is Orthopedics and **Vascular**
-    — and Vascular is on Thursday precisely because that is ST-8's wrong-day
+    Both revisions of the spec asked for *ortho and spine* clustering on the
+    Thursdays. The data does not do that and cannot be made to: ST-1 makes
+    Ortho A's **Thursday** block deliberately light, and Spine holds Mon/Wed/Fri.
+    Monday is the ortho-and-spine day (70% recovery-heavy against Thursday's
+    57%). The stripe that is genuinely there is Orthopedics and **Vascular** —
+    and Vascular sits on Thursday precisely because that is ST-8's wrong-day
     finding, so two storylines reconcile on one screen. Asserted as the data
-    behaves rather than bending the seeder to a claim that contradicts ST-1.
+    behaves, rather than bending the seeder to a claim that contradicts ST-1.
   * ST-3 — Fridays are light, so they read as low columns in the Total row.
 
 Replays the route's own aggregation over V4_FORECAST_COMPILE, so it checks the
 grid the page will draw rather than a restatement of it.
 
-Run: python3 scripts/checks/volume_matrix_acceptance.py
+Run: python3 scripts/checks/service_line_breakdown_acceptance.py
 """
 
 import datetime as dt
@@ -35,7 +37,7 @@ sys.path.insert(0, os.path.join(ROOT, 'scripts', 'demo'))
 
 ANCHOR = dt.date(2026, 8, 25)
 SEED = 42
-MATRIX_WEEKS = 4
+WINDOW_WEEKS = 4      # the header's default window
 DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 # The services whose recovery profiles drive PACU load (generate_or.RECOVERY_HEAVY).
 RECOVERY_SERVICES = ('Orthopedics', 'Spine', 'Vascular', 'Colorectal')
@@ -48,9 +50,9 @@ CASE_COLS = ('SCHEDULED_INPATIENT', 'SCHEDULED_OUTPATIENT',
 
 
 def build(tables, anchor):
-    """The route's aggregation: cases by service x date, weekdays only."""
+    """The route's aggregation: cases by service line x date, weekdays only."""
     start = anchor + dt.timedelta(days=1)
-    end = start + dt.timedelta(days=MATRIX_WEEKS * 7 - 1)
+    end = start + dt.timedelta(days=WINDOW_WEEKS * 7 - 1)
     cells, dates = {}, set()
     for r in tables['V4_FORECAST_COMPILE']:
         d = r['Date']
@@ -85,7 +87,7 @@ def main():
         if svc == STRIPE_SERVICE:
             stripe_by_dow[date.weekday()] += n
 
-    print(f'\n  {len(dates)} operating days over {MATRIX_WEEKS} weeks\n')
+    print(f'\n  {len(dates)} operating days over {WINDOW_WEEKS} weeks\n')
     print(f'  {"":<6}{"total":>8}{"recovery-heavy":>16}{STRIPE_SERVICE:>10}')
     for d in range(5):
         print(f'  {DOW[d]:<6}{by_dow[d]:>8.0f}{recovery_by_dow[d]:>16.0f}'
@@ -93,8 +95,8 @@ def main():
     print()
 
     check('columns are dates, weekends omitted', len(dates),
-          len(dates) == MATRIX_WEEKS * 5 and all(x.weekday() < 5 for x in dates),
-          f'{MATRIX_WEEKS * 5} weekdays')
+          len(dates) == WINDOW_WEEKS * 5 and all(x.weekday() < 5 for x in dates),
+          f'{WINDOW_WEEKS * 5} weekdays')
 
     # Bands are aligned to Monday, so a rolling window that does not start on one
     # has a partial band at each end. That is honest, and it is what keeps the
@@ -104,8 +106,8 @@ def main():
         weeks.setdefault(date - dt.timedelta(days=date.weekday()), []).append(date)
     interior = sorted(weeks)[1:-1]
     check('week bands are Monday-aligned and contiguous', len(weeks),
-          all(len(weeks[w]) == 5 for w in interior) and len(weeks) <= MATRIX_WEEKS + 1,
-          f'<= {MATRIX_WEEKS + 1} bands, interior full')
+          all(len(weeks[w]) == 5 for w in interior) and len(weeks) <= WINDOW_WEEKS + 1,
+          f'<= {WINDOW_WEEKS + 1} bands, interior full')
 
     # ST-9: the Total row puts the PACU peak's cause on the same screen.
     heaviest = max(by_dow, key=by_dow.get)
@@ -144,11 +146,11 @@ def main():
 
     print()
     if failures:
-        print(f'  Volume matrix acceptance: {len(failures)} failure(s)\n')
+        print(f'  Service Line Breakdown acceptance: {len(failures)} failure(s)\n')
         for f in failures:
             print(f'  - {f}')
         return 1
-    print('  Volume matrix acceptance: OK')
+    print('  Service Line Breakdown acceptance: OK')
     return 0
 
 

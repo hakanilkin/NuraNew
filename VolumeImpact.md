@@ -44,7 +44,12 @@ Revisit post-demo only if a customer asks.
 
 ---
 
-## 2. Shared context — set once, applies to all four tabs
+## 2. Shared context — set once, applies to every tab
+
+> **Amended by `ServiceLineBreakdown.md`.** The page now has five tabs: the
+> forecast itself (Service Line Breakdown, first and default) and the four
+> consequences below. The shared header is site, window and the summary line —
+> nothing else.
 
 A single header row, always visible:
 
@@ -207,7 +212,7 @@ One router, `routes/impact.js`, factory-style. Tenant-scoped via
 
 ## 9. Acceptance
 
-- [ ] One header sets site and window for all four tabs; switching tabs keeps
+- [ ] One header sets site and window for every tab; switching tabs keeps
       the selection.
 - [ ] Summary line always shows booked and expected-to-book as separate figures.
 - [ ] Budget: grid readable in greyscale; both flagging thresholds applied;

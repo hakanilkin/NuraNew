@@ -15,7 +15,9 @@ import { AlertCircle, AlertTriangle, ChevronDown, ChevronRight, ArrowRight, Info
    Every figure comes from /api/impact, which computes it in the shared libs.
    Nothing here is re-derived.                                                */
 
+// Tab 1 is the forecast; tabs 2-5 are what it does to you.
 const TABS = [
+  { id: 'breakdown', label: 'Service Line Breakdown', key: 'breakdown' },
   { id: 'budget',    label: 'Budget',        key: 'budget' },
   { id: 'inpatient', label: 'Inpatient',     key: 'inpatient' },
   { id: 'staffing',  label: 'Staffing',      key: 'staffing' },
@@ -58,17 +60,18 @@ function cellStyle(pct, onPlan) {
     : { background: `rgba(59,130,246,${0.10 + mag * 0.42})`, color: '#1e3a8a' }
 }
 
-/* ─── Specialty x date matrix (VolumeImpactMatrix.md) ─────────────────────────
-   The page's premise is one forecast, four consequences, and the cause used to
-   be a single summary line. This makes it permanently visible while you move
-   between effects.
+/* ─── Tab 1 — Service Line Breakdown (ServiceLineBreakdown.md) ────────────────
+   Tab 1 is the forecast; tabs 2-5 are what it does to you.
 
    Dates, not weekday averages. PACU, pre-op, sterile processing and the units
    need "Thursday the 17th brings 58 cases, 19 of them ortho"; "Thursdays are
-   usually busy" cannot staff a specific day, which is the only thing those
+   usually busy" cannot staff Thursday the 18th, which is the only thing those
    areas do with this. The weekday pattern survives anyway — with columns in
    aligned Mon-Fri bands, a recurring Thursday cluster reads as a vertical
-   stripe down the same position in every week.                              */
+   stripe down the same position in every week.
+
+   The grid is read-only on purpose: it reports what is coming, and nothing on
+   it filters another tab.                                                   */
 
 const DOW_INITIAL = ['M', 'T', 'W', 'T', 'F']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -88,7 +91,7 @@ const longDate = (iso, dow) => `${['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][dow] ?? ''
    diverging forecast-vs-budget scale, and two grids on one page reading as the
    same thing would be worse than no matrix at all — so this one carries no
    good/bad valence, and the value is always printed so it survives greyscale. */
-function matrixCellStyle(value, peak) {
+function breakdownCellStyle(value, peak) {
   if (!value) return { background: 'transparent', color: 'var(--color-gray-300)' }
   const mag = peak > 0 ? Math.min(1, value / peak) : 0
   return {
@@ -104,35 +107,45 @@ const MTD = { padding: '4px 6px', fontSize: 12, textAlign: 'center',
 const STICKY_L = { position: 'sticky', left: 0, zIndex: 2, background: 'var(--surface-card)' }
 const STICKY_R = { position: 'sticky', right: 0, zIndex: 2, background: 'var(--surface-card)' }
 
-export function VolumeMatrix({ matrix, filter, onFilter }) {
-  if (!matrix?.dates?.length) {
+export function ServiceLineBreakdownTab({ data }) {
+  if (!data) return null
+  if (!data.dates?.length) {
     return (
-      <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', margin: 0 }}>
+      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-400)' }}>
         No forecast volume in this window.
       </p>
     )
   }
-  const { dates, services, totals } = matrix
+  const { dates, services, totals } = data
 
-  // Week bands, so the same weekday sits at the same position in every band.
+  // Week bands, so the same weekday sits at the same position in every band and
+  // a recurring cluster reads as a vertical stripe rather than needing an average.
   const bands = []
   for (const [i, d] of dates.entries()) {
     const last = bands[bands.length - 1]
     if (last && last.weekOf === d.weekOf) last.count += 1
     else bands.push({ weekOf: d.weekOf, count: 1, first: i })
   }
+  const bandStarts = new Set(bands.map(b => b.first).filter(i => i !== 0))
 
   const peak = Math.max(1, ...services.flatMap(s => s.byDate))
   const totalPeak = Math.max(1, ...totals.byDate)
-  const selService = filter?.service ?? null
-  const selDate = filter?.date ?? null
-  const isSel = (svc, date) =>
-    (selService && selService === svc) || (selDate && selDate === date)
+  const bandEdge = i => (bandStarts.has(i) ? '2px solid var(--surface-border)' : 'none')
 
   return (
-    <div>
-      <div style={{ overflowX: 'auto', border: '1px solid var(--surface-border)',
-                    borderRadius: 'var(--radius-md)' }}>
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">Forecast cases by service line and date</div>
+          <div className="card-subtitle">
+            Actual dates, not weekday averages — {fmt0(totals.window)} cases across{' '}
+            {dates.length} operating days. The Total row is what PACU, pre-op and the
+            units plan against.
+          </div>
+        </div>
+      </div>
+
+      <div style={{ overflowX: 'auto', margin: '0 16px 16px' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>
             <tr>
@@ -147,98 +160,63 @@ export function VolumeMatrix({ matrix, filter, onFilter }) {
               <th style={{ ...MTH, ...STICKY_R }} />
             </tr>
             <tr>
-              <th style={{ ...MTH, ...STICKY_L, textAlign: 'left', paddingRight: 14 }}>Specialty</th>
-              {dates.map((d, i) => {
-                const bandStart = bands.some(b => b.first === i && b.first !== 0)
-                return (
-                  <th key={d.date} style={{ ...MTH, padding: 0,
-                        borderLeft: bandStart ? '2px solid var(--surface-border)' : 'none' }}>
-                    <button type="button"
-                      onClick={() => onFilter({ service: selService, date: selDate === d.date ? null : d.date })}
-                      title={d.holiday
-                        ? `${longDate(d.date, d.dow)} — reduced-volume day (holiday)`
-                        : `Filter every tab to ${longDate(d.date, d.dow)}`}
-                      style={{ width: '100%', border: 'none', cursor: 'pointer', padding: '4px 6px',
-                               background: selDate === d.date ? 'var(--color-blue)' : 'transparent',
-                               color: selDate === d.date ? '#fff'
-                                 : d.holiday ? 'var(--color-gray-300)' : 'var(--color-gray-500)',
-                               fontSize: 11, fontWeight: 600, lineHeight: 1.15,
-                               fontStyle: d.holiday ? 'italic' : 'normal' }}>
-                      <div>{DOW_INITIAL[d.dow]}</div>
-                      <div style={{ fontVariantNumeric: 'tabular-nums' }}>{dayNum(d.date)}</div>
-                    </button>
-                  </th>
-                )
-              })}
+              <th style={{ ...MTH, ...STICKY_L, textAlign: 'left', paddingRight: 14 }}>
+                Service line
+              </th>
+              {dates.map((d, i) => (
+                <th key={d.date}
+                    title={d.holiday
+                      ? `${longDate(d.date, d.dow)} — reduced-volume day (holiday)`
+                      : longDate(d.date, d.dow)}
+                    style={{ ...MTH, borderLeft: bandEdge(i), lineHeight: 1.15,
+                             color: d.holiday ? 'var(--color-gray-300)' : 'var(--color-gray-500)',
+                             fontStyle: d.holiday ? 'italic' : 'normal' }}>
+                  <div>{DOW_INITIAL[d.dow]}</div>
+                  <div style={{ fontVariantNumeric: 'tabular-nums' }}>{dayNum(d.date)}</div>
+                </th>
+              ))}
               <th style={{ ...MTH, ...STICKY_R, textAlign: 'right', paddingLeft: 12 }}>Total</th>
             </tr>
           </thead>
           <tbody>
             {services.map(s => (
               <tr key={s.service}>
-                <th scope="row" style={{ ...MTD, ...STICKY_L, textAlign: 'left', padding: 0 }}>
-                  <button type="button"
-                    onClick={() => onFilter({ service: selService === s.service ? null : s.service, date: selDate })}
-                    title={s.tail
-                      ? `${s.tail} smaller services`
-                      : `Filter every tab to ${s.service}`}
-                    disabled={Boolean(s.tail)}
-                    style={{ width: '100%', textAlign: 'left', border: 'none', padding: '4px 14px 4px 6px',
-                             background: selService === s.service ? 'var(--color-blue)' : 'transparent',
-                             color: selService === s.service ? '#fff' : 'var(--color-gray-700)',
-                             cursor: s.tail ? 'default' : 'pointer',
-                             fontSize: 12, fontWeight: selService === s.service ? 700 : 500,
-                             whiteSpace: 'nowrap' }}>
-                    {s.service}
-                  </button>
+                <th scope="row" style={{ ...MTD, ...STICKY_L, textAlign: 'left',
+                          fontWeight: 500, whiteSpace: 'nowrap', paddingRight: 14 }}>
+                  {s.service}
                 </th>
-                {s.byDate.map((v, i) => {
-                  const d = dates[i]
-                  const bandStart = bands.some(b => b.first === i && b.first !== 0)
-                  return (
-                    <td key={d.date} style={{ ...MTD, padding: 0,
-                          borderLeft: bandStart ? '2px solid var(--surface-border)' : 'none' }}>
-                      <button type="button"
-                        onClick={() => onFilter({ service: s.tail ? null : s.service, date: d.date })}
-                        title={`${s.service} · ${longDate(d.date, d.dow)}: ${v} cases`}
-                        style={{ width: '100%', border: 'none', cursor: 'pointer', padding: '4px 6px',
-                                 fontSize: 12, fontVariantNumeric: 'tabular-nums',
-                                 outline: isSel(s.service, d.date) ? '2px solid var(--color-blue)' : 'none',
-                                 outlineOffset: -2,
-                                 opacity: d.holiday ? 0.55 : 1,
-                                 ...matrixCellStyle(v, peak) }}>
-                        {v || '·'}
-                      </button>
-                    </td>
-                  )
-                })}
+                {s.byDate.map((v, i) => (
+                  <td key={dates[i].date}
+                      title={`${s.service} · ${longDate(dates[i].date, dates[i].dow)}: ${v} cases`}
+                      style={{ ...MTD, borderLeft: bandEdge(i),
+                               opacity: dates[i].holiday ? 0.55 : 1,
+                               ...breakdownCellStyle(v, peak) }}>
+                    {v || '·'}
+                  </td>
+                ))}
                 <td style={{ ...MTD, ...STICKY_R, textAlign: 'right', fontWeight: 600,
                              paddingLeft: 12 }}>{s.total}</td>
               </tr>
             ))}
-            {/* Daily case load is what PACU, pre-op and the units plan against,
-                so the Total row carries the weight on this grid. */}
+            {/* Daily case load is what the downstream areas plan against, so the
+                Total row carries the weight on this grid. */}
             <tr>
               <th scope="row" style={{ ...MTD, ...STICKY_L, textAlign: 'left', fontWeight: 700,
-                        color: 'var(--color-gray-900)', padding: '6px',
+                        color: 'var(--color-gray-900)', whiteSpace: 'nowrap',
                         borderTop: '2px solid var(--color-border-secondary)' }}>
-                All specialties
+                All service lines
               </th>
-              {totals.byDate.map((v, i) => {
-                const d = dates[i]
-                const bandStart = bands.some(b => b.first === i && b.first !== 0)
-                return (
-                  <td key={d.date}
-                      title={`${longDate(d.date, d.dow)}: ${v} cases`}
-                      style={{ ...MTD, fontWeight: 700, padding: '6px',
-                               borderTop: '2px solid var(--color-border-secondary)',
-                               borderLeft: bandStart ? '2px solid var(--surface-border)' : 'none',
-                               opacity: d.holiday ? 0.55 : 1,
-                               ...matrixCellStyle(v, totalPeak) }}>
-                    {v}
-                  </td>
-                )
-              })}
+              {totals.byDate.map((v, i) => (
+                <td key={dates[i].date}
+                    title={`${longDate(dates[i].date, dates[i].dow)}: ${v} cases`}
+                    style={{ ...MTD, fontWeight: 700,
+                             borderTop: '2px solid var(--color-border-secondary)',
+                             borderLeft: bandEdge(i),
+                             opacity: dates[i].holiday ? 0.55 : 1,
+                             ...breakdownCellStyle(v, totalPeak) }}>
+                  {v}
+                </td>
+              ))}
               <td style={{ ...MTD, ...STICKY_R, textAlign: 'right', fontWeight: 800,
                            color: 'var(--color-gray-900)', paddingLeft: 12,
                            borderTop: '2px solid var(--color-border-secondary)' }}>
@@ -248,35 +226,6 @@ export function VolumeMatrix({ matrix, filter, onFilter }) {
           </tbody>
         </table>
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-                    marginTop: 8, fontSize: 'var(--font-size-xs)' }}>
-        {(selService || selDate) ? (
-          <>
-            <span style={{ color: 'var(--color-gray-700)' }}>
-              <strong>Showing:</strong>{' '}
-              {[selService, selDate && longDate(selDate,
-                dates.find(d => d.date === selDate)?.dow ?? 0)].filter(Boolean).join(' · ')}
-            </span>
-            <button type="button" onClick={() => onFilter({ service: null, date: null })}
-              style={{ border: '1px solid var(--color-border-secondary)', background: 'none',
-                       borderRadius: 'var(--radius-md)', padding: '2px 9px', cursor: 'pointer',
-                       fontSize: 'var(--font-size-xs)', fontWeight: 600,
-                       color: 'var(--color-gray-600)' }}>
-              Clear
-            </button>
-          </>
-        ) : (
-          <span style={{ color: 'var(--color-gray-400)' }}>
-            Click a specialty, a date or a cell to filter every tab.
-          </span>
-        )}
-        {matrix.capped && (
-          <span style={{ marginLeft: 'auto', color: 'var(--color-gray-400)' }}>
-            First {matrix.cappedAt} weeks of a longer window.
-          </span>
-        )}
-      </div>
     </div>
   )
 }
@@ -285,9 +234,7 @@ export function VolumeMatrix({ matrix, filter, onFilter }) {
    schedule is only partly filled, and a tool reading the booked schedule alone
    systematically under-counts. Showing both is the answer to "why isn't this
    the EMR's own report?" */
-export function ContextHeader({ summary, sites, site, onSite, weeks, onWeeks,
-                               filter, onFilter, expanded, onToggle }) {
-  const matrix = summary?.matrix
+export function ContextHeader({ summary, sites, site, onSite, weeks, onWeeks }) {
   return (
     <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-lg)',
                   background: 'var(--surface-card)', padding: '12px 16px', marginBottom: 'var(--space-4)' }}>
@@ -299,16 +246,6 @@ export function ContextHeader({ summary, sites, site, onSite, weeks, onWeeks,
         <select className="form-input" value={weeks} onChange={e => onWeeks(Number(e.target.value))}>
           {[2, 4, 6].map(w => <option key={w} value={w}>Next {w} weeks</option>)}
         </select>
-        {matrix && onToggle && (
-          <button type="button" onClick={onToggle} aria-expanded={expanded}
-            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4,
-                     border: 'none', background: 'none', cursor: 'pointer',
-                     fontSize: 'var(--font-size-xs)', fontWeight: 600,
-                     color: 'var(--color-gray-500)' }}>
-            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            {expanded ? 'Hide the volume matrix' : 'Show the volume matrix'}
-          </button>
-        )}
       </div>
       {summary && (
         <div style={{ fontSize: 'var(--font-size-base)', color: 'var(--color-gray-800)' }}>
@@ -322,13 +259,6 @@ export function ContextHeader({ summary, sites, site, onSite, weeks, onWeeks,
               {signedPct(summary.variancePct)} vs budget
             </span>
           )}
-        </div>
-      )}
-      {/* Collapsed the matrix cannot do its job, so it is expanded by default
-          and the header falls back to the summary line above when it is not. */}
-      {matrix && expanded && (
-        <div style={{ marginTop: 12 }}>
-          <VolumeMatrix matrix={matrix} filter={filter} onFilter={onFilter} />
         </div>
       )}
     </div>
@@ -467,31 +397,11 @@ export function BudgetTab({ data, mix, onExpand }) {
   )
 }
 
-/* Some filters a tab genuinely cannot honour. Saying so beats rendering an
-   unchanged tab, which reads as a broken filter. */
-export function FilterNotice({ filter, applied }) {
-  if (!filter?.service || applied?.service !== false) return null
-  return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 'var(--space-3)',
-                  padding: '8px 12px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--surface-bg)', border: '1px solid var(--surface-border)',
-                  fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)' }}>
-      <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-      <span>
-        Projected census is attributed by unit and weekday from trailing occupancy,
-        which carries no specialty dimension — so the <strong>{filter.service}</strong>{' '}
-        filter does not apply here. The date filter does.
-      </span>
-    </div>
-  )
-}
-
-export function InpatientTab({ data, filter }) {
+export function InpatientTab({ data }) {
   if (!data) return null
   const dates = data.units[0]?.days ?? []
   return (
     <>
-      <FilterNotice filter={filter} applied={data.appliedFilters} />
       {data.suggestions?.length > 0 && (
         <div style={{ display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 'var(--space-4)',
                       borderRadius: 'var(--radius-lg)', background: 'rgba(99,102,241,0.08)',
@@ -699,6 +609,7 @@ export default function VolumeImpact() {
   const [site, setSite] = useState('')
   const [weeks, setWeeks] = useState(4)
   const [summary, setSummary] = useState(null)
+  const [breakdown, setBreakdown] = useState(null)
   const [budget, setBudget] = useState(null)
   const [inpatient, setInpatient] = useState(null)
   const [staffing, setStaffing] = useState(null)
@@ -706,19 +617,6 @@ export default function VolumeImpact() {
   const [mix, setMix] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
-  // The matrix drives the tabs, so the filter lives here rather than inside it:
-  // one selection, four consequences, and it survives switching between them.
-  const [filter, setFilter] = useState({ service: null, date: null })
-  const [matrixOpen, setMatrixOpen] = useState(() => {
-    try { return window.localStorage.getItem('impact.matrix') !== 'closed' } catch { return true }
-  })
-
-  const toggleMatrix = useCallback(() => {
-    setMatrixOpen(v => {
-      try { window.localStorage.setItem('impact.matrix', v ? 'closed' : 'open') } catch { /* private mode */ }
-      return !v
-    })
-  }, [])
 
   const shown = TABS.filter(t => !available || available[t.key])
   const active = shown.some(t => t.id === tabParam) ? tabParam : (shown[0]?.id ?? 'budget')
@@ -733,10 +631,8 @@ export default function VolumeImpact() {
     const from = new Date(today.getTime() + 86400000).toISOString().slice(0, 10)
     const to = new Date(today.getTime() + weeks * 7 * 86400000).toISOString().slice(0, 10)
     const s = site ? `&sites=${encodeURIComponent(site)}` : ''
-    const f = (filter.service ? `&service=${encodeURIComponent(filter.service)}` : '')
-            + (filter.date ? `&date=${encodeURIComponent(filter.date)}` : '')
-    return `from=${from}&to=${to}${s}${f}`
-  }, [weeks, site, filter])
+    return `from=${from}&to=${to}${s}`
+  }, [weeks, site])
 
   // One selection, four consequences: the tabs never disagree about which
   // forecast they are describing.
@@ -745,14 +641,16 @@ export default function VolumeImpact() {
     const q = range()
     Promise.all([
       fetch(`/api/impact/summary?${q}`).then(readJson),
+      fetch(`/api/impact/breakdown?${q}`).then(readJson).catch(() => null),
       fetch(`/api/impact/budget?${q}&bySite=true`).then(readJson),
       fetch(`/api/impact/inpatient?${q}`).then(readJson).catch(() => null),
       fetch(`/api/impact/staffing?${q}`).then(readJson).catch(() => null),
       fetch(`/api/impact/recovery?${q}`).then(readJson).catch(() => null),
     ])
-      .then(([s, b, i, st, r]) => {
+      .then(([s, bd, b, i, st, r]) => {
         if (s?.error) throw new Error(s.error)
-        setSummary(s); setBudget(b); setInpatient(i); setStaffing(st); setRecovery(r)
+        setSummary(s); setBreakdown(bd?.error ? null : bd)
+        setBudget(b); setInpatient(i); setStaffing(st); setRecovery(r)
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -777,8 +675,6 @@ export default function VolumeImpact() {
       <ContextHeader
         summary={summary} sites={sites} site={site} onSite={setSite}
         weeks={weeks} onWeeks={setWeeks}
-        filter={filter} onFilter={setFilter}
-        expanded={matrixOpen} onToggle={toggleMatrix}
       />
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '2px solid var(--surface-border)' }}>
@@ -808,8 +704,9 @@ export default function VolumeImpact() {
 
       {!error && !loading && (
         <>
+          {active === 'breakdown' && <ServiceLineBreakdownTab data={breakdown} />}
           {active === 'budget'    && <BudgetTab data={budget} mix={mix} onExpand={loadMix} />}
-          {active === 'inpatient' && <InpatientTab data={inpatient} filter={filter} />}
+          {active === 'inpatient' && <InpatientTab data={inpatient} />}
           {active === 'staffing'  && <StaffingTab data={staffing} />}
           {active === 'recovery'  && <RecoveryTab data={recovery} />}
         </>
