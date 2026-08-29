@@ -91,21 +91,42 @@ const longDate = (iso, dow) => `${['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][dow] ?? ''
    diverging forecast-vs-budget scale, and two grids on one page reading as the
    same thing would be worse than no matrix at all — so this one carries no
    good/bad valence, and the value is always printed so it survives greyscale. */
-function breakdownCellStyle(value, peak) {
-  if (!value) return { background: 'transparent', color: 'var(--color-gray-300)' }
-  const mag = peak > 0 ? Math.min(1, value / peak) : 0
-  return {
-    background: `rgba(71, 85, 105, ${0.06 + mag * 0.40})`,
-    color: mag > 0.62 ? '#f8fafc' : 'var(--color-gray-800)',
-  }
+/* Magnitude rides the numeral, not a fill behind it. Two hundred shaded boxes
+   competing with two hundred numbers is a grid you decode rather than read; five
+   steps of ink depth carry the same ordering quietly, and leave the cells free.
+
+   Thresholds are fractions of the window's peak rather than absolutes, so the
+   ramp spans whatever scale a tenant's data happens to have. The fractions are
+   the mock's own (3/6/10/15 against a peak of 22). */
+const INK_STEPS = [
+  { at: 0.14, color: 'var(--color-gray-400)', weight: 400 },
+  { at: 0.27, color: 'var(--color-gray-500)', weight: 400 },
+  { at: 0.45, color: 'var(--color-gray-700)', weight: 500 },
+  { at: 0.68, color: 'var(--color-gray-900)', weight: 600 },
+  { at: Infinity, color: 'var(--color-gray-900)', weight: 700 },
+]
+
+/* A zero is not information worth ink. Kept in the DOM so the column keeps its
+   width and a screen reader still reads the cell, but invisible, so the
+   occupied cells are what form the pattern. */
+function inkStep(value, peak) {
+  if (!value) return { color: 'transparent', fontWeight: 400 }
+  const s = INK_STEPS.find(x => value <= x.at * peak) ?? INK_STEPS[INK_STEPS.length - 1]
+  return { color: s.color, fontWeight: s.weight }
 }
 
-const MTH = { padding: '4px 6px', fontSize: 11, fontWeight: 600, textAlign: 'center',
-              color: 'var(--color-gray-500)', whiteSpace: 'nowrap' }
-const MTD = { padding: '4px 6px', fontSize: 12, textAlign: 'center',
-              fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
+const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+const MTH = { padding: '0 0 8px', fontSize: 11, fontWeight: 500, textAlign: 'center',
+              fontFamily: MONO, color: 'var(--color-gray-500)', whiteSpace: 'nowrap',
+              lineHeight: 1.25 }
+const MTD = { padding: 0, height: 29, textAlign: 'center', fontFamily: MONO,
+              fontSize: 12.5, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
 const STICKY_L = { position: 'sticky', left: 0, zIndex: 2, background: 'var(--surface-card)' }
 const STICKY_R = { position: 'sticky', right: 0, zIndex: 2, background: 'var(--surface-card)' }
+const BAND_LABEL = { fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: '.11em',
+                     textTransform: 'uppercase', color: 'var(--color-gray-400)',
+                     textAlign: 'left', padding: '0 0 5px 4px' }
+const GAP = { width: 14 }
 
 export function ServiceLineBreakdownTab({ data }) {
   if (!data) return null
@@ -118,113 +139,165 @@ export function ServiceLineBreakdownTab({ data }) {
   }
   const { dates, services, totals } = data
 
-  // Week bands, so the same weekday sits at the same position in every band and
-  // a recurring cluster reads as a vertical stripe rather than needing an average.
+  // Weeks are grouped by air rather than by rules: a gap column between bands
+  // instead of a vertical line, so the Thursday stripe reads down the page
+  // without four more marks competing with it.
   const bands = []
   for (const [i, d] of dates.entries()) {
     const last = bands[bands.length - 1]
-    if (last && last.weekOf === d.weekOf) last.count += 1
-    else bands.push({ weekOf: d.weekOf, count: 1, first: i })
+    if (last && last.weekOf === d.weekOf) last.days.push(i)
+    else bands.push({ weekOf: d.weekOf, days: [i] })
   }
-  const bandStarts = new Set(bands.map(b => b.first).filter(i => i !== 0))
 
   const peak = Math.max(1, ...services.flatMap(s => s.byDate))
-  const totalPeak = Math.max(1, ...totals.byDate)
-  const bandEdge = i => (bandStarts.has(i) ? '2px solid var(--surface-border)' : 'none')
+  const maxTotal = Math.max(1, ...totals.byDate)
+  const peakDay = totals.byDate.indexOf(maxTotal)
+  const cols = 2 + dates.length + (bands.length - 1) + 1
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <div>
-          <div className="card-title">Forecast cases by service line and date</div>
-          <div className="card-subtitle">
-            Actual dates, not weekday averages — {fmt0(totals.window)} cases across{' '}
-            {dates.length} operating days. The Total row is what PACU, pre-op and the
-            units plan against.
-          </div>
-        </div>
-      </div>
-
-      <div style={{ overflowX: 'auto', margin: '0 16px 16px' }}>
-        <table style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
+    <div className="card" style={{ padding: '22px 26px 26px' }}>
+      <style>{`.slb tbody tr:hover td, .slb tbody tr:hover th {
+        background: var(--color-gray-100, #f1f5f9);
+      }`}</style>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="slb" style={{ borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
           <thead>
+            {/* Week bands */}
             <tr>
-              <th style={{ ...MTH, ...STICKY_L, textAlign: 'left' }} />
+              <th style={{ ...STICKY_L, padding: 0 }} />
+              <th style={GAP} />
               {bands.map((b, i) => (
-                <th key={b.weekOf} colSpan={b.count}
-                    style={{ ...MTH, borderLeft: i ? '2px solid var(--surface-border)' : 'none',
-                             borderBottom: '1px solid var(--surface-border)' }}>
-                  {shortDate(b.weekOf)}
-                </th>
+                <Fragment key={b.weekOf}>
+                  <th colSpan={b.days.length} style={BAND_LABEL}>{shortDate(b.weekOf)}</th>
+                  {i < bands.length - 1 && <th style={GAP} />}
+                </Fragment>
               ))}
-              <th style={{ ...MTH, ...STICKY_R }} />
+              <th style={{ ...STICKY_R, padding: 0 }} />
             </tr>
+            {/* Dates */}
             <tr>
-              <th style={{ ...MTH, ...STICKY_L, textAlign: 'left', paddingRight: 14 }}>
-                Service line
-              </th>
-              {dates.map((d, i) => (
-                <th key={d.date}
-                    title={d.holiday
-                      ? `${longDate(d.date, d.dow)} — reduced-volume day (holiday)`
-                      : longDate(d.date, d.dow)}
-                    style={{ ...MTH, borderLeft: bandEdge(i), lineHeight: 1.15,
-                             color: d.holiday ? 'var(--color-gray-300)' : 'var(--color-gray-500)',
-                             fontStyle: d.holiday ? 'italic' : 'normal' }}>
-                  <div>{DOW_INITIAL[d.dow]}</div>
-                  <div style={{ fontVariantNumeric: 'tabular-nums' }}>{dayNum(d.date)}</div>
-                </th>
+              <th style={{ ...STICKY_L, padding: 0 }} />
+              <th style={GAP} />
+              {bands.map((b, i) => (
+                <Fragment key={b.weekOf}>
+                  {b.days.map(j => {
+                    const d = dates[j]
+                    return (
+                      <th key={d.date} scope="col"
+                          title={d.holiday
+                            ? `${longDate(d.date, d.dow)} — reduced-volume day (holiday)`
+                            : longDate(d.date, d.dow)}
+                          style={{ ...MTH, width: 40,
+                                   color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-500)' }}>
+                        {DOW_INITIAL[d.dow]}
+                        <span style={{ display: 'block', fontSize: 12.5,
+                                       fontWeight: d.holiday ? 500 : 600,
+                                       color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-700)' }}>
+                          {dayNum(d.date)}
+                        </span>
+                      </th>
+                    )
+                  })}
+                  {i < bands.length - 1 && <th style={GAP} />}
+                </Fragment>
               ))}
-              <th style={{ ...MTH, ...STICKY_R, textAlign: 'right', paddingLeft: 12 }}>Total</th>
+              <th style={{ ...STICKY_R, ...BAND_LABEL, textAlign: 'right',
+                           paddingLeft: 20, paddingBottom: 8 }}>Total</th>
             </tr>
+            {/* Daily totals as a bar strip. This was a row of numbers at the
+                bottom of the grid; as the shape of the month at the top it is
+                read first, which is what "most important line" should mean. */}
+            <tr>
+              <th scope="row" style={{ ...STICKY_L, ...BAND_LABEL, textAlign: 'right',
+                        color: 'var(--color-gray-500)', verticalAlign: 'bottom',
+                        padding: '0 14px 22px 0', whiteSpace: 'nowrap' }}>
+                Cases<br />per day
+              </th>
+              <td style={GAP} />
+              {bands.map((b, i) => (
+                <Fragment key={b.weekOf}>
+                  {b.days.map(j => {
+                    const v = totals.byDate[j]
+                    const hol = dates[j].holiday
+                    const hi = j === peakDay
+                    return (
+                      <td key={dates[j].date}
+                          title={`${longDate(dates[j].date, dates[j].dow)}: ${v} cases`}
+                          style={{ verticalAlign: 'bottom', height: 56, paddingBottom: 3 }}>
+                        <div style={{ margin: '0 auto', width: 17, borderRadius: '3px 3px 0 0',
+                                      height: Math.round((v / maxTotal) * 44),
+                                      background: hol ? 'var(--color-gray-300)' : 'var(--color-blue)',
+                                      opacity: hol ? 1 : (hi ? 1 : 0.55) }} />
+                        <span style={{ display: 'block', textAlign: 'center', fontFamily: MONO,
+                                       fontSize: 11.5, paddingTop: 4,
+                                       fontWeight: hol ? 400 : 600,
+                                       color: hol ? 'var(--color-gray-400)'
+                                         : hi ? 'var(--color-blue)' : 'var(--color-gray-700)' }}>
+                          {v}
+                        </span>
+                      </td>
+                    )
+                  })}
+                  {i < bands.length - 1 && <td style={GAP} />}
+                </Fragment>
+              ))}
+              <td style={{ ...STICKY_R, textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
+                           fontWeight: 700, color: 'var(--color-gray-900)', paddingLeft: 20,
+                           verticalAlign: 'bottom', paddingBottom: 22 }}>
+                {totals.window}
+              </td>
+            </tr>
+            <tr><td colSpan={cols} style={{ padding: 0, height: 1,
+                    borderBottom: '1px solid var(--color-border-secondary)' }} /></tr>
           </thead>
           <tbody>
             {services.map(s => (
               <tr key={s.service}>
-                <th scope="row" style={{ ...MTD, ...STICKY_L, textAlign: 'left',
-                          fontWeight: 500, whiteSpace: 'nowrap', paddingRight: 14 }}>
+                <th scope="row" style={{ ...STICKY_L, textAlign: 'left', fontSize: 13.5,
+                          fontWeight: 500, color: 'var(--color-gray-700)', height: 29,
+                          whiteSpace: 'nowrap', padding: '0 14px 0 0' }}>
                   {s.service}
                 </th>
-                {s.byDate.map((v, i) => (
-                  <td key={dates[i].date}
-                      title={`${s.service} · ${longDate(dates[i].date, dates[i].dow)}: ${v} cases`}
-                      style={{ ...MTD, borderLeft: bandEdge(i),
-                               opacity: dates[i].holiday ? 0.55 : 1,
-                               ...breakdownCellStyle(v, peak) }}>
-                    {v || '·'}
-                  </td>
+                <td style={GAP} />
+                {bands.map((b, i) => (
+                  <Fragment key={b.weekOf}>
+                    {b.days.map(j => {
+                      const v = s.byDate[j]
+                      return (
+                        <td key={dates[j].date}
+                            title={`${s.service} · ${longDate(dates[j].date, dates[j].dow)}: ${v} cases`}
+                            style={{ ...MTD, opacity: dates[j].holiday ? 0.42 : 1,
+                                     ...inkStep(v, peak) }}>
+                          {v}
+                        </td>
+                      )
+                    })}
+                    {i < bands.length - 1 && <td style={GAP} />}
+                  </Fragment>
                 ))}
-                <td style={{ ...MTD, ...STICKY_R, textAlign: 'right', fontWeight: 600,
-                             paddingLeft: 12 }}>{s.total}</td>
+                <td style={{ ...STICKY_R, textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
+                             fontWeight: 600, color: 'var(--color-gray-900)', paddingLeft: 20,
+                             width: 52 }}>
+                  {s.total}
+                </td>
               </tr>
             ))}
-            {/* Daily case load is what the downstream areas plan against, so the
-                Total row carries the weight on this grid. */}
-            <tr>
-              <th scope="row" style={{ ...MTD, ...STICKY_L, textAlign: 'left', fontWeight: 700,
-                        color: 'var(--color-gray-900)', whiteSpace: 'nowrap',
-                        borderTop: '2px solid var(--color-border-secondary)' }}>
-                All service lines
-              </th>
-              {totals.byDate.map((v, i) => (
-                <td key={dates[i].date}
-                    title={`${longDate(dates[i].date, dates[i].dow)}: ${v} cases`}
-                    style={{ ...MTD, fontWeight: 700,
-                             borderTop: '2px solid var(--color-border-secondary)',
-                             borderLeft: bandEdge(i),
-                             opacity: dates[i].holiday ? 0.55 : 1,
-                             ...breakdownCellStyle(v, totalPeak) }}>
-                  {v}
-                </td>
-              ))}
-              <td style={{ ...MTD, ...STICKY_R, textAlign: 'right', fontWeight: 800,
-                           color: 'var(--color-gray-900)', paddingLeft: 12,
-                           borderTop: '2px solid var(--color-border-secondary)' }}>
-                {totals.window}
-              </td>
-            </tr>
           </tbody>
         </table>
+      </div>
+
+      <div style={{ marginTop: 16, display: 'flex', gap: 20, alignItems: 'center',
+                    flexWrap: 'wrap', fontSize: 12, color: 'var(--color-gray-500)' }}>
+        <span style={{ display: 'flex', alignItems: 'baseline', gap: 6, fontFamily: MONO }}>
+          Fewer
+          {INK_STEPS.map((s, i) => {
+            const v = Math.max(1, Math.round((i === INK_STEPS.length - 1 ? 1 : s.at) * peak))
+            return <span key={s.at} style={{ fontSize: 12, ...inkStep(v, peak) }}>{v}</span>
+          })}
+          More cases
+        </span>
+        <span>Bars: total cases that day</span>
+        <span style={{ opacity: 0.5 }}>Muted column: holiday</span>
       </div>
     </div>
   )
@@ -234,30 +307,47 @@ export function ServiceLineBreakdownTab({ data }) {
    schedule is only partly filled, and a tool reading the booked schedule alone
    systematically under-counts. Showing both is the answer to "why isn't this
    the EMR's own report?" */
+/* One header, not two stacked bars. The page title carries the selectors on its
+   own row and the summary sits directly beneath, so the chrome above the tabs is
+   about half what it was and the grid starts higher up the page.
+
+   The two-component split is never collapsed: four weeks out an elective
+   schedule is only partly filled, and a tool reading the booked schedule alone
+   systematically under-counts. Showing both is the answer to "why isn't this
+   the EMR's own report?" */
 export function ContextHeader({ summary, sites, site, onSite, weeks, onWeeks }) {
   return (
-    <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-lg)',
-                  background: 'var(--surface-card)', padding: '12px 16px', marginBottom: 'var(--space-4)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
-        <select className="form-input" value={site} onChange={e => onSite(e.target.value)}>
-          <option value="">All sites</option>
-          {sites.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <select className="form-input" value={weeks} onChange={e => onWeeks(Number(e.target.value))}>
-          {[2, 4, 6].map(w => <option key={w} value={w}>Next {w} weeks</option>)}
-        </select>
+    <div style={{ marginBottom: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <h1 className="page-title" style={{ margin: 0 }}>Volume Impact</h1>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <select className="form-input" value={site} onChange={e => onSite(e.target.value)}>
+            <option value="">All sites</option>
+            {sites.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select className="form-input" value={weeks} onChange={e => onWeeks(Number(e.target.value))}>
+            {[2, 4, 6].map(w => <option key={w} value={w}>Next {w} weeks</option>)}
+          </select>
+        </div>
       </div>
       {summary && (
-        <div style={{ fontSize: 'var(--font-size-base)', color: 'var(--color-gray-800)' }}>
-          <strong style={{ fontSize: 'var(--font-size-lg)' }}>{fmt0(summary.forecast)} cases forecast</strong>
-          <span style={{ color: 'var(--color-gray-500)' }}>
-            {' '}— {fmt0(summary.booked)} booked + ~{fmt0(summary.expectedAdds)} expected to book
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 10,
+                      flexWrap: 'wrap', fontSize: 'var(--font-size-sm)',
+                      color: 'var(--color-gray-500)' }}>
+          <span style={{ color: 'var(--color-gray-800)' }}>
+            <strong style={{ fontSize: 'var(--font-size-lg)' }}>{fmt0(summary.forecast)} cases</strong>
+            {' '}forecast
           </span>
+          <span>·</span>
+          <span>{fmt0(summary.booked)} booked + ~{fmt0(summary.expectedAdds)} expected to book</span>
           {summary.variancePct != null && (
-            <span style={{ marginLeft: 10, fontWeight: 700,
-                           color: summary.variancePct > 0 ? '#b91c1c' : '#1d4ed8' }}>
-              {signedPct(summary.variancePct)} vs budget
-            </span>
+            <>
+              <span>·</span>
+              <span style={{ fontWeight: 700,
+                             color: summary.variancePct > 0 ? '#b91c1c' : '#1d4ed8' }}>
+                {signedPct(summary.variancePct)} vs budget
+              </span>
+            </>
           )}
         </div>
       )}
@@ -664,14 +754,6 @@ export default function VolumeImpact() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Volume Impact</h1>
-        <p className="page-subtitle">
-          What the volume coming at us does to the rest of the operation — plan, beds,
-          rooms and recovery, all off the same forecast.
-        </p>
-      </div>
-
       <ContextHeader
         summary={summary} sites={sites} site={site} onSite={setSite}
         weeks={weeks} onWeeks={setWeeks}

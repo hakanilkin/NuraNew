@@ -109,12 +109,20 @@ Its own endpoint, consistent with one endpoint per tab.
 - [ ] No cross-tab filtering anywhere; clicking the matrix does nothing.
 - [ ] Columns are actual dates in aligned Mon–Fri week bands with
       week-commencing labels; no averaging.
-- [ ] Total row visually weighted; Total column present; both correct.
+- [ ] Daily totals visually weighted; Total column present; both correct.
+
+      > **Amended by the *Service Line Breakdown Redesign* artifact.** The daily
+      > total is no longer a weighted row at the bottom of the grid — it is a bar
+      > strip above it, so the shape of the month is read first and the totals
+      > appear exactly once. Cell shading came off entirely: magnitude rides the
+      > numeral in five steps of ink depth, zeros are invisible, weeks are
+      > separated by air rather than rules, and a row highlights on hover.
 - [ ] Non-operating days omitted; holidays muted with reason on hover.
 - [ ] Horizontal scroll contained; labels and Total column pinned; page body
       never scrolls sideways.
-- [ ] Shading sequential and distinct from the Budget tab's diverging grid;
-      readable in greyscale.
+- [ ] No cell fills at all; magnitude carried by the numeral in five steps, with
+      a legend for the ramp. Nothing on this tab can read as the Budget tab's
+      diverging grid, because nothing on it is filled.
 - [ ] Service column resolved through tenant config.
 - [ ] Demo: Thursday is the heaviest column in the Total row and recovery-heavy
       volume peaks there, so the PACU tab's Thursday peak has a source the room

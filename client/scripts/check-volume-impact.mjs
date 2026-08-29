@@ -29,7 +29,9 @@ try {
     summary: { forecast: 682, booked: 541, expectedAdds: 141, budget: 631, variancePct: 8 },
     sites: ['Bright Memorial Hospital'], site: '', onSite() {}, weeks: 4, onWeeks() {},
   })))
-  ok('summary leads with the forecast', header.includes('682 cases forecast'))
+  ok('summary leads with the forecast', header.includes('682 cases'))
+  ok('one header: the page title carries the selectors',
+    header.includes('Volume Impact') && header.includes('page-title'))
   ok('booked and expected are shown separately, never collapsed',
     header.includes('541 booked') && header.includes('141 expected to book'))
   ok('variance against budget is on the header', header.includes('+8% vs budget'))
@@ -124,8 +126,7 @@ try {
     data: breakdown,
   })))
   ok('columns are actual dates, not weekday averages',
-    grid.includes('>1<') && grid.includes('>10<')
-    && grid.includes('Actual dates, not weekday averages'))
+    grid.includes('>1<') && grid.includes('>10<'))
   ok('and each column names its own date on hover',
     grid.includes('title="Tue Sep 1"') && grid.includes('title="Thu Sep 10"'))
   ok('dates group into week bands with a week-commencing label',
@@ -135,17 +136,41 @@ try {
   ok('every service line is named, with a row total',
     grid.includes('Orthopedics') && grid.includes('Spine') && grid.includes('Plastics')
     && grid.includes('>85<') && grid.includes('>41<'))
-  ok('the Total row is present and weighted',
-    grid.includes('All service lines') && grid.includes('>143<'))
+  // Redesign 02: the daily total was a row of numbers at the bottom; it is now
+  // the shape of the month at the top, and appears exactly once.
+  ok('daily totals are a bar strip, not a bottom row',
+    grid.includes('Cases<br/>per day') && !grid.includes('All service lines'))
+  ok('every day total is still printed above its bar',
+    ['16', '17', '27', '28'].every(v => grid.includes(`>${v}<`)))
+  ok('the window total appears once', (grid.match(/>143</g) || []).length === 1)
+  ok('the busiest day is the one bar called out',
+    grid.includes('opacity:1') && grid.includes('var(--color-blue)'))
   ok('holidays are muted with the reason on hover',
-    grid.includes('reduced-volume day (holiday)') && grid.includes('italic'))
-  ok('an empty cell reads as a dot, never a blank',
-    grid.includes('>·<'))
-  ok('every value is printed, so the shading survives greyscale',
-    ['11', '19', '21', '27'].every(v => grid.includes(`>${v}<`)))
-  ok('shading is sequential single-hue, not the Budget tab diverging scale',
-    grid.includes('rgba(71, 85, 105') && !grid.includes('rgba(239,68,68')
+    grid.includes('reduced-volume day (holiday)') && grid.includes('opacity:0.42'))
+  ok('and the holiday bar is greyed rather than coloured',
+    grid.includes('var(--color-gray-300)'))
+  // Redesign 03: a mark in every empty cell is noise that says "nothing".
+  ok('zeros are invisible rather than dotted',
+    grid.includes('color:transparent') && !grid.includes('>·<'))
+  ok('every value is printed', ['11', '19', '21'].every(v => grid.includes(`>${v}<`)))
+  // Redesign 01: 200 shaded boxes competing with 200 numbers. Magnitude now
+  // rides the numeral, so nothing sits behind a cell at all.
+  ok('no cell carries a background fill',
+    !grid.includes('rgba(71, 85, 105') && !grid.includes('rgba(239,68,68')
     && !grid.includes('rgba(59,130,246'))
+  ok('magnitude rides the numeral, in five steps of ink',
+    ['var(--color-gray-400)', 'var(--color-gray-500)', 'var(--color-gray-700)',
+     'var(--color-gray-900)'].every(c => grid.includes(c))
+    && grid.includes('font-weight:700'))
+  ok('and the legend says what the ramp means',
+    grid.includes('Fewer') && grid.includes('More cases')
+    && grid.includes('Bars: total cases that day'))
+  // Redesign 04: gaps group the weeks, so there are fewer permanent marks.
+  ok('weeks are split by air, not vertical rules',
+    !grid.includes('border-left:2px solid') && grid.includes('width:14px'))
+  // Redesign 06: tracking one service across twenty columns needs help.
+  ok('a row highlights on hover without adding a permanent mark',
+    grid.includes('tbody tr:hover'))
   ok('horizontal scroll is contained rather than on the page body',
     grid.includes('overflow-x:auto') || grid.includes('overflow-x: auto'))
   ok('service labels and the Total column stay pinned',
@@ -166,11 +191,14 @@ try {
     summary: { forecast: 145, booked: 100, expectedAdds: 45, variancePct: 3 },
     sites: [], site: '', onSite() {}, weeks: 4, onWeeks() {},
   })))
-  ok('the header carries only site, window and the summary line',
-    bare.includes('cases forecast') && bare.includes('All sites')
+  ok('the header carries only title, site, window and the summary line',
+    bare.includes('Volume Impact') && bare.includes('cases') && bare.includes('All sites')
     && bare.includes('Next 4 weeks'))
   ok('and no matrix, filter control or collapse toggle',
     !bare.includes('All service lines') && !/volume matrix|Showing:/i.test(bare))
+  // Redesign 05: one title, not a page title above a card title.
+  ok('the methodology subtitle is gone — the tab name already said it',
+    !/rest of the operation|Actual dates, not weekday/i.test(bare))
 
 } finally {
   await server.close()
