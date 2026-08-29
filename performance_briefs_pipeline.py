@@ -423,6 +423,7 @@ SELECT ISNULL(c.Case_SurgeonService, 'Unknown')          AS Service,
        ISNULL(c.Loc_ORGrp2, 'Unknown')                   AS Site,
        (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7     AS Dow,
        SUM(ISNULL(c.Dur_ORIn_OROut, 0)) / 60.0           AS OutsideHours,
+       COUNT(*)                                          AS OutsideCases,
        COUNT(DISTINCT CAST(c.Date_SchedDate AS DATE))    AS Days
 FROM DS_CASES c
 WHERE c.Date_SchedDate BETWEEN '{curr_start}' AND '{curr_end}'
@@ -459,10 +460,14 @@ _conn2.close()
 _weeks = max(1.0, (curr_end - curr_start).days / 7.0)
 _tail = {r.CaseBlock: r.LastOutHours for r in df_tail.itertuples()}
 
-# Out-of-block hours per service, site and weekday, per week.
+# Out-of-block hours and cases per service, site and weekday, per week. Cases
+# because a committee argues about cases more readily than about hours.
 _outside = {}
+_outside_cases = {}
 for r in df_outside.itertuples():
-    _outside[(r.Service, r.Site, int(r.Dow))] = float(r.OutsideHours or 0) / _weeks
+    k = (r.Service, r.Site, int(r.Dow))
+    _outside[k] = float(r.OutsideHours or 0) / _weeks
+    _outside_cases[k] = float(getattr(r, 'OutsideCases', 0) or 0) / _weeks
 
 _service_alloc = (df_alloc[df_alloc['CaseBlock'] != 'Open']
                   .groupby(['Service', 'Site'])['AllocHours'].sum().to_dict())
@@ -476,6 +481,7 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
     share = (mine / pool) if pool > 0 else 0.0
     by_dow, release_events, instances = [], 0, 0
     released_by_dow = {}
+    outside_cases_by_dow = {}
     for d in range(5):
         row = grp[grp['Dow'] == d]
         alloc = float(row['AllocHours'].sum()) / _weeks
@@ -488,6 +494,9 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
         # blocks each look like they are losing the same hours.
         by_dow.append({'dow': d, 'alloc': alloc, 'used': used,
                        'outside': _outside.get((service, site, d), 0.0) * share})
+        # Apportioned on the same share as the hours, so the caption's cases and
+        # its hours describe the same volume.
+        outside_cases_by_dow[d] = _outside_cases.get((service, site, d), 0.0) * share
     brief = next((g for g in groups if g['caseblock'] == block), None)
     fwd = (brief or {}).get('context', {}).get('pipeline', {}) if brief else {}
     trend, trend_pct = BP.classify_trend(fwd.get('forecasted'), fwd.get('scheduled'))
@@ -499,7 +508,9 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
     # Released hours are evidence, not a classifier input, so they are merged
     # back onto the weekdays the taxonomy normalised rather than passed through
     # it. The drawer's day table has to reconcile to the week shape beside it.
-    found['byDow'] = [{**d, 'released': round(released_by_dow.get(d['dow'], 0.0), 2)}
+    found['byDow'] = [{**d,
+                       'released': round(released_by_dow.get(d['dow'], 0.0), 2),
+                       'outsideCases': round(outside_cases_by_dow.get(d['dow'], 0.0), 2)}
                       for d in found['byDow']]
     allocations.append({
         'owner': block, 'service': service, 'site': site,

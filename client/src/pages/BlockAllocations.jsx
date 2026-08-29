@@ -110,6 +110,40 @@ export function WeekShape({ byDow, height = 46, width = 30 }) {
   )
 }
 
+/* ─── The caption under the bars (BlockAllocationsNumbers.md) ─────────────────
+   The shape shows pattern — which days are held, where the volume actually
+   lands. It does not show size, and a committee reading the row cannot tell
+   whether a short Tuesday is two hours or twelve. That is the difference
+   between a footnote and an agenda item, and the numbers are already on the row.
+
+   Never colour-coded: the pattern chip carries status, and a second status
+   signal in the same cell would compete with it. */
+export function ShapeCaption({ byDow }) {
+  const sum = k => (byDow ?? []).reduce((t, d) => t + (d[k] ?? 0), 0)
+  const alloc = sum('alloc')
+  const used = sum('used')
+  const outside = sum('outside')
+  const cases = (byDow ?? []).some(d => d.outsideCases != null) ? sum('outsideCases') : null
+  const util = alloc > 0 ? (used / alloc) * 100 : null
+
+  const line = { fontSize: 11, lineHeight: 1.45, color: 'var(--color-gray-500)',
+                 fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
+  return (
+    <div style={{ marginTop: 3 }}>
+      <div style={line}>
+        {util == null ? 'No block allocated' : `${Math.round(util)}% of ${fmt1(alloc)}h in block`}
+      </div>
+      {/* A row reading "0h · 0 cases outside" spends a line saying nothing, and
+          the absence is itself informative when scanning the column. */}
+      {outside >= 0.5 && (
+        <div style={line}>
+          {fmt1(outside)}h{cases == null ? '' : ` · ${Math.round(cases)} cases`} outside
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ShapeLegend() {
   return (
     <div style={{ display: 'flex', gap: 16, fontSize: 'var(--font-size-xs)',
@@ -369,7 +403,10 @@ export function OwnerTable({ owners, onDetails }) {
                       </span>
                     </button>
                   </td>
-                  <td style={TD}><WeekShape byDow={o.byDow} /></td>
+                  <td style={TD}>
+                    <WeekShape byDow={o.byDow} />
+                    <ShapeCaption byDow={o.byDow} />
+                  </td>
                   <td style={TD}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px',
                                    borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 700,

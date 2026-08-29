@@ -77,6 +77,11 @@ outside / released per weekday, which is the full evidence.
 room for per-day hour labels above each bar. Worth trying, easy to revert; the
 list view must not follow suit.
 
+> **Not taken.** The drawer's numeric day table sits directly beneath that
+> shape and already gives allocated / used / outside / released per weekday, so
+> per-bar labels would print the same five numbers twice, a few pixels apart.
+> One line of evidence, not two.
+
 ---
 
 ## 5. Acceptance
@@ -88,6 +93,13 @@ list view must not follow suit.
 - [ ] No per-bar labels in the list view.
 - [ ] `outsideCases` flows from the pipeline through `byDow` to the caption;
       absent counts degrade to hours only.
-- [ ] Ortho A reads `56% of 8.1h in block` / `6.5h · N cases outside`, matching
-      its drivers and its recommendation text.
+- [ ] Ortho A's caption matches its drivers and its recommendation text.
+
+      > **Figures updated.** The spec's `56% of 8.1h` / `6.5h` predate
+      > `BlockAllocationsFixes.md` and the reseed that came with it. Against the
+      > current data Ortho A reads **`60% of 8.1h in block`** /
+      > **`7.8h · N cases outside`**; the allocation is unchanged, the
+      > utilisation and spill moved with the seed. The caption is computed from
+      > the same `byDow` the bars are drawn from, so it cannot disagree with them
+      > whatever the numbers become.
 - [ ] Column width still fits the five bars without wrapping the caption.

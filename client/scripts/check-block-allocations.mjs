@@ -24,11 +24,11 @@ try {
 
   // A wrong-day week: Tuesday held and nearly empty, Thursday busy and unheld.
   const wrongDayWeek = [
-    { dow: 0, alloc: 0, used: 0, outside: 0.4 },
-    { dow: 1, alloc: 8, used: 2.4, outside: 0.2 },
-    { dow: 2, alloc: 0, used: 0, outside: 0.6 },
-    { dow: 3, alloc: 0, used: 0, outside: 6.3 },
-    { dow: 4, alloc: 0, used: 0, outside: 0.3 },
+    { dow: 0, alloc: 0, used: 0, outside: 0.4, outsideCases: 1 },
+    { dow: 1, alloc: 8, used: 2.4, outside: 0.2, outsideCases: 0 },
+    { dow: 2, alloc: 0, used: 0, outside: 0.6, outsideCases: 1 },
+    { dow: 3, alloc: 0, used: 0, outside: 6.3, outsideCases: 7 },
+    { dow: 4, alloc: 0, used: 0, outside: 0.3, outsideCases: 0 },
   ]
   const shape = plain(renderToString(React.createElement(m.WeekShape, { byDow: wrongDayWeek })))
   ok('week shape draws allocated as an outline', shape.includes('fill="none"'))
@@ -67,7 +67,7 @@ try {
       releaseHistory: { count: 0, of: 26 } },
     { owner: 'Ortho B', service: 'Orthopedics', site: 'Bright Memorial Hospital',
       pattern: 'RIGHT_SIZED', mismatchHours: 0, trend: 'STABLE', trendPct: 1,
-      byDow: [{ dow: 1, alloc: 8, used: 6.4, outside: 0.5 }],
+      byDow: [{ dow: 1, alloc: 8, used: 6.4, outside: 0.2, outsideCases: 0 }],
       drivers: [], recommendation: { text: 'No change.', deltaHours: 0 },
       releaseHistory: { count: 0, of: 13 } },
     { owner: 'General A', service: 'General Surgery', site: 'Bright Memorial Hospital',
@@ -92,6 +92,38 @@ try {
   ok('unmatched blocks are never labelled right-sized',
     table.includes('No clear pattern') && !/UNCLASSIFIED/.test(table))
   ok('mismatch is stated in hours a week', table.includes('h/wk'))
+
+  // BlockAllocationsNumbers.md: the shape shows pattern, the caption shows size.
+  ok('the bars carry a caption giving the magnitudes they encode',
+    table.includes('% of ') && table.includes('h in block'))
+  const caption = plain(renderToString(React.createElement(m.ShapeCaption, {
+    byDow: [{ dow: 3, alloc: 8.1, used: 4.5, outside: 6.5, outsideCases: 9 }],
+  })))
+  ok('the percentage never appears without its denominator',
+    caption.includes('56% of 8.1h in block') && !/\d+% of (?!\d)/.test(caption))
+  ok('and the two lines read as the spec writes them',
+    caption.includes('6.5h · 9 cases outside'))
+  ok('material out-of-block volume names hours and cases',
+    table.includes('h · ') && table.includes('cases outside'))
+  ok('and a negligible one says nothing at all',
+    (table.match(/cases outside/g) || []).length < owners.length)
+  ok('captions are tabular and uncoloured',
+    table.includes('font-variant-numeric:tabular-nums'))
+  ok('no per-bar labels in the list view — that is what the drawer is for',
+    (table.match(/<text /g) || []).length
+      === owners.reduce((n, o) => n + o.byDow.length, 0))
+
+  const noCounts = plain(renderToString(React.createElement(m.ShapeCaption, {
+    byDow: [{ dow: 1, alloc: 8, used: 4.5, outside: 6.4 }],
+  })))
+  ok('an absent case count degrades to hours only, never suppressing the line',
+    noCounts.includes('6.4h') && noCounts.includes('outside')
+    && !noCounts.includes('cases'))
+  const quiet = plain(renderToString(React.createElement(m.ShapeCaption, {
+    byDow: [{ dow: 1, alloc: 8, used: 6.4, outside: 0.2, outsideCases: 0 }],
+  })))
+  ok('below half an hour outside, the second line is omitted',
+    quiet.includes('80% of 8.0h in block') && !quiet.includes('outside'))
   ok('recommendations are specific, never "consider adjusting"',
     table.includes('Move the Tuesday block to Thursday') && !/consider adjusting/i.test(table))
   ok('the abandoned row states the count', table.includes('Released 9 of the last 13'))
