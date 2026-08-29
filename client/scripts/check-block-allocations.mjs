@@ -70,19 +70,69 @@ try {
       byDow: [{ dow: 1, alloc: 8, used: 6.4, outside: 0.5 }],
       drivers: [], recommendation: { text: 'No change.', deltaHours: 0 },
       releaseHistory: { count: 0, of: 13 } },
+    { owner: 'General A', service: 'General Surgery', site: 'Bright Memorial Hospital',
+      pattern: 'MISPLACED', mismatchHours: 5.5, trend: 'STABLE', trendPct: 3,
+      byDow: [{ dow: 1, alloc: 8, used: 5.6, outside: 6.4 }],
+      drivers: [], recommendation: { text: 'Uses 70% of an 8.0h block while booking 6.4h a week outside it.', deltaHours: 0 },
+      releaseHistory: { count: 1, of: 26 } },
+    // No forward data at all: the cell has to say so rather than imply stability.
+    { owner: 'Colorectal', service: 'Colorectal', site: 'Bright Memorial Hospital',
+      pattern: 'UNCLASSIFIED', mismatchHours: 0, trend: 'STABLE', trendPct: null,
+      byDow: [{ dow: 2, alloc: 8, used: 5.2, outside: 1.1 }],
+      drivers: [], recommendation: { text: 'No clear pattern — review with the owner.', deltaHours: 0 },
+      releaseHistory: { count: 0, of: 13 } },
   ]
   const table = plain(renderToString(inRouter(React.createElement(m.OwnerTable, {
-    owners, onEvaluate() {},
+    owners, onDetails() {},
   }))))
   ok('pattern is a chip with a glyph, not colour alone',
     table.includes('⇄') && table.includes('✕') && table.includes('▲'))
+  ok('misplaced and unclassified carry their own glyphs',
+    table.includes('◇') && table.includes('?'))
+  ok('unmatched blocks are never labelled right-sized',
+    table.includes('No clear pattern') && !/UNCLASSIFIED/.test(table))
   ok('mismatch is stated in hours a week', table.includes('h/wk'))
   ok('recommendations are specific, never "consider adjusting"',
     table.includes('Move the Tuesday block to Thursday') && !/consider adjusting/i.test(table))
   ok('the abandoned row states the count', table.includes('Released 9 of the last 13'))
-  ok('trend is shown alongside', table.includes('Growing') && table.includes('Declining'))
-  ok('a right-sized block offers no action', !table.includes('No change.') ? false
-    : (table.match(/Evaluate impact/g) || []).length === 3)
+
+  // BlockAllocationsFixes.md §4: label plus signed whole percentage, so the
+  // cell reads without interpretation and without relying on colour.
+  ok('the pipeline column is named Pipeline, not Trend',
+    table.includes('>Pipeline<') && !table.includes('>Trend<'))
+  ok('pipeline reads as a label and a signed whole percentage',
+    table.includes('Growing') && table.includes('+44%')
+    && table.includes('Declining') && table.includes('\u221218%'))
+  ok('a thin forward book says so rather than printing 0%',
+    table.includes('No forward data'))
+
+  // §3: the scenario panel is gone from this page; evidence replaces it.
+  ok('"Evaluate impact" is gone from this page', !table.includes('Evaluate impact'))
+  ok('every row offers See details, including the right-sized one',
+    (table.match(/See details/g) || []).length === owners.length)
+
+  // §3a/§3b: the drawer carries the evidence and nothing else.
+  const drawer = plain(renderToString(inRouter(React.createElement(m.DetailDrawer, {
+    owner: owners[0], open: true, focus: 'shape', onClose() {},
+  }))))
+  ok('the drawer is a right slide-over dialog',
+    drawer.includes('role="dialog"') && drawer.includes('translateX(0)'))
+  ok('it carries the week shape at full size',
+    drawer.includes('url(#ba-hatch)') && drawer.includes('fill="none"'))
+  ok('and the numeric day table, released included',
+    ['Allocated', 'Used', 'Outside', 'Released'].every(h => drawer.includes(`>${h}<`)))
+  ok('with a week total', drawer.includes('>Week<'))
+  ok('it names the pipeline as its second half', drawer.includes('>Pipeline<'))
+  ok('and nothing else — no recommendation restated, no scenario controls',
+    !drawer.includes('Move the Tuesday block to Thursday')
+    && !/Evaluate impact|Apply|Alternatives/.test(drawer))
+
+  const cell = plain(renderToString(React.createElement(m.PipelineCell, {
+    trend: 'GROWING', pct: 38.4, onOpen() {},
+  })))
+  ok('a growing pipeline reads "Growing +38%"',
+    cell.includes('Growing') && cell.includes('+38%'))
+  ok('and it is clickable through to the evidence', cell.includes('<button'))
 } finally {
   await server.close()
 }

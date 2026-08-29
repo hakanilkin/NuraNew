@@ -1,6 +1,5 @@
 import { Fragment, useState, useEffect } from 'react'
-import { AlertCircle, ChevronDown, ChevronRight, Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import ScenarioPanel from '../components/ScenarioPanel'
+import { AlertCircle, ChevronDown, ChevronRight, X, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 /* ─── Block Allocations (BlockAllocations.md) ─────────────────────────────────
    A quarterly block committee review. The question is not "which blocks have
@@ -25,54 +24,84 @@ function patternConfig(p) {
     case 'FRAGMENTED':      return { label: 'Fragmented',      glyph: '⋯', color: '#0e7490', bg: 'rgba(14,116,144,0.13)' }
     case 'OVER_ALLOCATED':  return { label: 'Over-allocated',  glyph: '▼', color: '#dc2626', bg: 'rgba(239,68,68,0.11)' }
     case 'UNDER_ALLOCATED': return { label: 'Under-allocated', glyph: '▲', color: '#2563eb', bg: 'rgba(59,130,246,0.12)' }
-    default:                return { label: 'Right-sized',     glyph: '■', color: '#15803d', bg: 'rgba(34,197,94,0.12)' }
+    case 'MISPLACED':       return { label: 'Misplaced',       glyph: '◇', color: '#9333ea', bg: 'rgba(147,51,234,0.12)' }
+    case 'RIGHT_SIZED':     return { label: 'Right-sized',     glyph: '■', color: '#15803d', bg: 'rgba(34,197,94,0.12)' }
+    // Never an endorsement. A silent fallback that reads as "fine" is the thing
+    // a sceptical director catches on a projector.
+    default:                return { label: 'No clear pattern', glyph: '?', color: 'var(--color-gray-500)', bg: 'rgba(100,116,139,0.10)' }
   }
 }
 
-function TrendChip({ trend, pct }) {
+const INERT = new Set(['RIGHT_SIZED', 'UNCLASSIFIED'])
+
+/* Pipeline: label plus number, so the cell reads without interpretation. The
+   label carries the meaning by word and by icon — never by colour alone — and
+   a signed whole percentage gives it a magnitude. Where the forward book is
+   too thin to divide by, say so rather than printing a confident 0%. */
+export function PipelineCell({ trend, pct, onOpen }) {
+  const known = pct != null && trend
   const Icon = trend === 'GROWING' ? TrendingUp : trend === 'DECLINING' ? TrendingDown : Minus
   const color = trend === 'GROWING' ? '#15803d' : trend === 'DECLINING' ? '#b91c1c' : 'var(--color-gray-500)'
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11,
-                   fontWeight: 600, color }}>
-      <Icon size={12} />{trend === 'STABLE' ? 'Stable' : trend === 'GROWING' ? 'Growing' : 'Declining'}
-      {pct != null && <span style={{ color: 'var(--color-gray-400)' }}>{pct > 0 ? '+' : ''}{Math.round(pct)}%</span>}
+  const label = trend === 'GROWING' ? 'Growing' : trend === 'DECLINING' ? 'Declining' : 'Stable'
+  if (!known) {
+    return <span style={{ fontSize: 11, color: 'var(--color-gray-400)' }}>No forward data</span>
+  }
+  const body = (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11,
+                   fontWeight: 700, color }}>
+      <Icon size={12} aria-hidden="true" />{label}
+      <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {pct > 0 ? '+' : pct < 0 ? '\u2212' : ''}{Math.abs(Math.round(pct))}%
+      </span>
     </span>
+  )
+  if (!onOpen) return body
+  return (
+    <button type="button" onClick={onOpen}
+      title="Show the forward book behind this"
+      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+               textDecorationLine: 'underline', textDecorationStyle: 'dotted',
+               textUnderlineOffset: 3, textDecorationColor: 'var(--color-gray-300)' }}>
+      {body}
+    </button>
   )
 }
 
 /* Five bars, Monday to Friday. Allocated is an outline, used is a solid fill,
    and volume booked outside any block is hatched — so the three quantities are
    distinguishable without colour. */
-export function WeekShape({ byDow, height = 46 }) {
+export function WeekShape({ byDow, height = 46, width = 30 }) {
   const peak = Math.max(1, ...byDow.map(d => Math.max(d.alloc ?? 0, (d.used ?? 0) + (d.outside ?? 0))))
   const h = v => Math.max(0, ((v ?? 0) / peak) * height)
+  // Bars scale with the pitch so the drawer's full-size shape is the same
+  // drawing, not a second one that could disagree with the row.
+  const bw = Math.round(width * 0.4)
   return (
-    <svg width={5 * 30} height={height + 14} role="img" aria-label="Allocated, used and out-of-block hours by weekday">
+    <svg width={5 * width} height={height + 14} role="img" aria-label="Allocated, used and out-of-block hours by weekday">
       <defs>
         <pattern id="ba-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <line x1="0" y1="0" x2="0" y2="5" stroke="#64748b" strokeWidth="2" />
         </pattern>
       </defs>
       {byDow.map((d, i) => {
-        const x = i * 30 + 3
+        const x = i * width + 3
         return (
           <g key={d.dow}>
             {/* Out-of-block first, so it reads as volume that found somewhere else. */}
             {d.outside > 0.05 && (
-              <rect x={x + 13} y={height - h(d.outside)} width={10} height={h(d.outside)}
+              <rect x={x + bw + 1} y={height - h(d.outside)} width={bw - 2} height={h(d.outside)}
                     fill="url(#ba-hatch)" opacity="0.75" />
             )}
             {d.alloc > 0.05 && (
-              <rect x={x} y={height - h(d.alloc)} width={12} height={h(d.alloc)}
+              <rect x={x} y={height - h(d.alloc)} width={bw} height={h(d.alloc)}
                     fill="none" stroke="var(--color-blue)" strokeWidth="1.4" />
             )}
             {d.used > 0.05 && (
-              <rect x={x} y={height - h(d.used)} width={12} height={h(d.used)}
+              <rect x={x} y={height - h(d.used)} width={bw} height={h(d.used)}
                     fill="var(--color-blue)" opacity="0.55" />
             )}
-            <line x1={x - 2} x2={x + 26} y1={height} y2={height} stroke="var(--surface-border)" />
-            <text x={x + 11} y={height + 11} fontSize="9" textAnchor="middle"
+            <line x1={x - 2} x2={x + width - 4} y1={height} y2={height} stroke="var(--surface-border)" />
+            <text x={x + bw} y={height + 11} fontSize="9" textAnchor="middle"
                   fill="var(--color-gray-400)">{DOW[i]}</text>
           </g>
         )
@@ -92,12 +121,216 @@ export function ShapeLegend() {
   )
 }
 
-const TH = { padding: '8px 11px', fontSize: 12, fontWeight: 600, textAlign: 'left',
-             color: 'var(--color-text-primary)', borderBottom: '1px solid var(--color-border-secondary)' }
-const TD = { padding: '10px 11px', fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)',
-             borderBottom: '1px solid var(--surface-border)', verticalAlign: 'middle' }
+const TH_BASE = { padding: '8px 11px', fontSize: 12, fontWeight: 600, textAlign: 'left',
+                  color: 'var(--color-text-primary)', borderBottom: '1px solid var(--color-border-secondary)' }
+const TD_BASE = { padding: '10px 11px', fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-700)',
+                  borderBottom: '1px solid var(--surface-border)', verticalAlign: 'middle' }
+const SECTION_LABEL = { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em',
+                        fontWeight: 700, color: 'var(--color-gray-600)', marginBottom: 8 }
 
-export function OwnerTable({ owners, onEvaluate }) {
+/* ─── See details ────────────────────────────────────────────────────────────
+   Evidence, not a simulation. A committee reviewing allocations wants to know
+   why the number on the row is the number on the row; the scenario panel keeps
+   its Release Time Mgmt host, where the question actually is "what if".
+
+   Exactly two things: the evidence behind the utilisation figure, and the
+   evidence behind the Pipeline column. Nothing restated, nothing linking out. */
+
+/* Forward booked cases a week against the owner's own trailing baseline. The
+   baseline is drawn and labelled rather than implied, so "+38%" has a visible
+   denominator. */
+function PipelineChart({ pipeline }) {
+  const weeks = pipeline?.weeks ?? []
+  const base = pipeline?.baselinePerWeek
+  if (!weeks.length) {
+    return (
+      <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', margin: 0 }}>
+        No forward bookings in the horizon for this block.
+      </p>
+    )
+  }
+  const W = 46, H = 92, pad = 26
+  const peak = Math.max(1, ...weeks.map(w => w.cases), base ?? 0)
+  const y = v => H - (v / peak) * H
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <svg width={Math.max(200, weeks.length * W + pad)} height={H + 30} role="img"
+           aria-label="Forward booked cases by week against the trailing baseline">
+        {weeks.map((w, i) => (
+          <g key={w.weekAhead}>
+            <rect x={pad + i * W + 8} y={y(w.cases)} width={W - 20} height={H - y(w.cases)}
+                  fill="var(--color-blue)" opacity="0.55" />
+            <text x={pad + i * W + 8 + (W - 20) / 2} y={y(w.cases) - 4} fontSize="10"
+                  textAnchor="middle" fill="var(--color-gray-600)"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}>{w.cases}</text>
+            <text x={pad + i * W + 8 + (W - 20) / 2} y={H + 13} fontSize="9" textAnchor="middle"
+                  fill="var(--color-gray-400)">wk {w.weekAhead}</text>
+          </g>
+        ))}
+        {base > 0 && (
+          <g>
+            <line x1={pad} x2={pad + weeks.length * W} y1={y(base)} y2={y(base)}
+                  stroke="var(--color-gray-500)" strokeWidth="1.3" strokeDasharray="4 3" />
+            <text x={pad - 4} y={y(base) + 3} fontSize="9" textAnchor="end"
+                  fill="var(--color-gray-500)">{Math.round(base)}</text>
+          </g>
+        )}
+        <line x1={pad} x2={pad + weeks.length * W} y1={H} y2={H} stroke="var(--surface-border)" />
+      </svg>
+    </div>
+  )
+}
+
+function DayTable({ byDow }) {
+  const tot = k => byDow.reduce((t, d) => t + (d[k] ?? 0), 0)
+  const cell = { ...TD_BASE, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
+  return (
+    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+      <thead><tr>
+        <th style={{ ...TH_BASE }}>Day</th>
+        <th style={{ ...TH_BASE, textAlign: 'right' }}>Allocated</th>
+        <th style={{ ...TH_BASE, textAlign: 'right' }}>Used</th>
+        <th style={{ ...TH_BASE, textAlign: 'right' }}>Outside</th>
+        <th style={{ ...TH_BASE, textAlign: 'right' }}>Released</th>
+      </tr></thead>
+      <tbody>
+        {byDow.map(d => (
+          <tr key={d.dow}>
+            <td style={TD_BASE}>{DOW[d.dow]}</td>
+            <td style={cell}>{fmt1(d.alloc)}</td>
+            <td style={cell}>{fmt1(d.used)}</td>
+            <td style={cell}>{fmt1(d.outside)}</td>
+            <td style={cell}>{fmt1(d.released ?? 0)}</td>
+          </tr>
+        ))}
+        <tr style={{ fontWeight: 700, color: 'var(--color-gray-900)' }}>
+          <td style={{ ...TD_BASE, borderTop: '1px solid var(--color-border-secondary)' }}>Week</td>
+          {['alloc', 'used', 'outside', 'released'].map(k => (
+            <td key={k} style={{ ...cell, borderTop: '1px solid var(--color-border-secondary)' }}>
+              {fmt1(tot(k))}
+            </td>
+          ))}
+        </tr>
+      </tbody>
+    </table>
+  )
+}
+
+export function DetailDrawer({ owner, open, focus, onClose }) {
+  const [detail, setDetail] = useState(null)
+  const [detailError, setDetailError] = useState(null)
+
+  useEffect(() => {
+    if (!owner) return undefined
+    const onKey = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [owner, onClose])
+
+  useEffect(() => {
+    if (!owner) { setDetail(null); setDetailError(null); return undefined }
+    let live = true
+    setDetail(null); setDetailError(null)
+    fetch(`/api/blocks/allocations/${encodeURIComponent(owner.owner)}?horizonDays=28`)
+      .then(async r => {
+        const text = await r.text()
+        if (!r.ok || !text) throw new Error('unavailable')
+        return JSON.parse(text)
+      })
+      .then(d => { if (live) setDetail(d) })
+      .catch(() => { if (live) setDetailError('The forward book could not be loaded.') })
+    return () => { live = false }
+  }, [owner])
+
+  // Opened from the Pipeline cell, the drawer should land on the pipeline.
+  useEffect(() => {
+    if (!open || focus !== 'pipeline') return
+    const el = document.getElementById('ba-pipeline')
+    if (el) el.scrollIntoView({ block: 'start' })
+  }, [open, focus, detail])
+
+  if (!owner) return null
+  const pc = patternConfig(owner.pattern)
+
+  return (
+    <>
+      <div onClick={onClose}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)',
+                 opacity: open ? 1 : 0, transition: 'opacity .22s ease', zIndex: 1000 }} />
+      <div role="dialog" aria-modal="true" aria-label={`${owner.owner} details`}
+        style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(520px, 100%)',
+                 background: '#fff', boxShadow: '-8px 0 30px rgba(0,0,0,0.18)', zIndex: 1001,
+                 transform: open ? 'translateX(0)' : 'translateX(100%)',
+                 transition: 'transform .24s ease', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                      padding: '18px 20px 14px', borderBottom: '1px solid var(--surface-border)' }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-gray-900)' }}>{owner.owner}</div>
+            <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 2 }}>
+              {owner.service} · {owner.site}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px',
+                           borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 700,
+                           background: pc.bg, color: pc.color, whiteSpace: 'nowrap' }}>
+              <span aria-hidden="true">{pc.glyph}</span>{pc.label}
+            </span>
+            <button onClick={onClose} aria-label="Close"
+              style={{ border: 'none', background: 'none', cursor: 'pointer',
+                       color: 'var(--color-gray-400)', padding: 4, borderRadius: 6 }}>
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div style={{ overflowY: 'auto', flex: 1, padding: '18px 20px 28px' }}>
+          <div style={SECTION_LABEL}>The week</div>
+          <div style={{ marginBottom: 10 }}>
+            <WeekShape byDow={owner.byDow} height={96} width={64} />
+          </div>
+          <div style={{ marginBottom: 16 }}><ShapeLegend /></div>
+          <DayTable byDow={owner.byDow} />
+
+          <div id="ba-pipeline" style={{ ...SECTION_LABEL, marginTop: 26 }}>Pipeline</div>
+          {detailError && (
+            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)' }}>{detailError}</p>
+          )}
+          {!detailError && !detail && (
+            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)' }}>Loading…</p>
+          )}
+          {detail && (
+            <>
+              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)',
+                          margin: '0 0 10px' }}>
+                Forward booked cases a week, against this block&rsquo;s own baseline of{' '}
+                <strong>{fmt1(detail.pipeline?.baselinePerWeek)} cases a week</strong>
+                {detail.pipeline?.trailingDays
+                  ? ` over the prior ${detail.pipeline.trailingDays} days`
+                  : ''}.
+              </p>
+              <PipelineChart pipeline={detail.pipeline} />
+              {detail.pipeline?.pct != null && (
+                <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)',
+                            marginTop: 8 }}>
+                  {fmt1(detail.pipeline.forwardPerWeek)} booked a week against{' '}
+                  {fmt1(detail.pipeline.baselinePerWeek)} —{' '}
+                  <strong>{detail.pipeline.pct > 0 ? '+' : detail.pipeline.pct < 0 ? '−' : ''}
+                  {Math.abs(Math.round(detail.pipeline.pct))}%</strong>.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+const TH = TH_BASE
+const TD = TD_BASE
+
+export function OwnerTable({ owners, onDetails }) {
   const [open, setOpen] = useState(null)
   if (!owners?.length) {
     return (
@@ -114,7 +347,7 @@ export function OwnerTable({ owners, onEvaluate }) {
           <th style={TH}>Week shape</th>
           <th style={TH}>Pattern</th>
           <th style={{ ...TH, textAlign: 'right' }}>Mismatch</th>
-          <th style={TH}>Trend</th>
+          <th style={TH}>Pipeline</th>
           <th style={TH}>Recommendation</th>
           <th style={TH}></th>
         </tr></thead>
@@ -147,18 +380,21 @@ export function OwnerTable({ owners, onEvaluate }) {
                   <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }}>
                     {fmt1(o.mismatchHours)}<span style={{ fontWeight: 400, color: 'var(--color-gray-400)' }}> h/wk</span>
                   </td>
-                  <td style={TD}><TrendChip trend={o.trend} pct={o.trendPct} /></td>
+                  <td style={TD}>
+                    <PipelineCell trend={o.trend} pct={o.trendPct}
+                                  onOpen={onDetails ? () => onDetails(o, 'pipeline') : null} />
+                  </td>
                   <td style={{ ...TD, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)', maxWidth: 340 }}>
                     {o.recommendation?.text}
                   </td>
                   <td style={TD}>
-                    {o.pattern !== 'RIGHT_SIZED' && onEvaluate && (
-                      <button type="button" onClick={() => onEvaluate(o)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
-                                 border: '1px solid var(--color-blue)', background: 'var(--color-blue)',
-                                 color: '#fff', borderRadius: 'var(--radius-md)', padding: '5px 10px',
+                    {onDetails && (
+                      <button type="button" onClick={() => onDetails(o, 'shape')}
+                        style={{ cursor: 'pointer', border: '1px solid var(--color-border-secondary)',
+                                 background: 'var(--surface-bg)', color: 'var(--color-gray-700)',
+                                 borderRadius: 'var(--radius-md)', padding: '5px 10px',
                                  fontSize: 'var(--font-size-xs)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                        <Scale size={12} /> Evaluate impact
+                        See details
                       </button>
                     )}
                   </td>
@@ -220,7 +456,7 @@ export function OwnerTable({ owners, onEvaluate }) {
 
 export default function BlockAllocations() {
   const [data, setData] = useState(null)
-  const [decision, setDecision] = useState(null)
+  const [detail, setDetail] = useState(null)      // { owner, focus }
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -241,7 +477,7 @@ export default function BlockAllocations() {
   }, [])
 
   const counts = data?.counts ?? {}
-  const findings = (data?.owners ?? []).filter(o => o.pattern !== 'RIGHT_SIZED')
+  const findings = (data?.owners ?? []).filter(o => !INERT.has(o.pattern))
 
   return (
     <div className="page">
@@ -272,8 +508,8 @@ export default function BlockAllocations() {
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
                         marginBottom: 'var(--space-4)' }}>
-            {['WRONG_DAY', 'WRONG_SHAPE', 'ABANDONED', 'FRAGMENTED',
-              'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'RIGHT_SIZED']
+            {['WRONG_DAY', 'WRONG_SHAPE', 'MISPLACED', 'ABANDONED', 'FRAGMENTED',
+              'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'RIGHT_SIZED', 'UNCLASSIFIED']
               .filter(p => counts[p])
               .map(p => {
                 const pc = patternConfig(p)
@@ -304,21 +540,14 @@ export default function BlockAllocations() {
             <div style={{ padding: '0 16px 10px' }}><ShapeLegend /></div>
             <OwnerTable
               owners={data?.owners ?? []}
-              onEvaluate={o => setDecision({
-                kind: 'REALLOCATE',
-                fromBlock: o.owner,
-                toService: o.service,
-                hours: Math.abs(o.recommendation?.deltaHours || 4) || 4,
-                dayOfWeek: o.recommendation?.targetDow ?? o.byDow.reduce(
-                  (best, d) => (d.alloc > (best?.alloc ?? -1) ? d : best), null)?.dow ?? 0,
-                dayOfWeekLabel: DOW[o.recommendation?.targetDow ?? 0],
-              })}
+              onDetails={(o, focus) => setDetail({ owner: o, focus })}
             />
           </div>
         </>
       )}
 
-      <ScenarioPanel open={decision !== null} decision={decision} onClose={() => setDecision(null)} />
+      <DetailDrawer owner={detail?.owner ?? null} focus={detail?.focus} open={detail !== null}
+                    onClose={() => setDetail(null)} />
     </div>
   )
 }

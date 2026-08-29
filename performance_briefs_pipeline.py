@@ -407,6 +407,7 @@ SELECT ISNULL(CaseBlock, 'Unknown')                  AS CaseBlock,
        (DATEPART(WEEKDAY, BlockDate) + 5) % 7        AS Dow,
        SUM(ISNULL(blockTime, 0))   / 60.0            AS AllocHours,
        SUM(ISNULL(InBlock, 0))     / 60.0            AS UsedHours,
+       SUM(ISNULL(ReleasedTime, 0)) / 60.0           AS ReleasedHours,
        COUNT(DISTINCT CASE WHEN ISNULL(ReleasedTime, 0) > 0
                            THEN CAST(BlockDate AS DATE) END)          AS ReleasedDays,
        COUNT(DISTINCT CAST(BlockDate AS DATE))       AS Instances
@@ -474,10 +475,12 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
     pool = _service_alloc.get((service, site), 0.0)
     share = (mine / pool) if pool > 0 else 0.0
     by_dow, release_events, instances = [], 0, 0
+    released_by_dow = {}
     for d in range(5):
         row = grp[grp['Dow'] == d]
         alloc = float(row['AllocHours'].sum()) / _weeks
         used = float(row['UsedHours'].sum()) / _weeks
+        released_by_dow[d] = float(row['ReleasedHours'].sum()) / _weeks
         release_events += int(row['ReleasedDays'].sum())
         instances += int(row['Instances'].sum())
         # Out-of-block volume belongs to this service's blocks in proportion to
@@ -493,6 +496,11 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
         by_dow, release_events=release_events, release_of=max(instances, 0),
         last_case_out_hours=_tail.get(block), trend=trend,
         cfg=_tenant_block_thresholds)
+    # Released hours are evidence, not a classifier input, so they are merged
+    # back onto the weekdays the taxonomy normalised rather than passed through
+    # it. The drawer's day table has to reconcile to the week shape beside it.
+    found['byDow'] = [{**d, 'released': round(released_by_dow.get(d['dow'], 0.0), 2)}
+                      for d in found['byDow']]
     allocations.append({
         'owner': block, 'service': service, 'site': site,
         'trendPct': trend_pct, 'instances': instances,
@@ -503,7 +511,8 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
 allocations.sort(key=lambda a: -(a['mismatchHours'] or 0))
 print(f"  Owners classified: {len(allocations)}")
 for pat in (BP.ABANDONED, BP.WRONG_DAY, BP.WRONG_SHAPE, BP.FRAGMENTED,
-            BP.UNDER_ALLOCATED, BP.OVER_ALLOCATED, BP.RIGHT_SIZED):
+            BP.MISPLACED, BP.UNDER_ALLOCATED, BP.OVER_ALLOCATED,
+            BP.RIGHT_SIZED, BP.UNCLASSIFIED):
     n = sum(1 for a in allocations if a['pattern'] == pat)
     if n:
         print(f"    {pat:16s} {n}")

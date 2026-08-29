@@ -314,7 +314,9 @@ STORYLINES = {
         # classify ABANDONED there, which needs releases on at least half its
         # instances, so the Radar and the allocation review tell one story about
         # the same block instead of two.
-        'release_instance_rate': 0.55,
+        # Well clear of the 50% the abandoned rule needs: at thirteen instances
+        # a rate of 0.55 lands either side of the line depending on the seed.
+        'release_instance_rate': 0.72,
         'healthy_day_util_pct': 78.0,     # Ortho A on Monday is fine
         # The counterweight runs hot in its own block as well as booking ahead:
         # the briefs pipeline calls a block under-allocated above 75% in-block,
@@ -437,6 +439,22 @@ STORYLINES = {
     # one nobody surfaces: a block held on the wrong day. Vascular holds Tuesday
     # and books most of its work on Thursdays, which looks over-allocated to any
     # measure that sums the week.
+    # Real out-of-block volume concentrates. A surgeon books wherever they can
+    # get time, which is one or two specific days — not a thin film across the
+    # week. Smeared, it can never trigger a day-based rule by construction, so
+    # every owner gets a preferred alternative day.
+    'st8_outside_preference': {
+        'Vascular':         [3],        # ST-8's wrong-day headline: Thursday
+        'Orthopedics':      [0, 3],
+        'Spine':            [1],
+        'General Surgery':  [2],
+        'Urology':          [4],
+        'GYN':              [0],
+        'ENT':              [1],
+        'Plastics':         [2],
+        'Colorectal':       [3],
+        'Robotics-General': [4],
+    },
     'st8': {
         'wrong_day_service': 'Vascular',
         'wrong_day_held': 1,          # Tuesday, held
@@ -447,12 +465,38 @@ STORYLINES = {
         # The two volume patterns, engineered rather than hoped for. Over- and
         # under-allocation both need a block clear of the right-sized band, and
         # under-allocation additionally needs volume visibly spilling outside.
+        # A block whose window outlasts its day, for WRONG_SHAPE.
+        # A wrong-shape block is a *healthy* block in a window that is too long,
+        # not a half-empty one: the room consistently ends early because the day
+        # is the wrong length, and the committee's fix is to shorten the window.
+        # Authored at 58% it read as a volume problem instead, and the
+        # classifier — rightly — refused to call it a shape problem.
+        # The window is two hours longer than the rooms around it — a legacy
+        # ten-hour robotics day nobody has revisited. The room runs a full,
+        # ordinary day inside it and still closes two hours early, which is the
+        # shape finding stated plainly. `used_pct` is against the ordinary day,
+        # not the extended window, so the case load is a normal one.
+        'wrong_shape_block': 'Robotics 1',
+        # Three hours, not two: this is also ST-5's turnover offender, so its
+        # wall clock runs about 8.5h on 6.2h of case time. The window has to
+        # clear the day the room actually runs, not the time it operates.
+        'wrong_shape_window_extra_min': 180,
+        'wrong_shape_used_pct': 78.0,
         'over_allocated_block': 'Plastics',
         'over_allocated_util_pct': 50.0,
+        # Over-allocation means the volume genuinely is not there. With the
+        # service's spill left at its natural level the block books 5.3h a week
+        # outside itself, which is a misplacement story, not a reduction one.
+        'over_allocated_outside_damp': 0.25,
         # Spine carries this: it is already the growing service, so the
         # "under-allocated and still growing" row is one story rather than two.
         'under_allocated_block': 'Spine',
-        'required_patterns': ['WRONG_DAY', 'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'ABANDONED'],
+        # Every actionable pattern, not four of six: a taxonomy the page names
+        # but never demonstrates is a taxonomy nobody trusts.
+        'required_patterns': ['WRONG_DAY', 'WRONG_SHAPE', 'MISPLACED',
+                              'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'ABANDONED'],
+        # Ceiling on blocks that say "no change" or "no clear pattern".
+        'max_inert_share': 0.5,
     },
     # ST-9 The Thursday afternoon PACU peak
     #

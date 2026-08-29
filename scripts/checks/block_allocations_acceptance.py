@@ -36,11 +36,16 @@ SEED = 42
 WEEKS = 13          # a quarter, as the pipeline reviews
 
 
-def main():
-    import seed_demo_tenant as S
-    print('  Generating the seed ...')
-    tables, ctx = S.generate_all(ANCHOR, SEED)
-    since = ANCHOR - dt.timedelta(weeks=WEEKS)
+
+
+def classify(tables, ctx, anchor=ANCHOR, weeks=WEEKS):
+    """
+    Replay the pipeline's aggregation and run the shipping taxonomy.
+
+    Shared with verify.py so the storyline check and this acceptance check
+    assert against one classification rather than two that can drift.
+    """
+    since = anchor - dt.timedelta(weeks=weeks)
     failures = []
 
     def check(label, actual, ok, target):
@@ -52,7 +57,7 @@ def main():
     alloc = {}
     for r in tables['V4_BlockResultsView']:
         d = r['BlockDate']
-        if not (since <= d < ANCHOR) or d.weekday() > 4 or r['CaseBlock'] == 'Open':
+        if not (since <= d < anchor) or d.weekday() > 4 or r['CaseBlock'] == 'Open':
             continue
         key = r['CaseBlock']
         a = alloc.setdefault(key, {'service': r['Group_Service'], 'site': r['LocationGroup'],
@@ -73,7 +78,7 @@ def main():
         if c['__is_future'] or c['__cancelled'] or c['Case_CaseBlock'] != 'Open':
             continue
         d = c['Date_SchedDate']
-        if not (since <= d < ANCHOR) or d.weekday() > 4:
+        if not (since <= d < anchor) or d.weekday() > 4:
             continue
         k = (c['Case_SurgeonService'], c['Loc_ORGrp2'], d.weekday())
         outside[k] = outside.get(k, 0.0) + (c['Dur_ORIn_OROut'] or 0) / 60.0
@@ -87,7 +92,21 @@ def main():
         service_alloc[(a['service'], a['site'])] = \
             service_alloc.get((a['service'], a['site']), 0.0) + total
 
-    weeks = WEEKS
+    # How far into its block each day actually runs, for the wrong-shape test.
+    day_end = {}
+    for c in ctx['cases']:
+        if c['__is_future'] or c['__cancelled'] or c['Case_CaseBlock'] == 'Open':
+            continue
+        d = c['Date_SchedDate']
+        if not (since <= d < anchor):
+            continue
+        k = (c['Case_CaseBlock'], d)
+        day_end[k] = max(day_end.get(k, 0.0), (c['__end_min'] - 7 * 60) / 60.0)
+    tail = {}
+    for (blk, _d), hours in day_end.items():
+        tail.setdefault(blk, []).append(hours)
+    tail = {b: sum(v) / len(v) for b, v in tail.items()}
+
     findings = []
     for block, a in alloc.items():
         by_dow = []
@@ -105,10 +124,25 @@ def main():
         instances = len(a['instances'])
         release_events = len(a.get('released_days', ()))
         found = BP.classify_block(by_dow, release_events=release_events,
-                                  release_of=instances, cfg=THRESHOLDS)
+                                  release_of=instances, cfg=THRESHOLDS,
+                                  last_case_out_hours=tail.get(block))
         findings.append({'owner': block, 'service': a['service'], **found})
 
     findings.sort(key=lambda f: -(f['mismatchHours'] or 0))
+    return findings
+def main():
+    import seed_demo_tenant as S
+    print('  Generating the seed ...')
+    tables, ctx = S.generate_all(ANCHOR, SEED)
+    findings = classify(tables, ctx)
+    weeks = WEEKS
+    failures = []
+
+    def check(label, actual, ok, target):
+        print(f'  [{"ok  " if ok else "FAIL"}] {label:<52} {str(actual):>16}   (target {target})')
+        if not ok:
+            failures.append(f'{label}: {actual}, expected {target}')
+
 
     print(f'\n  {len(findings)} blocks classified over {weeks} weeks\n')
     print(f'  {"block":<16}{"service":<18}{"pattern":<17}{"mismatch":>9}  recommendation')
@@ -132,10 +166,13 @@ def main():
           bool(wd) and wd[0]['service'] == C.STORYLINES['st8']['wrong_day_service'],
           C.STORYLINES['st8']['wrong_day_service'])
 
-    # The findings only read as signal if most blocks are fine.
-    right = sum(1 for f in findings if f['pattern'] == BP.RIGHT_SIZED)
-    check('ST-8 most blocks are right-sized', f'{right} of {len(findings)}',
-          right >= len(findings) * 0.35, '>= 35%')
+    # The inverse of the old assertion, which had it backwards: a roster
+    # where most blocks say "no change" is not a demo, and UNCLASSIFIED counts
+    # as inert too — an honest gap is still not a finding.
+    inert = sum(1 for f in findings
+                if f['pattern'] in (BP.RIGHT_SIZED, BP.UNCLASSIFIED))
+    check('ST-8 no more than half the roster is inert',
+          f'{inert} of {len(findings)}', inert <= len(findings) * 0.5, '<= 50%')
 
     # Sorted by magnitude, because that is what a committee has agenda time for.
     mism = [f['mismatchHours'] or 0 for f in findings]

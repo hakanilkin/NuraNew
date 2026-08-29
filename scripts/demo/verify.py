@@ -359,6 +359,47 @@ def _st5(tables, ctx):
            f">= {s['robotics_room_extra_minutes'] * 0.4:g}", ok, 'min')
 
 
+def _st8(tables, ctx):
+    """
+    Block Allocations: the taxonomy has to be visible in the data, not just in
+    the code. Classification runs through the acceptance check's replay of the
+    pipeline aggregation, so this asserts the same numbers the page will show.
+    """
+    import os
+    import sys
+    root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        '..', '..'))
+    for path in (root, os.path.join(root, 'scripts', 'checks')):
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    import block_allocations_acceptance as BA
+    import block_patterns as BP
+
+    s8 = C.STORYLINES['st8']
+    findings = BA.classify(tables, ctx, anchor=ctx['anchor'])
+    by_owner = {f['owner']: f for f in findings}
+
+    for pat in s8['required_patterns']:
+        n = sum(1 for f in findings if f['pattern'] == pat)
+        _check(f'ST-8 blocks classified {pat}', n, '>= 1',
+               PASS if n >= 1 else FAIL)
+
+    ortho = by_owner.get(s8['abandoned_block'])
+    _check(f'ST-8 {s8["abandoned_block"]} is ABANDONED',
+           ortho['pattern'] if ortho else None, 'ABANDONED',
+           PASS if (ortho and ortho['pattern'] == BP.ABANDONED) else FAIL)
+
+    # A roster of "no change" is not a demo. UNCLASSIFIED counts as inert too:
+    # an honest gap is still not a finding a committee can act on.
+    inert = sum(1 for f in findings
+                if f['pattern'] in (BP.RIGHT_SIZED, BP.UNCLASSIFIED))
+    share = inert / len(findings) if findings else 1.0
+    _check('ST-8 inert share of the block roster', round(share * 100, 1),
+           f'<= {s8["max_inert_share"] * 100:g}',
+           PASS if share <= s8['max_inert_share'] else FAIL, '%',
+           f'{inert} of {len(findings)}')
+
+
 def _st7(tables, ctx):
     """
     The radar has to read as a work queue, not a one-row demo: a few blocks at
@@ -591,7 +632,7 @@ def run(tables, ctx):
     print('  Storyline reconciliation — DemoTenant.md section 10')
     print('=' * 72)
 
-    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6, _st7, _st9):
+    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6, _st7, _st8, _st9):
         try:
             fn(tables, ctx)
         except Exception as exc:                    # a broken check must not hide the rest

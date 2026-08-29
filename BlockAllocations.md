@@ -146,7 +146,14 @@ forward-fill query is reusable as the trend input; the UI is not.
 
 ---
 
-## 7. ScenarioPanel
+## 7. ScenarioPanel — superseded
+
+> **Superseded by `BlockAllocationsFixes.md` §3.** This page does not host the
+> ScenarioPanel. A committee reviewing the allocated grid wants evidence for the
+> numbers in front of it, not a simulation, so the row action is **See details**:
+> a right slide-over with the full-size week shape, the numeric day table, and
+> the forward book behind the Pipeline column. The panel keeps its Release Time
+> Mgmt host only. The reasoning below is kept for the record.
 
 A reallocation recommendation is a **decision** — "what if we moved Dr. Vance's
 block from Tuesday to Thursday" — which is exactly what the panel is for.

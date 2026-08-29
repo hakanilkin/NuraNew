@@ -22,9 +22,13 @@ ABANDONED = 'ABANDONED'
 WRONG_DAY = 'WRONG_DAY'
 WRONG_SHAPE = 'WRONG_SHAPE'
 FRAGMENTED = 'FRAGMENTED'
+MISPLACED = 'MISPLACED'
 UNDER_ALLOCATED = 'UNDER_ALLOCATED'
 OVER_ALLOCATED = 'OVER_ALLOCATED'
 RIGHT_SIZED = 'RIGHT_SIZED'
+# Nothing matched. An honest gap, never an endorsement: a silent fallback that
+# reads as "fine" is the thing a sceptical director catches on a projector.
+UNCLASSIFIED = 'UNCLASSIFIED'
 
 GROWING, STABLE, DECLINING = 'GROWING', 'STABLE', 'DECLINING'
 
@@ -38,14 +42,16 @@ DEFAULT_THRESHOLDS = {
     'over_allocated_lt_pct': 62.0,
     'under_allocated_gt_pct': 88.0,
     # Out-of-block hours a week that count as "material" — the volume is there,
-    # it is simply not landing in the block.
+    # it is simply not landing in the block. A single threshold, so a value
+    # between two of them can never match nothing.
     'material_outside_hours': 3.0,
-    'low_outside_hours': 1.5,
     # WRONG_DAY: a held day this empty, against an unheld day this busy.
     'wrong_day_held_used_pct': 45.0,
     'wrong_day_outside_hours': 2.5,
-    # WRONG_SHAPE: allocated window longer than the day actually runs.
+    # WRONG_SHAPE: allocated window longer than the day actually runs — and the
+    # day it does run is long enough to be worth keeping.
     'wrong_shape_slack_hours': 2.0,
+    'wrong_shape_min_day_hours': 6.0,
     # FRAGMENTED: spread this thin across this many days.
     'fragmented_min_days': 3,
     'fragmented_chunk_hours': 4.0,
@@ -174,7 +180,14 @@ def classify_block(by_dow, release_events=0, release_of=0,
     if last_case_out_hours is not None and held_days:
         window = max(d['alloc'] for d in held_days)
         slack = window - _num(last_case_out_hours)
-        if slack >= t['wrong_shape_slack_hours']:
+        # The day the room actually runs has to be a real day. Without this a
+        # half-empty block finishes early, shows plenty of slack, and reads as a
+        # shape problem — sending the committee to shorten a window when what
+        # they should do is reduce the allocation. Gating on utilisation instead
+        # would be self-defeating: an over-long window is what depresses
+        # utilisation here, so the signature would suppress itself.
+        if slack >= t['wrong_shape_slack_hours'] \
+                and _num(last_case_out_hours) >= t['wrong_shape_min_day_hours']:
             longest = max(held_days, key=lambda d: d['alloc'])
             return _result(
                 WRONG_SHAPE, alloc, drivers + [driver(
@@ -186,7 +199,31 @@ def classify_block(by_dow, release_events=0, release_of=0,
                 delta_hours=-_round1(slack), trend=trend, cfg=t, days=days,
                 mismatch_override=slack * max(1, len(held_days)))
 
-    # ── 4. Fragmented ───────────────────────────────────────────────────────
+    # ── 4. Misplaced ────────────────────────────────────────────────────────
+    # Low utilisation with material volume outside matches neither volume
+    # pattern — over-allocated wants the volume absent, under-allocated wants
+    # the block full. That gap is most of a roster, and it is a real finding.
+    # Two departures from the spec, both to close holes it left open. The spec
+    # scopes this to util below the right-sized floor, which leaves its own dead
+    # zone: a block inside the band with material volume outside it matches
+    # nothing either. The bar is the under-allocated threshold instead, so
+    # material outside volume always lands somewhere — under-allocated if the
+    # block is also full, misplaced if not. And there is no dominant-day guard,
+    # because WRONG_DAY is tested above: a block reaching here with a
+    # concentrated alternative day is one whose held day was not empty enough to
+    # move, and excluding it a second time drops it into nothing at all.
+    if util is not None and util < t['under_allocated_gt_pct'] \
+            and outside >= t['material_outside_hours']:
+        window = max((d['alloc'] for d in held_days), default=0.0)
+        return _result(
+            MISPLACED, alloc, drivers,
+            f'Uses {_round1(util)}% of a {_round1(window)}h block while booking '
+            f'{_round1(outside)}h a week outside it — review day and shape with the '
+            f'owner before changing the allocation.',
+            delta_hours=0.0, trend=trend, cfg=t, days=days,
+            mismatch_override=min(alloc - used, outside))
+
+    # ── 5. Fragmented ───────────────────────────────────────────────────────
     if len(held_days) >= t['fragmented_min_days'] \
             and all(d['alloc'] < t['fragmented_chunk_hours'] for d in held_days):
         return _result(
@@ -198,7 +235,7 @@ def classify_block(by_dow, release_events=0, release_of=0,
             f'{max(1, round(alloc / t["fragmented_chunk_hours"]))} longer blocks.',
             delta_hours=0.0, trend=trend, cfg=t, days=days)
 
-    # ── 5. Volume patterns ──────────────────────────────────────────────────
+    # ── 6. Volume patterns ──────────────────────────────────────────────────
     if util is not None and util > t['under_allocated_gt_pct'] \
             and outside >= t['material_outside_hours']:
         add = _round1(outside * 0.75)
@@ -209,10 +246,16 @@ def classify_block(by_dow, release_events=0, release_of=0,
             delta_hours=add, trend=trend, cfg=t, days=days,
             mismatch_override=outside)
 
+    # One threshold with two sides rather than two that can overlap or leave a
+    # gap: volume outside the block is either material or it is not.
+    target = total * (1 + t['headroom_pct'] / 100)
+    # Only over-allocated if there is something to give back. Sizing the target
+    # from used plus outside can land above the current allocation, and
+    # "reduce from 8h to about 10h" is worse than saying nothing.
     if util is not None and util < t['over_allocated_lt_pct'] \
-            and outside <= t['low_outside_hours']:
-        target = total * (1 + t['headroom_pct'] / 100)
-        cut = _round1(max(0.0, alloc - target))
+            and outside < t['material_outside_hours'] \
+            and target < alloc - 0.5:
+        cut = _round1(alloc - target)
         return _result(
             OVER_ALLOCATED, alloc, drivers,
             f'Reduce from {_round1(alloc)}h to about {_round1(target)}h a week — '
@@ -220,8 +263,18 @@ def classify_block(by_dow, release_events=0, release_of=0,
             delta_hours=-cut, trend=trend, cfg=t, days=days,
             mismatch_override=cut)
 
-    return _result(RIGHT_SIZED, alloc, drivers, 'No change.', delta_hours=0.0,
-                   trend=trend, cfg=t, days=days, mismatch_override=0.0)
+    # RIGHT_SIZED is an assertion against the configured bands, not the place
+    # everything unmatched lands.
+    if util is not None and t['right_sized_min_pct'] <= util <= t['right_sized_max_pct'] \
+            and outside < t['material_outside_hours']:
+        return _result(RIGHT_SIZED, alloc, drivers, 'No change.', delta_hours=0.0,
+                       trend=trend, cfg=t, days=days, mismatch_override=0.0)
+
+    return _result(
+        UNCLASSIFIED, alloc, drivers,
+        'No clear pattern — the numbers do not match any rule cleanly. '
+        'Review with the owner.',
+        delta_hours=0.0, trend=trend, cfg=t, days=days, mismatch_override=0.0)
 
 
 def _result(pattern, alloc, drivers, recommendation, delta_hours, trend, cfg, days,

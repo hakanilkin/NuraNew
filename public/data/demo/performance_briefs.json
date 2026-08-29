@@ -6,15 +6,15 @@
   "groups": [
     {
       "caseblock": "ASC ENT",
-      "status": "watch",
-      "inblock_util": 68.6,
-      "primetime_util": 68.6,
-      "volume": 129,
+      "status": "right_sized",
+      "inblock_util": 70.5,
+      "primetime_util": 70.5,
+      "volume": 133,
       "deltas": {
-        "volume": -4,
-        "volume_pct": -3.0,
-        "inblock_util": 2.7,
-        "primetime_util": 2.7
+        "volume": 6,
+        "volume_pct": 4.7,
+        "inblock_util": 2.8,
+        "primetime_util": 2.8
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -23,14 +23,14 @@
     {
       "caseblock": "ASC General",
       "status": "right_sized",
-      "inblock_util": 74.4,
-      "primetime_util": 74.4,
+      "inblock_util": 70.9,
+      "primetime_util": 70.9,
       "volume": 99,
       "deltas": {
-        "volume": 3,
-        "volume_pct": 3.1,
-        "inblock_util": 0.7,
-        "primetime_util": 0.7
+        "volume": -5,
+        "volume_pct": -4.8,
+        "inblock_util": -5.9,
+        "primetime_util": -5.9
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -39,14 +39,14 @@
     {
       "caseblock": "ASC Ortho",
       "status": "under_allocated",
-      "inblock_util": 76.8,
-      "primetime_util": 76.8,
-      "volume": 84,
+      "inblock_util": 76.5,
+      "primetime_util": 76.5,
+      "volume": 83,
       "deltas": {
-        "volume": 4,
-        "volume_pct": 5.0,
-        "inblock_util": 4.0,
-        "primetime_util": 4.0
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": -1.8,
+        "primetime_util": -1.8
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -55,14 +55,14 @@
     {
       "caseblock": "ASC Plastics",
       "status": "watch",
-      "inblock_util": 69.4,
-      "primetime_util": 69.4,
-      "volume": 44,
+      "inblock_util": 68.7,
+      "primetime_util": 68.7,
+      "volume": 51,
       "deltas": {
-        "volume": -1,
-        "volume_pct": -2.2,
-        "inblock_util": 6.0,
-        "primetime_util": 6.0
+        "volume": 2,
+        "volume_pct": 4.1,
+        "inblock_util": 4.3,
+        "primetime_util": 4.3
       },
       "findings": [],
       "allocated_hours": 91.0,
@@ -71,14 +71,14 @@
     {
       "caseblock": "ASC Uro/Gyn",
       "status": "under_allocated",
-      "inblock_util": 75.9,
-      "primetime_util": 75.9,
-      "volume": 126,
+      "inblock_util": 80.0,
+      "primetime_util": 80.0,
+      "volume": 130,
       "deltas": {
-        "volume": 6,
-        "volume_pct": 5.0,
-        "inblock_util": 1.9,
-        "primetime_util": 1.9
+        "volume": 3,
+        "volume_pct": 2.4,
+        "inblock_util": 3.5,
+        "primetime_util": 3.5
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -87,30 +87,41 @@
     {
       "caseblock": "Colorectal",
       "status": "watch",
-      "inblock_util": 64.6,
-      "primetime_util": 64.6,
-      "volume": 69,
+      "inblock_util": 63.9,
+      "primetime_util": 63.9,
+      "volume": 71,
       "deltas": {
-        "volume": -1,
-        "volume_pct": -1.4,
-        "inblock_util": -8.0,
-        "primetime_util": -8.0
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": -10.2,
+        "primetime_util": -10.2
       },
-      "findings": [],
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 74.1% to 63.9% QoQ (-10.2 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 74.1% to 63.9% QoQ (-10.2 pts).",
+          "severity": 3
+        }
+      ],
       "allocated_hours": 208.0,
       "budget": null
     },
     {
       "caseblock": "ENT",
       "status": "watch",
-      "inblock_util": 64.2,
-      "primetime_util": 64.2,
-      "volume": 69,
+      "inblock_util": 64.6,
+      "primetime_util": 64.6,
+      "volume": 72,
       "deltas": {
-        "volume": 0,
-        "volume_pct": 0.0,
-        "inblock_util": 4.0,
-        "primetime_util": 4.0
+        "volume": 3,
+        "volume_pct": 4.3,
+        "inblock_util": 0.5,
+        "primetime_util": 0.5
       },
       "findings": [],
       "allocated_hours": 104.0,
@@ -119,14 +130,14 @@
     {
       "caseblock": "General A",
       "status": "watch",
-      "inblock_util": 68.8,
-      "primetime_util": 68.8,
-      "volume": 112,
+      "inblock_util": 67.9,
+      "primetime_util": 67.9,
+      "volume": 111,
       "deltas": {
-        "volume": 2,
-        "volume_pct": 1.8,
-        "inblock_util": 2.8,
-        "primetime_util": 2.8
+        "volume": -7,
+        "volume_pct": -5.9,
+        "inblock_util": 1.6,
+        "primetime_util": 1.6
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -135,14 +146,14 @@
     {
       "caseblock": "General B",
       "status": "watch",
-      "inblock_util": 63.6,
-      "primetime_util": 63.6,
-      "volume": 93,
+      "inblock_util": 63.5,
+      "primetime_util": 63.5,
+      "volume": 104,
       "deltas": {
-        "volume": -3,
-        "volume_pct": -3.1,
-        "inblock_util": 0.6,
-        "primetime_util": 0.6
+        "volume": 7,
+        "volume_pct": 7.2,
+        "inblock_util": 2.9,
+        "primetime_util": 2.9
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -152,51 +163,57 @@
       "caseblock": "Open",
       "status": "misaligned",
       "inblock_util": 0.0,
-      "primetime_util": 77.3,
-      "volume": 1151,
+      "primetime_util": 77.7,
+      "volume": 1062,
       "deltas": {
-        "volume": 98,
-        "volume_pct": 9.3,
+        "volume": 16,
+        "volume_pct": 1.5,
         "inblock_util": 0.0,
-        "primetime_util": 0.6
+        "primetime_util": 1.4
       },
       "findings": [
         {
           "type": "outofblock_high",
-          "text": "100% of OR time was out-of-block this quarter (104,885 min out of 104,885 min total).",
+          "text": "100% of OR time was out-of-block this quarter (103,221 min out of 103,221 min total).",
           "severity": 2
         }
       ],
-      "allocated_hours": 2260.0,
+      "allocated_hours": 2213.33,
       "budget": null
     },
     {
       "caseblock": "Ortho A",
       "status": "over_allocated",
-      "inblock_util": 55.8,
-      "primetime_util": 55.8,
-      "volume": 39,
+      "inblock_util": 59.9,
+      "primetime_util": 59.9,
+      "volume": 33,
       "deltas": {
-        "volume": 2,
-        "volume_pct": 5.4,
-        "inblock_util": -2.8,
-        "primetime_util": -2.8
+        "volume": -3,
+        "volume_pct": -8.3,
+        "inblock_util": 0.3,
+        "primetime_util": 0.3
       },
-      "findings": [],
+      "findings": [
+        {
+          "type": "released_high",
+          "text": "34% of allocated block time was released this quarter (2,145 min of 6,240 min allocated).",
+          "severity": 1
+        }
+      ],
       "allocated_hours": 104.0,
       "budget": null
     },
     {
       "caseblock": "Ortho B",
       "status": "watch",
-      "inblock_util": 67.6,
-      "primetime_util": 67.6,
+      "inblock_util": 68.7,
+      "primetime_util": 68.7,
       "volume": 89,
       "deltas": {
-        "volume": 7,
-        "volume_pct": 8.5,
-        "inblock_util": -1.7,
-        "primetime_util": -1.7
+        "volume": -3,
+        "volume_pct": -3.3,
+        "inblock_util": -0.7,
+        "primetime_util": -0.7
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -205,19 +222,19 @@
     {
       "caseblock": "Ortho C",
       "status": "watch",
-      "inblock_util": 64.4,
-      "primetime_util": 64.4,
-      "volume": 39,
+      "inblock_util": 63.4,
+      "primetime_util": 63.4,
+      "volume": 40,
       "deltas": {
-        "volume": -6,
-        "volume_pct": -13.3,
-        "inblock_util": -0.3,
-        "primetime_util": -0.3
+        "volume": -5,
+        "volume_pct": -11.1,
+        "inblock_util": 0.1,
+        "primetime_util": 0.1
       },
       "findings": [
         {
           "type": "volume_qoq",
-          "text": "Volume moved from 45 to 39 cases QoQ (-13%).",
+          "text": "Volume moved from 45 to 40 cases QoQ (-11%).",
           "severity": 2
         }
       ],
@@ -226,84 +243,84 @@
     },
     {
       "caseblock": "Plastics",
-      "status": "watch",
-      "inblock_util": 63.9,
-      "primetime_util": 63.9,
-      "volume": 57,
+      "status": "over_allocated",
+      "inblock_util": 48.6,
+      "primetime_util": 48.6,
+      "volume": 36,
       "deltas": {
-        "volume": 0,
-        "volume_pct": 0.0,
-        "inblock_util": 2.5,
-        "primetime_util": 2.5
+        "volume": 4,
+        "volume_pct": 12.5,
+        "inblock_util": 5.0,
+        "primetime_util": 5.0
       },
-      "findings": [],
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 32 to 36 cases QoQ (+12%).",
+          "severity": 2
+        }
+      ],
       "allocated_hours": 104.0,
       "budget": null
     },
     {
       "caseblock": "Robotics 1",
       "status": "watch",
-      "inblock_util": 68.4,
-      "primetime_util": 68.4,
-      "volume": 108,
+      "inblock_util": 65.1,
+      "primetime_util": 65.1,
+      "volume": 105,
       "deltas": {
-        "volume": -1,
-        "volume_pct": -0.9,
-        "inblock_util": 0.7,
-        "primetime_util": 0.7
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": 3.6,
+        "primetime_util": 3.6
       },
       "findings": [],
-      "allocated_hours": 312.0,
+      "allocated_hours": 351.0,
       "budget": null
     },
     {
       "caseblock": "Spine",
-      "status": "under_allocated",
-      "inblock_util": 78.9,
-      "primetime_util": 78.9,
-      "volume": 69,
+      "status": "right_sized",
+      "inblock_util": 75.0,
+      "primetime_util": 75.0,
+      "volume": 67,
       "deltas": {
-        "volume": 7,
-        "volume_pct": 11.3,
-        "inblock_util": 1.3,
-        "primetime_util": 1.3
+        "volume": -5,
+        "volume_pct": -6.9,
+        "inblock_util": 3.8,
+        "primetime_util": 3.8
       },
-      "findings": [
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 62 to 69 cases QoQ (+11%).",
-          "severity": 2
-        }
-      ],
+      "findings": [],
       "allocated_hours": 208.0,
       "budget": null
     },
     {
       "caseblock": "Spine B",
       "status": "watch",
-      "inblock_util": 64.7,
-      "primetime_util": 64.7,
-      "volume": 37,
+      "inblock_util": 66.1,
+      "primetime_util": 66.1,
+      "volume": 31,
       "deltas": {
-        "volume": 9,
-        "volume_pct": 32.1,
-        "inblock_util": -13.6,
-        "primetime_util": -13.6
+        "volume": -7,
+        "volume_pct": -18.4,
+        "inblock_util": -9.3,
+        "primetime_util": -9.3
       },
       "findings": [
         {
           "type": "inblock_util_qoq",
-          "text": "In-block utilization moved from 78.3% to 64.7% QoQ (-13.6 pts).",
+          "text": "In-block utilization moved from 75.4% to 66.1% QoQ (-9.3 pts).",
           "severity": 3
         },
         {
           "type": "primetime_util_qoq",
-          "text": "Primetime utilization moved from 78.3% to 64.7% QoQ (-13.6 pts).",
+          "text": "Primetime utilization moved from 75.4% to 66.1% QoQ (-9.3 pts).",
           "severity": 3
         },
         {
           "type": "volume_qoq",
-          "text": "Volume moved from 28 to 37 cases QoQ (+32%).",
+          "text": "Volume moved from 38 to 31 cases QoQ (-18%).",
           "severity": 2
         }
       ],
@@ -313,40 +330,1492 @@
     {
       "caseblock": "Uro/Gyn",
       "status": "watch",
-      "inblock_util": 63.8,
-      "primetime_util": 63.8,
-      "volume": 117,
+      "inblock_util": 65.2,
+      "primetime_util": 65.2,
+      "volume": 128,
       "deltas": {
-        "volume": 1,
-        "volume_pct": 0.9,
-        "inblock_util": 0.4,
-        "primetime_util": 0.4
+        "volume": 20,
+        "volume_pct": 18.5,
+        "inblock_util": -0.2,
+        "primetime_util": -0.2
       },
-      "findings": [],
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 108 to 128 cases QoQ (+19%).",
+          "severity": 2
+        }
+      ],
       "allocated_hours": 208.0,
       "budget": null
     },
     {
       "caseblock": "Vascular",
-      "status": "under_allocated",
-      "inblock_util": 76.6,
-      "primetime_util": 76.6,
-      "volume": 46,
+      "status": "over_allocated",
+      "inblock_util": 34.8,
+      "primetime_util": 34.8,
+      "volume": 14,
       "deltas": {
-        "volume": 7,
-        "volume_pct": 17.9,
-        "inblock_util": 4.3,
-        "primetime_util": 4.3
+        "volume": -4,
+        "volume_pct": -22.2,
+        "inblock_util": -3.0,
+        "primetime_util": -3.0
       },
       "findings": [
         {
           "type": "volume_qoq",
-          "text": "Volume moved from 39 to 46 cases QoQ (+18%).",
+          "text": "Volume moved from 18 to 14 cases QoQ (-22%).",
           "severity": 2
         }
       ],
       "allocated_hours": 104.0,
       "budget": null
+    }
+  ],
+  "allocations": [
+    {
+      "owner": "ASC Ortho",
+      "service": "Orthopedics",
+      "site": "Bright Surgery Center",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 2,
+        "of": 26
+      },
+      "pattern": "UNDER_ALLOCATED",
+      "mismatchHours": 13.3,
+      "recommendation": {
+        "text": "Add about 10.0h a week \u2014 the block runs at 76.5% and 13.3h is already spilling outside it.",
+        "deltaHours": 10.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 76.5,
+          "detail": "10.8h used of 14.2h allocated (76.5%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 13.3,
+          "detail": "13.3h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 7.0777777777777775,
+          "used": 5.006296244444444,
+          "outside": 6.170370344444444,
+          "released": 0.35
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.254814788888889,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 7.0777777777777775,
+          "used": 5.8268518,
+          "outside": 1.245740688888889,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 4.2090740222222225,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.42129624444444447,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 14.2
+    },
+    {
+      "owner": "Ortho A",
+      "service": "Orthopedics",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 11,
+        "of": 13
+      },
+      "pattern": "ABANDONED",
+      "mismatchHours": 8.1,
+      "recommendation": {
+        "text": "Released 11 of the last 13 instances \u2014 reallocate rather than re-release.",
+        "deltaHours": -8.1,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 59.9,
+          "detail": "4.8h used of 8.1h allocated (59.9%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 7.8,
+          "detail": "7.8h a week booked outside any block"
+        },
+        {
+          "key": "releases",
+          "label": "Release history",
+          "contribution": 11.0,
+          "detail": "Released 11 of 13 instances (85%)"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 3.640648141666666,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.40249999999999997,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.7165277777777778,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 8.088888888888889,
+          "used": 4.848148122222223,
+          "outside": 2.872592586111111,
+          "released": 2.78
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.19314814166666663,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "Robotics 1",
+      "service": "Robotics-General",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 39,
+      "releaseHistory": {
+        "count": 3,
+        "of": 39
+      },
+      "pattern": "WRONG_SHAPE",
+      "mismatchHours": 8.1,
+      "recommendation": {
+        "text": "Shorten Monday from 11.1h to 8.9h, or pair a second owner into the tail.",
+        "deltaHours": -2.7,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 65.1,
+          "detail": "17.8h used of 27.3h allocated (65.1%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 3.6,
+          "detail": "3.6h a week booked outside any block"
+        },
+        {
+          "key": "tail",
+          "label": "Unused tail",
+          "contribution": 2.7,
+          "detail": "Cases consistently finish by 8.4h into a 11.1h block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 11.122222222222222,
+          "used": 5.955185133333333,
+          "outside": 0.5664814555555555,
+          "released": 0.89
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3020370111111111,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 8.088888888888889,
+          "used": 5.9862962444444445,
+          "outside": 1.4168517999999999,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.08814812222222221,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 8.088888888888889,
+          "used": 5.843703677777777,
+          "outside": 1.2068518,
+          "released": 0.27
+        }
+      ],
+      "allocatedHours": 27.3
+    },
+    {
+      "owner": "Vascular",
+      "service": "Vascular",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 1,
+        "of": 13
+      },
+      "pattern": "WRONG_DAY",
+      "mismatchHours": 8.1,
+      "recommendation": {
+        "text": "Move the Tuesday block to Thursday \u2014 14.0h a week is already being booked there.",
+        "deltaHours": 0.0,
+        "targetDow": 3
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 34.8,
+          "detail": "2.8h used of 8.1h allocated (34.8%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 16.0,
+          "detail": "16.0h a week booked outside any block"
+        },
+        {
+          "key": "held_day",
+          "label": "Tuesday allocation",
+          "contribution": 5.3,
+          "detail": "Tuesday: 2.8h used of 8.1h held"
+        },
+        {
+          "key": "busy_day",
+          "label": "Thursday volume",
+          "contribution": 14.0,
+          "detail": "Thursday: 14.0h booked with no block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.11796291111111111,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 8.088888888888889,
+          "used": 2.8181481222222224,
+          "outside": 0.22685180000000002,
+          "released": 0.35
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.5296295777777777,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 14.014259233333334,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.08037034444444445,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "General B",
+      "service": "General Surgery",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 0,
+        "of": 26
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 5.9,
+      "recommendation": {
+        "text": "Uses 63.5% of a 8.1h block while booking 8.4h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 63.5,
+          "detail": "10.3h used of 16.2h allocated (63.5%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 8.4,
+          "detail": "8.4h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.37462961666666666,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.2631481222222222,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 8.088888888888889,
+          "used": 5.532592566666666,
+          "outside": 7.447870344444444,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.21712961666666664,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 8.088888888888889,
+          "used": 4.735370344444444,
+          "outside": 0.0959259,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 16.2
+    },
+    {
+      "owner": "Colorectal",
+      "service": "Colorectal",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 3,
+        "of": 26
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 5.8,
+      "recommendation": {
+        "text": "Uses 63.9% of a 8.1h block while booking 6.4h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 63.9,
+          "detail": "10.3h used of 16.2h allocated (63.9%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 6.4,
+          "detail": "6.4h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 8.088888888888889,
+          "used": 5.00111111111111,
+          "outside": 0.2411111111111111,
+          "released": 0.27
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.12962957777777778,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.8848147888888886,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 4.0185184666666665,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 8.088888888888889,
+          "used": 5.3342592333333325,
+          "outside": 0.14777777777777776,
+          "released": 0.45
+        }
+      ],
+      "allocatedHours": 16.2
+    },
+    {
+      "owner": "General A",
+      "service": "General Surgery",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 1,
+        "of": 26
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 5.2,
+      "recommendation": {
+        "text": "Uses 67.9% of a 8.1h block while booking 8.4h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 67.9,
+          "detail": "11.0h used of 16.2h allocated (67.9%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 8.4,
+          "detail": "8.4h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.37462961666666666,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 8.088888888888889,
+          "used": 5.785370344444444,
+          "outside": 0.2631481222222222,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 7.447870344444444,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 8.088888888888889,
+          "used": 5.207222222222223,
+          "outside": 0.21712961666666664,
+          "released": 0.35
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0959259,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 16.2
+    },
+    {
+      "owner": "Ortho B",
+      "service": "Orthopedics",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 0,
+        "of": 26
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 5.1,
+      "recommendation": {
+        "text": "Uses 68.7% of a 8.1h block while booking 15.7h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 68.7,
+          "detail": "11.1h used of 16.2h allocated (68.7%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 15.7,
+          "detail": "15.7h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 7.281296283333332,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 8.088888888888889,
+          "used": 5.987592566666667,
+          "outside": 0.8049999999999999,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.4330555555555555,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 5.745185172222222,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 8.088888888888889,
+          "used": 5.125555555555556,
+          "outside": 0.38629628333333327,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 16.2
+    },
+    {
+      "owner": "Spine",
+      "service": "Spine",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 1,
+        "of": 26
+      },
+      "pattern": "UNDER_ALLOCATED",
+      "mismatchHours": 4.4,
+      "recommendation": {
+        "text": "Add about 3.3h a week \u2014 the block runs at 75.0% and 4.4h is already spilling outside it.",
+        "deltaHours": 3.3,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 75.0,
+          "detail": "12.1h used of 16.2h allocated (75.0%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 4.4,
+          "detail": "4.4h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 8.088888888888889,
+          "used": 5.714074022222222,
+          "outside": 0.7630863851851851,
+          "released": 0.33
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 2.626296296296296,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 8.088888888888889,
+          "used": 6.414074022222223,
+          "outside": 0.7838271259259258,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.22296296296296295,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 16.2
+    },
+    {
+      "owner": "ASC General",
+      "service": "General Surgery",
+      "site": "Bright Surgery Center",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 2,
+        "of": 26
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 4.1,
+      "recommendation": {
+        "text": "Uses 70.9% of a 7.1h block while booking 5.0h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 70.9,
+          "detail": "10.0h used of 14.2h allocated (70.9%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 5.0,
+          "detail": "5.0h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.4511111111111111,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 7.0777777777777775,
+          "used": 5.399074022222223,
+          "outside": 0.27870367777777777,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 4.115740688888889,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.15425923333333333,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 7.0777777777777775,
+          "used": 4.630370344444445,
+          "outside": 0.044074022222222224,
+          "released": 0.33
+        }
+      ],
+      "allocatedHours": 14.2
+    },
+    {
+      "owner": "Ortho C",
+      "service": "Orthopedics",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 0,
+        "of": 13
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 3.0,
+      "recommendation": {
+        "text": "Uses 63.4% of a 8.1h block while booking 7.8h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 63.4,
+          "detail": "5.1h used of 8.1h allocated (63.4%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 7.8,
+          "detail": "7.8h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 8.088888888888889,
+          "used": 5.126851800000001,
+          "outside": 3.640648141666666,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.40249999999999997,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.7165277777777778,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 2.872592586111111,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.19314814166666663,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "ENT",
+      "service": "ENT",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 0,
+        "of": 13
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 2.9,
+      "recommendation": {
+        "text": "Uses 64.6% of a 8.1h block while booking 4.5h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 64.6,
+          "detail": "5.2h used of 8.1h allocated (64.6%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 4.5,
+          "detail": "4.5h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3461111111111111,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 8.088888888888889,
+          "used": 5.226666666666667,
+          "outside": 2.3462962444444444,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.3805555555555555,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3953703444444444,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.028518466666666666,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "Uro/Gyn",
+      "service": "GYN",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 0,
+        "of": 13
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 2.7,
+      "recommendation": {
+        "text": "Uses 67.1% of a 8.1h block while booking 5.3h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 67.1,
+          "detail": "5.4h used of 8.1h allocated (67.1%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 5.3,
+          "detail": "5.3h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 3.0851851333333333,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.49518513333333336,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.5944444444444443,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 8.088888888888889,
+          "used": 5.430185133333333,
+          "outside": 0.08296291111111109,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.05444444444444444,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "Plastics",
+      "service": "Plastics",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 1,
+        "of": 13
+      },
+      "pattern": "OVER_ALLOCATED",
+      "mismatchHours": 2.3,
+      "recommendation": {
+        "text": "Reduce from 8.1h to about 5.8h a week \u2014 the volume is not there and little is booking elsewhere.",
+        "deltaHours": -2.3,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 48.6,
+          "detail": "3.9h used of 8.1h allocated (48.6%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 1.1,
+          "detail": "1.1h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.079814788888889,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 8.088888888888889,
+          "used": 3.9342592333333335,
+          "outside": 0.0,
+          "released": 0.25
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "ASC ENT",
+      "service": "ENT",
+      "site": "Bright Surgery Center",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 0,
+        "of": 26
+      },
+      "pattern": "RIGHT_SIZED",
+      "mismatchHours": 0.0,
+      "recommendation": {
+        "text": "No change.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 70.5,
+          "detail": "10.0h used of 14.2h allocated (70.5%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 1.0,
+          "detail": "1.0h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 7.0777777777777775,
+          "used": 4.714629577777778,
+          "outside": 0.0,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.4459259,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 7.0777777777777775,
+          "used": 5.264259233333333,
+          "outside": 0.2631481222222222,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.2087036777777778,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.06740735555555556,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 14.2
+    },
+    {
+      "owner": "ASC Plastics",
+      "service": "Plastics",
+      "site": "Bright Surgery Center",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 0,
+        "of": 13
+      },
+      "pattern": "RIGHT_SIZED",
+      "mismatchHours": 0.0,
+      "recommendation": {
+        "text": "No change.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 68.7,
+          "detail": "4.9h used of 7.1h allocated (68.7%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 0.4,
+          "detail": "0.4h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.05703701111111111,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3772222222222222,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 7.0777777777777775,
+          "used": 4.862407355555556,
+          "outside": 0.0,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 7.1
+    },
+    {
+      "owner": "ASC Uro/Gyn",
+      "service": "GYN",
+      "site": "Bright Surgery Center",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 1,
+        "of": 13
+      },
+      "pattern": "RIGHT_SIZED",
+      "mismatchHours": 0.0,
+      "recommendation": {
+        "text": "No change.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 84.4,
+          "detail": "6.0h used of 7.1h allocated (84.4%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 3.0,
+          "detail": "3.0h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.7085184666666666,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.044074022222222224,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.6429629111111111,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 7.0777777777777775,
+          "used": 5.973333333333333,
+          "outside": 0.4187036777777778,
+          "released": 0.19
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.23462957777777776,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 7.1
+    },
+    {
+      "owner": "ASC Uro/Gyn",
+      "service": "Urology",
+      "site": "Bright Surgery Center",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 0,
+        "of": 13
+      },
+      "pattern": "RIGHT_SIZED",
+      "mismatchHours": 0.0,
+      "recommendation": {
+        "text": "No change.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 75.7,
+          "detail": "5.4h used of 7.1h allocated (75.7%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 1.8,
+          "detail": "1.8h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.30851846666666666,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 7.0777777777777775,
+          "used": 5.356296244444444,
+          "outside": 0.385,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.4446295777777778,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.19444444444444445,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.4524073555555555,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 7.1
+    },
+    {
+      "owner": "Spine B",
+      "service": "Spine",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 1,
+        "of": 13
+      },
+      "pattern": "RIGHT_SIZED",
+      "mismatchHours": 0.0,
+      "recommendation": {
+        "text": "No change.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 66.1,
+          "detail": "5.3h used of 8.1h allocated (66.1%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 2.2,
+          "detail": "2.2h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.38154319259259256,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.313148148148148,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3919135629629629,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.11148148148148147,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 8.088888888888889,
+          "used": 5.344629577777778,
+          "outside": 0.0,
+          "released": 0.29
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "Uro/Gyn",
+      "service": "Urology",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 0,
+        "of": 13
+      },
+      "pattern": "RIGHT_SIZED",
+      "mismatchHours": 0.0,
+      "recommendation": {
+        "text": "No change.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 63.3,
+          "detail": "5.1h used of 8.1h allocated (63.3%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 2.4,
+          "detail": "2.4h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.15944444444444442,
+          "released": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 8.088888888888889,
+          "used": 5.1242592333333326,
+          "outside": 0.04796291111111111,
+          "released": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.1511111111111112,
+          "released": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "released": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.0344444444444445,
+          "released": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
     }
   ]
 }

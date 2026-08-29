@@ -149,6 +149,47 @@ SPINE_OPEN_TIME_SURGE = 1.32
 # without reading a number.
 WRONG_DAY_OPEN_TIME_SURGE = 6.0
 
+# How sharply out-of-block volume clusters on a service's preferred day. Between
+# them these put roughly two thirds of a service's spill on one or two days,
+# which is what real booking behaviour looks like and what any day-based rule
+# needs in order to fire at all.
+OUTSIDE_CONCENTRATION = 2.6
+OUTSIDE_SUPPRESSION = 0.45
+
+# The service owning ST-8's over-allocated block. Over-allocation is the claim
+# that the volume is not there, so that service's open-time spill is damped
+# too — otherwise the block reads as misplaced work, which is a different
+# finding with a different fix.
+_OVER_ALLOCATED_SERVICE = next(
+    (svc for name, _site, _room, _dow, svc in C.BLOCK_TEMPLATE
+     if name == C.STORYLINES['st8']['over_allocated_block']), None)
+
+
+_WRONG_SHAPE_LONG_DAY = min(
+    (dow for name, _s, _r, dow, _svc in C.BLOCK_TEMPLATE
+     if name == C.STORYLINES['st8']['wrong_shape_block']), default=None)
+
+
+def _alloc_minutes(block_name, nominal, weekday):
+    """
+    What a block instance *commits*, which is not always the day the room runs.
+
+    ST-8's wrong-shape block holds one legacy long day nobody has revisited. The
+    case load is drawn against the ordinary day, so the room fills normally and
+    still closes well before the block does — which is the finding, and it
+    cannot exist if allocation and running day are the same number by
+    construction.
+
+    One day, not all three: the classifier reads the longest held day, so a
+    single long Monday carries the finding, while extending every day would add
+    nine hours a week of empty denominator and drag the tenant's in-block
+    utilisation below its own target.
+    """
+    st8 = C.STORYLINES['st8']
+    if block_name == st8['wrong_shape_block'] and weekday == _WRONG_SHAPE_LONG_DAY:
+        return nominal + st8['wrong_shape_window_extra_min']
+    return nominal
+
 # Share of a blocked room's cases that belong to someone outside the block.
 OUT_OF_BLOCK_SHARE = 0.02
 
@@ -182,6 +223,15 @@ def _service_weights(weekday, is_future=False, spine_surge=1.0):
     if weekday == RECOVERY_HEAVY_WEEKDAY:
         for svc, mult in RECOVERY_HEAVY.items():
             w[svc] *= mult
+    # Out-of-block volume concentrates on each service's preferred alternative
+    # day. Spread evenly it is invisible to every day-based rule, which is what
+    # made a roster of twenty blocks produce three findings.
+    for svc, prefer in C.STORYLINES['st8_outside_preference'].items():
+        w[svc] = w.get(svc, 0.05) * (OUTSIDE_CONCENTRATION if weekday in prefer
+                                     else OUTSIDE_SUPPRESSION)
+    if _OVER_ALLOCATED_SERVICE in w:
+        w[_OVER_ALLOCATED_SERVICE] *= C.STORYLINES['st8']['over_allocated_outside_damp']
+
     # ST-8: the wrong-day owner's volume concentrates on the day they do not
     # hold, which is what makes the finding visible without reading a number.
     st8 = C.STORYLINES['st8']
@@ -286,6 +336,11 @@ def generate_cases(calendar, roster, params, rng, anchor):
                         # ST-8: the held day runs nearly empty, because the work
                         # is happening on a day this owner does not hold.
                         util_target = float(rng.normal(st8['held_util_pct'] / 100, 0.05))
+                    elif block_name == st8['wrong_shape_block']:
+                        # ST-8: the block runs a consistent short day, so its
+                        # window outlasts the work rather than its volume being
+                        # wrong.
+                        util_target = float(rng.normal(st8['wrong_shape_used_pct'] / 100, 0.03))
                     elif block_name == st8['over_allocated_block']:
                         # ST-8: the volume simply is not there, and little of it
                         # is booking elsewhere either.
@@ -537,15 +592,16 @@ def generate_cases(calendar, roster, params, rng, anchor):
 
                 if slot:
                     released = 0
+                    committed = _alloc_minutes(block_name, block_minutes, wd)
                     if not day['is_future']:
                         rate = (st1['release_instance_rate']
                                 if (block_name == st1['block'] and wd == st1['weekday'])
                                 else 0.06)
                         if rng.random() < rate:
-                            released = int(round(float(rng.uniform(0.25, 0.6)) * block_minutes / 15) * 15)
+                            released = int(round(float(rng.uniform(0.25, 0.6)) * committed / 15) * 15)
                     block_instances.append({
                         'date': d, 'block': block_name, 'site': site, 'room': room,
-                        'service': block_service, 'block_minutes': block_minutes,
+                        'service': block_service, 'block_minutes': committed,
                         'released': released, 'weekday': wd,
                         'week_of_month': day['week_of_month'],
                         'is_future': day['is_future'], 'days_ahead': day['days_ahead'],
@@ -568,7 +624,8 @@ def generate_cases(calendar, roster, params, rng, anchor):
             block_instances.append({
                 'date': day['date'], 'block': name, 'site': site, 'room': room,
                 'service': service,
-                'block_minutes': _hm(C.SITES[site]['block_end']) - _hm(C.SITES[site]['block_start']),
+                'block_minutes': _alloc_minutes(
+                    name, _hm(C.SITES[site]['block_end']) - _hm(C.SITES[site]['block_start']), dow),
                 'released': 0, 'weekday': dow, 'week_of_month': day['week_of_month'],
                 'is_future': day['is_future'], 'days_ahead': day['days_ahead'],
                 'dow_long': day['dow_long'],
@@ -711,9 +768,16 @@ def _booked_fraction(days_ahead):
     """
     Share of a block instance's eventual volume already on the books, by lead
     time. Decays toward a floor rather than linearly: a block five weeks out is
-    roughly 40% booked, one two weeks out roughly 60%, and the day itself full.
+    roughly 44% booked, one two weeks out roughly 65%, and the day itself full.
+
+    The floor was 0.28, which put five weeks out at 38.5% — a hair under the
+    40% line the Release Radar draws. Every block at the far edge of the radar's
+    14-35 day window therefore read as under-booked by construction, and the
+    population of that list moved by a third on any change that re-rolled the
+    seed. The curve's own intent was always "roughly 40% at five weeks"; this
+    puts it there rather than just beneath it.
     """
-    return float(0.28 + 0.72 * math.exp(-0.055 * max(0, days_ahead)))
+    return float(0.34 + 0.66 * math.exp(-0.055 * max(0, days_ahead)))
 
 
 # A forecast projects what the day will actually run, so scheduled plus

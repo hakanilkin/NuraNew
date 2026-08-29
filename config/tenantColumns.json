@@ -68,10 +68,9 @@
       "block_pattern_thresholds": {
         "over_allocated_lt_pct": 58,
         "under_allocated_gt_pct": 74,
-        "right_sized_min_pct": 62,
-        "right_sized_max_pct": 80,
-        "low_outside_hours": 5.5,
-        "material_outside_hours": 5.0
+        "right_sized_min_pct": 58,
+        "right_sized_max_pct": 92,
+        "material_outside_hours": 3.5
       },
       "crunch_occupancy_pct": 92,
       "impact_on_plan_pct": 5,

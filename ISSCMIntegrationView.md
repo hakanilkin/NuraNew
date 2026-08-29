@@ -326,8 +326,18 @@ impact** button on host pages.
 | Host page | Entry point | Decision passed to the panel |
 |---|---|---|
 | Release Time Mgmt (`OpenTimeRadar.jsx`) | "Evaluate impact" on a radar row | `REALLOCATE` / `RELEASE` for that block instance |
-| OR Smoothing *(when built)* | "Evaluate move" on a smoothing scenario | `SHIFT_DOW` for a block/case cohort |
-| Staffing *(when built)* | "Evaluate flex" on a flagged day | `FLEX_STAFFING` variant |
+
+Release Time Mgmt is the only host. Two rows have been removed from this table:
+
+- **Block Allocations** briefly hosted the panel and no longer does
+  (`BlockAllocationsFixes.md` §3). A committee reviewing the allocated grid
+  wants evidence for the numbers in front of them, not a simulation; that page's
+  row action is now **See details**, a drawer showing the week shape, the day
+  table and the forward book.
+- **OR Smoothing** and **Staffing** never became pages — both were absorbed into
+  **Volume Impact**, which deliberately does not host the panel (`VolumeImpact.md`
+  §7): it shows what the forecast already implies, not what a proposed change
+  would do.
 
 The panel is decision-agnostic: it receives `{ decision }`, calls the API, renders
 the result. Host pages own how decisions are proposed; the panel owns how they are

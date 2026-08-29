@@ -17,6 +17,24 @@ const { getParam } = require('../utils/tenantColumns');
 // history that turns a repeat offender on the Radar into an allocation finding.
 
 const num = x => (Number.isFinite(Number(x)) ? Number(x) : 0);
+
+// The trailing window a block's own baseline is measured over.
+const TRAILING_DAYS = 90;
+
+// Cases a week over a window of days. One helper, used by both the row and the
+// drawer, because two ways of averaging is two different percentages.
+const weekly = (total, days) => (days > 0 ? (total / days) * 7 : 0);
+
+// The label bands are tenant configuration; block_patterns.py owns the defaults
+// and this mirrors them so a row and its drawer read the same word.
+function trendLabel(pct, cfg) {
+  if (pct == null) return null;
+  const grow = Number(cfg?.growing_pct ?? 12);
+  const drop = Number(cfg?.declining_pct ?? -12);
+  if (pct >= grow) return 'GROWING';
+  if (pct <= drop) return 'DECLINING';
+  return 'STABLE';
+}
 const round1 = x => (x == null ? null : Math.round(x * 10) / 10);
 
 const FORECAST_CASES = `
@@ -49,10 +67,15 @@ module.exports = function blockRoutes(getTenantPool, sql, requireTenant, store) 
     `);
     const map = new Map();
     for (const x of res.recordset) {
-      const fwd = num(x.FwdDays) ? num(x.Fwd) / num(x.FwdDays) : 0;
-      const hist = num(x.HistDays) ? num(x.Hist) / num(x.HistDays) : 0;
+      // Divided by the window, not by the days that happen to carry rows: a
+      // block with three booked days in four weeks is booking three days a
+      // month, not three days a week. This is also the denominator the drawer
+      // uses, so the row's percentage and the evidence behind it agree.
+      const fwd = weekly(num(x.Fwd), horizonDays);
+      const hist = weekly(num(x.Hist), trailingDays);
       map.set(x.CaseBlock, {
-        forwardPerDay: round1(fwd), baselinePerDay: round1(hist),
+        forwardPerWeek: round1(fwd), baselinePerWeek: round1(hist),
+        forwardDays: num(x.FwdDays), baselineDays: num(x.HistDays),
         pct: hist > 0 ? round1((fwd / hist - 1) * 100) : null,
       });
     }
@@ -112,7 +135,7 @@ module.exports = function blockRoutes(getTenantPool, sql, requireTenant, store) 
 
       let trend = new Map();
       try {
-        trend = await trendByBlock(await getTenantPool(req.session.tenantId), horizonDays, 90);
+        trend = await trendByBlock(await getTenantPool(req.session.tenantId), horizonDays, TRAILING_DAYS);
       } catch (err) {
         // Without the forward join every recommendation still stands; it simply
         // is not qualified by where the volume is heading.
@@ -120,24 +143,34 @@ module.exports = function blockRoutes(getTenantPool, sql, requireTenant, store) 
       }
       const releases = releasesFromStore(req.session.tenantId);
 
+      const cfg = getParam(tenant, 'block_pattern_thresholds') ?? null;
       const owners = allocations
         .filter(a => !sites.length || sites.includes(a.site))
-        .map(a => ({
-          ...a,
-          forwardTrend: trend.get(a.owner) ?? null,
-          releaseHistory: {
-            ...a.releaseHistory,
-            // The workflow store knows about releases the block view cannot see.
-            requested: releases.get(a.owner) ?? 0,
-          },
-        }))
+        .map(a => {
+          const fwd = trend.get(a.owner) ?? null;
+          // The live forward join is the fresher of the two, so it wins when it
+          // has a baseline to divide by; the pipeline's own figure stands in
+          // when the join was unavailable.
+          const pct = fwd && fwd.pct != null ? fwd.pct : a.trendPct;
+          return {
+            ...a,
+            trendPct: pct ?? null,
+            trend: trendLabel(pct, cfg) ?? a.trend,
+            forwardTrend: fwd,
+            releaseHistory: {
+              ...a.releaseHistory,
+              // The workflow store knows about releases the block view cannot see.
+              requested: releases.get(a.owner) ?? 0,
+            },
+          };
+        })
         // Magnitude, not utilisation: a committee has agenda time for the four
         // findings that move the most hours.
         .sort((x, y) => num(y.mismatchHours) - num(x.mismatchHours));
 
       res.json({
         period, horizonDays,
-        thresholds: getParam(tenant, 'block_pattern_thresholds') ?? null,
+        thresholds: cfg,
         owners,
         counts: owners.reduce((acc, o) => ({ ...acc, [o.pattern]: (acc[o.pattern] || 0) + 1 }), {}),
       });
@@ -162,7 +195,9 @@ module.exports = function blockRoutes(getTenantPool, sql, requireTenant, store) 
       const owner = (allocations ?? []).find(a => a.owner === req.params.owner);
       if (!owner) return res.status(404).json({ error: 'Unknown block' });
 
+      const horizonDays = Math.min(Math.max(parseInt(req.query.horizonDays, 10) || 28, 7), 120);
       let series = [];
+      let pipeline = null;
       try {
         const r = (await getTenantPool(req.session.tenantId)).request();
         r.input('owner', sql.NVarChar, owner.owner);
@@ -183,7 +218,54 @@ module.exports = function blockRoutes(getTenantPool, sql, requireTenant, store) 
         console.error('/api/blocks/allocations/:owner series unavailable:', err.message);
       }
 
-      res.json({ ...owner, series });
+      // The evidence behind the Pipeline column: forward booked cases a week,
+      // against this owner's own trailing baseline. Bucketed by lead time
+      // rather than by calendar week, so every bucket is a whole seven days —
+      // a part-week at the edge of the horizon reads as a collapse in demand.
+      try {
+        const r = (await getTenantPool(req.session.tenantId)).request();
+        r.input('owner', sql.NVarChar, owner.owner);
+        r.input('horizon', sql.Int, horizonDays);
+        r.input('trailing', sql.Int, TRAILING_DAYS);
+        const out = await r.query(`
+          SELECT ((DaysAhead - 1) / 7) + 1                       AS WeekAhead,
+                 SUM(${FORECAST_CASES})                          AS Cases
+          FROM V4_FORECAST_COMPILE
+          WHERE ISNULL(Caseblock, 'Unknown') = @owner
+            AND DaysAhead BETWEEN 1 AND @horizon
+          GROUP BY ((DaysAhead - 1) / 7) + 1
+          ORDER BY 1
+        `);
+        const base = await r.query(`
+          SELECT CAST(SUM(ISNULL(ACTUAL_INPATIENT,0)
+                        + ISNULL(ACTUAL_OUTPATIENT,0)) AS FLOAT)  AS Cases,
+                 COUNT(DISTINCT CAST(Date AS DATE))               AS Days
+          FROM V4_FORECAST_COMPILE
+          WHERE ISNULL(Caseblock, 'Unknown') = @owner
+            AND DaysAhead <= 0 AND DaysAhead >= -@trailing
+        `);
+        const b = base.recordset[0] ?? {};
+        const baselinePerWeek = num(b.Days) > 0 ? weekly(num(b.Cases), TRAILING_DAYS) : null;
+        const weeks = out.recordset.map(x => ({
+          weekAhead: num(x.WeekAhead), cases: round1(num(x.Cases)),
+        }));
+        const booked = weeks.reduce((t, w) => t + w.cases, 0);
+        const forwardPerWeek = weekly(booked, horizonDays);
+        pipeline = {
+          weeks,
+          baselinePerWeek: round1(baselinePerWeek),
+          forwardPerWeek: round1(forwardPerWeek),
+          baselineDays: num(b.Days),
+          trailingDays: TRAILING_DAYS,
+          pct: baselinePerWeek > 0 ? round1((forwardPerWeek / baselinePerWeek - 1) * 100) : null,
+        };
+      } catch (err) {
+        // The week shape and the day table are the drawer's first half and do
+        // not depend on this; render them and say the pipeline is unavailable.
+        console.error('/api/blocks/allocations/:owner pipeline unavailable:', err.message);
+      }
+
+      res.json({ ...owner, series, pipeline });
     } catch (err) {
       console.error('/api/blocks/allocations/:owner error:', err.message);
       res.status(500).json({ error: 'Internal server error' });

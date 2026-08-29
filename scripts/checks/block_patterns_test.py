@@ -46,12 +46,23 @@ check('and it quantifies what is already happening there',
 summed_util = 3.0 / 8 * 100
 check('the summed week alone would have read as low utilisation', summed_util < 62)
 
-wrong_shape = B.classify_block([day(3, alloc=8, used=5.0, outside=0.3)],
-                               last_case_out_hours=5.2)
+# A solid seven-hour day inside a ten-hour window: the room is busy, the window
+# is simply the wrong length.
+wrong_shape = B.classify_block([day(3, alloc=10, used=7.0, outside=0.3)],
+                               last_case_out_hours=7.3)
 check('a block longer than its day is WRONG_SHAPE',
       wrong_shape['pattern'] == B.WRONG_SHAPE, wrong_shape['pattern'])
 check('and it says what to shorten it to',
       'Shorten Thursday' in wrong_shape['recommendation']['text'])
+
+# The same slack with a short day is a volume problem, not a shape one, and
+# shortening the window would be the wrong advice.
+short_day = B.classify_block([day(3, alloc=8, used=4.0, outside=0.3)],
+                             last_case_out_hours=4.2)
+check('a short day with the same slack is not WRONG_SHAPE',
+      short_day['pattern'] != B.WRONG_SHAPE, short_day['pattern'])
+check('it reads as over-allocated instead',
+      short_day['pattern'] == B.OVER_ALLOCATED, short_day['pattern'])
 
 abandoned = B.classify_block([day(3, alloc=8, used=3.0)],
                              release_events=6, release_of=8)

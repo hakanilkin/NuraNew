@@ -1,28 +1,18 @@
 {
-  "generated_at": "2026-08-24T20:38:58.982303+00:00",
-  "system_mean": 42.28,
+  "generated_at": "2026-08-28T18:26:25.008146+00:00",
+  "system_mean": 41.86,
   "target_minutes": 30,
-  "total_cases": 8397,
+  "total_cases": 8258,
   "combinations": [
     {
-      "type": "day_location",
-      "sub": "Day \u00d7 Location",
-      "label": "Wednesday \u2014 Bright Memorial Hospital",
-      "dim1": "Wednesday",
-      "dim2": "Bright Memorial Hospital",
-      "cnt": 1220,
-      "avg_turnover": 51.6,
-      "above_mean": 9.3
-    },
-    {
-      "type": "day_location",
-      "sub": "Day \u00d7 Location",
-      "label": "Monday \u2014 Bright Memorial Hospital",
-      "dim1": "Monday",
-      "dim2": "Bright Memorial Hospital",
-      "cnt": 1037,
-      "avg_turnover": 51.6,
-      "above_mean": 9.3
+      "type": "location_surgeon",
+      "sub": "Location \u00d7 Surgeon",
+      "label": "Bright Memorial Hospital \u2014 None",
+      "dim1": "Bright Memorial Hospital",
+      "dim2": "None",
+      "cnt": 2163,
+      "avg_turnover": 50.4,
+      "above_mean": 8.5
     },
     {
       "type": "duration_location",
@@ -30,8 +20,18 @@
       "label": "Medium (61-120 min) \u2014 Bright Memorial Hospital",
       "dim1": "Medium (61-120 min)",
       "dim2": "Bright Memorial Hospital",
-      "cnt": 2439,
-      "avg_turnover": 50.6,
+      "cnt": 2454,
+      "avg_turnover": 50.4,
+      "above_mean": 8.5
+    },
+    {
+      "type": "day_location",
+      "sub": "Day \u00d7 Location",
+      "label": "Wednesday \u2014 Bright Memorial Hospital",
+      "dim1": "Wednesday",
+      "dim2": "Bright Memorial Hospital",
+      "cnt": 1304,
+      "avg_turnover": 50.2,
       "above_mean": 8.3
     },
     {
@@ -40,29 +40,9 @@
       "label": "Bright Memorial Hospital \u2014 N",
       "dim1": "Bright Memorial Hospital",
       "dim2": "N",
-      "cnt": 2523,
-      "avg_turnover": 50.3,
-      "above_mean": 8.0
-    },
-    {
-      "type": "location_surgeon",
-      "sub": "Location \u00d7 Surgeon",
-      "label": "Bright Memorial Hospital \u2014 None",
-      "dim1": "Bright Memorial Hospital",
-      "dim2": "None",
-      "cnt": 2175,
-      "avg_turnover": 50.1,
-      "above_mean": 7.8
-    },
-    {
-      "type": "service_location",
-      "sub": "Service line \u00d7 Location",
-      "label": "General Surgery \u2014 Bright Memorial Hospital",
-      "dim1": "General Surgery",
-      "dim2": "Bright Memorial Hospital",
-      "cnt": 1111,
+      "cnt": 2349,
       "avg_turnover": 50.0,
-      "above_mean": 7.7
+      "above_mean": 8.1
     },
     {
       "type": "duration_location",
@@ -70,9 +50,19 @@
       "label": "Short (=60 min) \u2014 Bright Memorial Hospital",
       "dim1": "Short (=60 min)",
       "dim2": "Bright Memorial Hospital",
-      "cnt": 2006,
-      "avg_turnover": 49.7,
-      "above_mean": 7.4
+      "cnt": 1827,
+      "avg_turnover": 49.6,
+      "above_mean": 7.7
+    },
+    {
+      "type": "service_location",
+      "sub": "Service line \u00d7 Location",
+      "label": "General Surgery \u2014 Bright Memorial Hospital",
+      "dim1": "General Surgery",
+      "dim2": "Bright Memorial Hospital",
+      "cnt": 1307,
+      "avg_turnover": 49.4,
+      "above_mean": 7.5
     },
     {
       "type": "day_location",
@@ -80,9 +70,9 @@
       "label": "Thursday \u2014 Bright Memorial Hospital",
       "dim1": "Thursday",
       "dim2": "Bright Memorial Hospital",
-      "cnt": 1448,
-      "avg_turnover": 49.4,
-      "above_mean": 7.1
+      "cnt": 1271,
+      "avg_turnover": 48.9,
+      "above_mean": 7.0
     },
     {
       "type": "service_location",
@@ -90,9 +80,9 @@
       "label": "Orthopedics \u2014 Bright Memorial Hospital",
       "dim1": "Orthopedics",
       "dim2": "Bright Memorial Hospital",
-      "cnt": 1112,
-      "avg_turnover": 48.9,
-      "above_mean": 6.6
+      "cnt": 1329,
+      "avg_turnover": 48.8,
+      "above_mean": 6.9
     },
     {
       "type": "day_location",
@@ -100,9 +90,9 @@
       "label": "Tuesday \u2014 Bright Memorial Hospital",
       "dim1": "Tuesday",
       "dim2": "Bright Memorial Hospital",
-      "cnt": 1142,
+      "cnt": 1135,
       "avg_turnover": 48.1,
-      "above_mean": 5.8
+      "above_mean": 6.2
     }
   ]
 }
