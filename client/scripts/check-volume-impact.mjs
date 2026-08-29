@@ -98,6 +98,76 @@ try {
   ok('recovery peak is called out in words', recovery.includes('peaks at 9 bays against 7 staffed'))
   ok('recovery is labelled POTENTIAL', recovery.includes('POTENTIAL'))
   ok('and says why it is only potential', recovery.includes('not nurse ratios'))
+
+  // ── Specialty x date matrix (VolumeImpactMatrix.md) ─────────────────────
+  // Two aligned Mon-Fri bands with a Thursday spike, which is ST-9's cause:
+  // ortho and spine concentrated on the Thursdays, so the PACU tab's Thursday
+  // peak has its source on the same screen and on the same date.
+  const matrix = {
+    dates: [
+      { date: '2026-09-01', dow: 1, weekOf: '2026-08-31' },
+      { date: '2026-09-02', dow: 2, weekOf: '2026-08-31' },
+      { date: '2026-09-03', dow: 3, weekOf: '2026-08-31' },
+      { date: '2026-09-04', dow: 4, weekOf: '2026-08-31', holiday: true },
+      { date: '2026-09-08', dow: 1, weekOf: '2026-09-07' },
+      { date: '2026-09-09', dow: 2, weekOf: '2026-09-07' },
+      { date: '2026-09-10', dow: 3, weekOf: '2026-09-07' },
+      { date: '2026-09-11', dow: 4, weekOf: '2026-09-07' },
+    ],
+    services: [
+      { service: 'Orthopedics', byDate: [11, 6, 19, 7, 10, 5, 21, 6], total: 85 },
+      { service: 'Spine', byDate: [3, 9, 5, 2, 4, 11, 4, 3], total: 41 },
+      { service: 'Other', byDate: [2, 2, 3, 2, 3, 2, 3, 2], total: 19, tail: 4 },
+    ],
+    totals: { byDate: [16, 17, 27, 11, 17, 18, 28, 11], window: 145 },
+    weeks: 2, capped: true, cappedAt: 4, to: '2026-09-11',
+  }
+  let picked = null
+  const grid = plain(renderToString(React.createElement(m.VolumeMatrix, {
+    matrix, filter: { service: null, date: null }, onFilter(f) { picked = f },
+  })))
+  ok('columns are actual dates, not weekday averages',
+    grid.includes('>1<') && grid.includes('>10<') && !/average/i.test(grid))
+  ok('dates are grouped into week bands with a week-commencing label',
+    grid.includes('Aug 31') && grid.includes('Sep 7'))
+  ok('the same weekday sits at the same position in every band',
+    (grid.match(/>T</g) || []).length >= 4)
+  ok('rows carry a total column', grid.includes('>85<') && grid.includes('>41<'))
+  ok('the Total row is present and named', grid.includes('All specialties') && grid.includes('>145<'))
+  ok('the tail is summed into Other rather than dropped', grid.includes('Other'))
+  ok('holidays are muted with the reason on hover',
+    grid.includes('reduced-volume day (holiday)') && grid.includes('italic'))
+  ok('a capped window says so', grid.includes('First 4 weeks of a longer window'))
+  ok('every value is printed, so the shading survives greyscale',
+    ['11', '19', '21', '27'].every(v => grid.includes(`>${v}<`)))
+  ok('shading is sequential single-hue, not the Budget tab diverging scale',
+    grid.includes('rgba(71, 85, 105') && !grid.includes('rgba(239,68,68')
+    && !grid.includes('rgba(59,130,246'))
+  ok('horizontal scroll is contained rather than on the page body',
+    grid.includes('overflow-x:auto') || grid.includes('overflow-x: auto'))
+  ok('row labels and the Total column stay pinned',
+    grid.includes('position:sticky') || grid.includes('position: sticky'))
+  ok('it invites the click that drives the tabs',
+    grid.includes('Click a specialty, a date or a cell to filter every tab'))
+
+  const filtered = plain(renderToString(React.createElement(m.VolumeMatrix, {
+    matrix, filter: { service: 'Orthopedics', date: '2026-09-10' }, onFilter() {},
+  })))
+  ok('an active filter is stated in words',
+    filtered.includes('Showing:') && filtered.includes('Orthopedics')
+    && filtered.includes('Thu Sep 10'))
+  ok('and is clearable', filtered.includes('>Clear<'))
+
+  // A tab that cannot honour a filter says so rather than looking broken.
+  const notice = plain(renderToString(React.createElement(m.FilterNotice, {
+    filter: { service: 'Orthopedics', date: null }, applied: { service: false, date: true },
+  })))
+  ok('a tab without a specialty dimension says the filter does not apply',
+    notice.includes('no specialty dimension') && notice.includes('Orthopedics'))
+  const silent = renderToString(React.createElement(m.FilterNotice, {
+    filter: { service: 'Orthopedics', date: null }, applied: { service: true, date: true },
+  }))
+  ok('and stays quiet where the filter does apply', silent === '')
 } finally {
   await server.close()
 }

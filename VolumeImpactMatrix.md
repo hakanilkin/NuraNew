@@ -152,10 +152,19 @@ the tabs respond to matrix clicks through one mechanism.
       every value readable in greyscale.
 - [ ] Row / column / cell click filters all four tabs; filter stated in words,
       clearable, and surviving tab switches.
-- [ ] **Demo:** the matrix makes ST-9's cause visible — ortho and spine
-      concentrated on the Thursdays, forming a visible vertical stripe across
-      week bands, so the PACU tab's Thursday peak has its source on the same
-      screen and on the same date.
+- [ ] **Demo:** the matrix makes ST-9's cause visible — Thursday is the heaviest
+      column in the Total row and recovery-heavy volume peaks there, so the PACU
+      tab's Thursday peak has its source on the same screen and on the same date.
+
+      > **Corrected against the data.** This bullet originally named *ortho and
+      > spine* as the pair forming the Thursday stripe. The data cannot do that,
+      > and the spec cannot ask it to: ST-1 makes Ortho A's **Thursday** block
+      > deliberately light, and Spine holds Mon/Wed/Fri — Monday is the
+      > ortho-and-spine day (70% recovery-heavy against Thursday's 57%). The
+      > stripe that *is* there is **Vascular**: 41 cases on the Thursdays against
+      > 8 across the whole rest of the week, in every band. That is ST-8's
+      > wrong-day block seen from the matrix, so ST-8 and ST-9 reconcile on one
+      > screen. Asserted in `scripts/checks/volume_matrix_acceptance.py`.
 - [ ] ST-3's light Fridays read as low columns in the Total row.
 - [ ] Service column resolved through tenant config, not hardcoded.
 
