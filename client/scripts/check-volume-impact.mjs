@@ -158,6 +158,36 @@ try {
     && filtered.includes('Thu Sep 10'))
   ok('and is clearable', filtered.includes('>Clear<'))
 
+  // The header is where the matrix actually lives, and testing the grid alone
+  // leaves room for it to render perfectly and never reach the page.
+  const headerArgs = {
+    summary: { forecast: 145, booked: 100, expectedAdds: 45, variancePct: 3, matrix },
+    sites: [], site: '', onSite() {}, weeks: 4, onWeeks() {},
+    filter: { service: null, date: null }, onFilter() {},
+  }
+  const withMatrix = plain(renderToString(React.createElement(m.ContextHeader, {
+    ...headerArgs, expanded: true, onToggle() {},
+  })))
+  ok('the matrix reaches the shared header, above the tabs',
+    withMatrix.includes('All specialties') && withMatrix.includes('cases forecast'))
+  ok('and the header offers to collapse it', withMatrix.includes('Hide the volume matrix'))
+
+  const collapsed = plain(renderToString(React.createElement(m.ContextHeader, {
+    ...headerArgs, expanded: false, onToggle() {},
+  })))
+  ok('collapsed, the header falls back to the summary line',
+    !collapsed.includes('All specialties') && collapsed.includes('cases forecast')
+    && collapsed.includes('Show the volume matrix'))
+
+  // A tenant or a stale server without the matrix key loses the matrix, not the
+  // header — and says nothing about a matrix that is not there.
+  const bare = plain(renderToString(React.createElement(m.ContextHeader, {
+    ...headerArgs, summary: { forecast: 145, booked: 100, expectedAdds: 45 },
+    expanded: true, onToggle() {},
+  })))
+  ok('a summary without a matrix still renders the header',
+    bare.includes('cases forecast') && !bare.includes('volume matrix'))
+
   // A tab that cannot honour a filter says so rather than looking broken.
   const notice = plain(renderToString(React.createElement(m.FilterNotice, {
     filter: { service: 'Orthopedics', date: null }, applied: { service: false, date: true },
