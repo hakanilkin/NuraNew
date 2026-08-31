@@ -17,16 +17,142 @@ function slugEmail(s) {
   return `${base || 'practice'}@practice.demo`
 }
 
-const SLOT_STATUS = {
-  OPEN:    { label: 'Open',    bg: '#dcfce7', fg: '#15803d' },
-  OFFERED: { label: 'Offered', bg: '#fef3c7', fg: '#b45309' },
-  BOOKED:  { label: 'Booked',  bg: '#eef2fb', fg: '#3730a3' },
+/* ── The three lists (OpenTimeBoardLists.md) ───────────────────────────────
+   Action -> in flight -> done. One flat list with status chips answered no
+   question in particular; these three each answer one, and the order is the
+   order a scheduler works in. List 1 has primacy because it is the only one
+   with anything to do.
+
+   No status chips inside the lists: the list a row sits in *is* its status, and
+   a chip repeating it is a second signal doing the heading's job. */
+const LISTS = [
+  { key: 'NEEDS_OFFER', title: 'Needs an offer',
+    blurb: 'Released time with nobody lined up.',
+    empty: 'Nothing needs an offer.', primary: true },
+  { key: 'AWAITING', title: 'Awaiting response',
+    blurb: 'Offered, no reply yet.',
+    empty: 'Nothing awaiting response.' },
+  { key: 'BOOKED', title: 'Booked',
+    blurb: 'Recovered time.',
+    empty: 'Nothing booked yet.' },
+]
+
+/* Membership is the server's (lib/openTimeStore.slotList) so there is one rule,
+   not two. This only falls back for a store written before it existed. */
+function listOf(slot) {
+  if (slot.list) return slot.list
+  if (slot.status === 'BOOKED') return 'BOOKED'
+  return (slot.offers || []).some(o => o.status === 'SENT') ? 'AWAITING' : 'NEEDS_OFFER'
 }
+
+function fmtWhen(iso) {
+  if (!iso) return ''
+  const days = Math.floor((Date.now() - new Date(iso)) / 86400000)
+  if (!Number.isFinite(days)) return ''
+  return days <= 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`
+}
+
+/* The history that makes a second attempt useful rather than a dead end handed
+   back: who already said no, and when. */
+function priorOfferLine(slot) {
+  const done = (slot.offers || []).filter(o => o.status === 'PASSED' || o.status === 'LAPSED')
+  if (!done.length) return null
+  const last = done[done.length - 1]
+  const verb = last.status === 'PASSED' ? 'declined' : 'expired'
+  const when = fmtWhen(last.respondedAt || last.sentAt)
+  const more = done.length > 1 ? ` · ${done.length} offers so far` : ''
+  return `Offered to ${last.candidate} · ${verb}${when ? ` ${when}` : ''}${more}`
+}
+
+function liveOfferLine(slot) {
+  const live = (slot.offers || []).filter(o => o.status === 'SENT')
+  if (!live.length) return null
+  const when = fmtWhen(live[0].sentAt)
+  return live.length === 1
+    ? `Offered to ${live[0].candidate}${when ? ` · sent ${when}` : ''}`
+    : `Offered to ${live[0].candidate} +${live.length - 1} more${when ? ` · sent ${when}` : ''}`
+}
+
 const OFFER_STATUS = {
   SENT:    { label: 'Sent',    fg: '#b45309' },
   CLAIMED: { label: 'Claimed', fg: '#15803d' },
   PASSED:  { label: 'Passed',  fg: '#b91c1c' },
   LAPSED:  { label: 'Lapsed',  fg: 'var(--color-gray-400)' },
+}
+
+/* One list. The header carries a count and total hours, because "4 slots ·
+   22.5h" is the figure that reconciles with the funnel strip above. */
+export function BoardList({ list, slots, selId, onSelect }) {
+  const mins = slots.reduce((t, s) => t + (Number(s.durationMins) || 0), 0)
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card-header" style={{ padding: list.primary ? '13px 16px' : '11px 16px' }}>
+        <div>
+          <div className="card-title" style={{ fontSize: list.primary ? 15 : 13 }}>{list.title}</div>
+          <div className="card-subtitle" style={{ fontSize: 11 }}>
+            {slots.length ? `${slots.length} slot${slots.length === 1 ? '' : 's'} · ${fmtHrs(mins)}` : list.blurb}
+          </div>
+        </div>
+      </div>
+      {slots.length === 0 ? (
+        // An empty list is a real state, phrased as one.
+        <div style={{ padding: '16px', fontSize: 12, color: 'var(--color-gray-400)' }}>{list.empty}</div>
+      ) : (
+        <div style={{ maxHeight: list.primary ? 300 : 200, overflowY: 'auto' }}>
+          {slots.map(s => {
+            const active = s.id === selId
+            const prior = priorOfferLine(s)
+            const live = liveOfferLine(s)
+            return (
+              <div key={s.id} onClick={() => onSelect(s.id)} role="button" tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelect(s.id) }}
+                style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #f0f1f3',
+                         borderLeft: active ? '3px solid var(--color-blue)' : '3px solid transparent',
+                         background: active ? '#f5f8ff' : '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-gray-800)' }}>{s.caseBlock}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-gray-600)' }}>{fmtHrs(s.durationMins)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--color-gray-500)', marginTop: 2 }}>
+                  {fmtDate(s.blockDate)} · {s.site}
+                  {list.key === 'NEEDS_OFFER' && s.service ? ` · ${s.service}` : ''}
+                </div>
+                {list.key === 'NEEDS_OFFER' && prior && (
+                  <div style={{ fontSize: 11, color: '#b45309', marginTop: 3 }}>{prior}</div>
+                )}
+                {list.key === 'AWAITING' && live && (
+                  <div style={{ fontSize: 11, color: 'var(--color-gray-600)', marginTop: 3 }}>{live}</div>
+                )}
+                {list.key === 'BOOKED' && s.bookedBy && (
+                  <div style={{ fontSize: 11, color: '#15803d', fontWeight: 600, marginTop: 3 }}>
+                    Booked by {s.bookedBy}{fmtWhen(s.bookedAt) ? ` · ${fmtWhen(s.bookedAt)}` : ''}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* All three, in the order a scheduler works them. Grouped from one annotated
+   array, so a slot that changes status moves list on the next load without the
+   page being rebuilt around it. */
+export function BoardLists({ slots, selId, onSelect }) {
+  const byList = { NEEDS_OFFER: [], AWAITING: [], BOOKED: [] }
+  for (const s of slots) (byList[listOf(s)] ?? byList.NEEDS_OFFER).push(s)
+  // The win list reads most recent first; it is the number the whole
+  // capability exists to produce.
+  byList.BOOKED.sort((a, b) => String(b.bookedAt || '').localeCompare(String(a.bookedAt || '')))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {LISTS.map(l => (
+        <BoardList key={l.key} list={l} slots={byList[l.key]} selId={selId} onSelect={onSelect} />
+      ))}
+    </div>
+  )
 }
 
 /* ── Strategic goals editor ───────────────────────────────────────────── */
@@ -104,7 +230,7 @@ export default function OpenTimeBoard({ embedded = false }) {
 
   // Load candidates whenever the selected slot changes (and isn't booked)
   useEffect(() => {
-    if (!selSlot || selSlot.status === 'BOOKED') { setCandidates([]); setSelCands(new Set()); return }
+    if (!selSlot || listOf(selSlot) !== 'NEEDS_OFFER') { setCandidates([]); setSelCands(new Set()); return }
     setLoadingCand(true); setSelCands(new Set())
     fetch(`/api/opentime/slots/${selSlot.id}/candidates`)
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`)))
@@ -119,7 +245,7 @@ export default function OpenTimeBoard({ embedded = false }) {
     })
     if (res.ok) {
       setGoals((await res.json()).goals || [])
-      if (selSlot && selSlot.status !== 'BOOKED') {  // re-rank with new weights
+      if (selSlot && listOf(selSlot) === 'NEEDS_OFFER') {  // re-rank with new weights
         setLoadingCand(true)
         const cr = await fetch(`/api/opentime/slots/${selSlot.id}/candidates`)
         if (cr.ok) setCandidates((await cr.json()).candidates || [])
@@ -169,37 +295,18 @@ export default function OpenTimeBoard({ embedded = false }) {
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         {/* Left: slot inventory + goals */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320, flexShrink: 0 }}>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div className="card-header" style={{ padding: '12px 16px' }}>
-              <div className="card-title" style={{ fontSize: 14 }}>Released time</div>
-              <div className="card-subtitle" style={{ fontSize: 12 }}>{slots.length} slot{slots.length === 1 ? '' : 's'}</div>
-            </div>
-            {loading ? (
-              <div style={{ padding: 30, textAlign: 'center', color: 'var(--color-gray-400)', fontSize: 13 }}>Loading…</div>
-            ) : slots.length === 0 ? (
+          {loading ? (
+            <div className="card"><div style={{ padding: 30, textAlign: 'center', color: 'var(--color-gray-400)', fontSize: 13 }}>Loading…</div></div>
+          ) : slots.length === 0 ? (
+            <div className="card">
               <div style={{ padding: 36, textAlign: 'center', color: 'var(--color-gray-400)' }}>
                 <LayoutGrid size={30} strokeWidth={1.25} style={{ marginBottom: 10 }} />
                 <p style={{ fontSize: 12, color: 'var(--color-gray-500)' }}>No released time yet. When a practice releases a block in the Tracker, it lands here.</p>
               </div>
-            ) : (
-              <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-                {slots.map(s => {
-                  const st = SLOT_STATUS[s.status] || SLOT_STATUS.OPEN
-                  const active = s.id === selId
-                  return (
-                    <div key={s.id} onClick={() => setSelId(s.id)} style={{ padding: '11px 16px', cursor: 'pointer', borderBottom: '1px solid #f0f1f3', borderLeft: active ? '3px solid var(--color-blue)' : '3px solid transparent', background: active ? '#f5f8ff' : '#fff' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-gray-800)' }}>{s.caseBlock}</span>
-                        <span style={{ padding: '2px 8px', borderRadius: 999, background: st.bg, color: st.fg, fontWeight: 700, fontSize: 11 }}>{st.label}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--color-gray-500)' }}>{fmtDate(s.blockDate)} · {s.site} · {fmtHrs(s.durationMins)}</div>
-                      {s.status === 'BOOKED' && <div style={{ fontSize: 11, color: '#15803d', fontWeight: 600, marginTop: 3 }}>Booked by {s.bookedBy}</div>}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <BoardLists slots={slots} selId={selId} onSelect={setSelId} />
+          )}
 
           <GoalsEditor goals={goals} onSave={saveGoals} />
         </div>
@@ -240,11 +347,23 @@ export default function OpenTimeBoard({ embedded = false }) {
                 )}
               </div>
 
-              {selSlot.status === 'BOOKED' ? (
+              {/* The panel stays in context: ranking for list 1, offer detail
+                  for list 2, booking detail for list 3. */}
+              {listOf(selSlot) === 'BOOKED' ? (
                 <div className="card"><div className="card-body" style={{ padding: 32, textAlign: 'center' }}>
                   <Check size={30} color="#15803d" style={{ marginBottom: 8 }} />
                   <div style={{ fontWeight: 700, color: '#166534' }}>Booked by {selSlot.bookedBy}</div>
-                  <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 4 }}>This open time has been filled.</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 4 }}>
+                    {fmtHrs(selSlot.durationMins)} recovered{fmtWhen(selSlot.bookedAt) ? ` · ${fmtWhen(selSlot.bookedAt)}` : ''}.
+                  </div>
+                </div></div>
+              ) : listOf(selSlot) === 'AWAITING' ? (
+                <div className="card"><div className="card-body" style={{ padding: 28, textAlign: 'center' }}>
+                  <Send size={26} color="var(--color-gray-400)" style={{ marginBottom: 8 }} />
+                  <div style={{ fontWeight: 700, color: 'var(--color-gray-700)' }}>{liveOfferLine(selSlot)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 4 }}>
+                    Nothing to rank while an offer is live. Use the respond links above to see what the practice sees.
+                  </div>
                 </div></div>
               ) : (
                 <div className="card">

@@ -78,8 +78,8 @@ function main() {
   // ST-1's block is the headline: the Thursday Ortho A instances the radar
   // flags. The rest are ordinary traffic so the queue does not look staged.
   const thursdays = nextWeekdays(4, 3, 10);      // 4 = Thursday
-  const tuesdays  = nextWeekdays(2, 1, 10);
-  const fridays   = nextWeekdays(5, 1, 10);
+  const tuesdays  = nextWeekdays(2, 2, 10);
+  const fridays   = nextWeekdays(5, 2, 10);
 
   const requests = [
     {
@@ -158,6 +158,28 @@ function main() {
       body: 'Morning only is booked.',
       respond: 'RELEASE', book: true,
     },
+    {
+      blockDate: tuesdays[1], site: MAIN_SITE, caseBlock: 'Uro/Gyn', service: 'Urology',
+      riskScore: 44, blockTimeMins: 300,
+      recipientName: 'Urology scheduling',
+      recipientEmail: practiceEmail('Urology'),
+      subject: `Uro/Gyn — Tuesday ${tuesdays[1]}: half the day open`,
+      body: 'Three cases against a full list.',
+      // Released and never offered: the Board's first list needs something in
+      // it that has had nothing done to it yet.
+      respond: 'RELEASE', offer: false, book: false,
+    },
+    {
+      blockDate: fridays[1], site: MAIN_SITE, caseBlock: 'Colorectal', service: 'Colorectal',
+      riskScore: 52, blockTimeMins: 360,
+      recipientName: 'Colorectal scheduling',
+      recipientEmail: practiceEmail('Colorectal'),
+      subject: `Colorectal — Friday ${fridays[1]}: light book`,
+      body: 'One case on the list a fortnight out.',
+      // Offered and declined, so the Board shows a second attempt with the
+      // history that stops a scheduler handing back the same dead end.
+      respond: 'RELEASE', book: false, declineAll: true,
+    },
   ];
 
   // Enough answered history that the funnel reads as a working capability
@@ -172,14 +194,18 @@ function main() {
     });
     if (r.respond) {
       const out = store.respondToRequest(created.token, r.respond);
-      if (r.respond === 'RELEASE' && out.slot) releasedSlots.push({ slot: out.slot, book: r.book });
+      if (r.respond === 'RELEASE' && out.slot) {
+        releasedSlots.push({ slot: out.slot, book: r.book,
+                             offer: r.offer, declineAll: r.declineAll });
+      }
     }
   }
   const released = releasedSlots[0]?.slot ?? null;
 
   // Every released slot is offered to ranked candidates. Spine leads because its
   // forward pipeline is the one that is surging.
-  for (const { slot } of releasedSlots) {
+  for (const { slot, offer } of releasedSlots) {
+    if (offer === false) continue;
     store.createOffers(tenantId, slot.id, [
       { candidate: cast.st1_spine_surge, service: 'Spine', matchScore: 94,
         recipientEmail: practiceEmail('Spine') },
@@ -197,6 +223,16 @@ function main() {
     if (!book) continue;
     const offer = store.getSlot(tenantId, slot.id)?.offers?.[0];
     if (offer) store.respondToOffer(offer.token, 'CLAIM');
+  }
+
+  // One slot where everybody said no. The store returns it to OPEN, so it lands
+  // back on "needs an offer" carrying who already declined — which is the
+  // difference between a useful queue and a list handing back a dead end.
+  for (const { slot, declineAll } of releasedSlots) {
+    if (!declineAll) continue;
+    for (const o of store.getSlot(tenantId, slot.id)?.offers ?? []) {
+      if (o.status === 'SENT') store.respondToOffer(o.token, 'PASS');
+    }
   }
 
   // A few of the resulting EMR entries are already done; the rest are the

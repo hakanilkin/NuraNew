@@ -42,6 +42,7 @@ test.after(() => {
   const db = JSON.parse(fs.readFileSync(p, 'utf8'));
   delete db.tenants[T];
   delete db.tenants[T_EMPTY];
+  delete db.tenants['990992'];
   for (const k of Object.keys(db.tokens || {})) {
     if (db.tokens[k].tenantId === T) delete db.tokens[k];
   }
@@ -191,4 +192,93 @@ test('GET /summary returns the funnel', async () => {
                    'fillRatePct', 'responseRatePct', 'hoursStillOpen']) {
     assert.ok(k in r.body, `summary is missing ${k}`);
   }
+});
+
+// ── The Board's three lists (OpenTimeBoardLists.md) ────────────────────────
+//
+// The list a row sits in is its status, so the membership rule is the whole
+// feature. The case worth defending is the one the spec found: a slot whose
+// every offer has been declined used to sit in "awaiting response" awaiting
+// nothing, and its released hours quietly stopped being worked.
+
+const T_LISTS = '990992';
+
+function seedFor(tid, block) {
+  const req = store.createRequest(tid, {
+    blockDate: '2026-09-17', site: 'Bright Memorial Hospital', caseBlock: block,
+    service: 'Orthopedics', blockTimeMins: 480, recipientName: 'Dr Vance',
+  });
+  return store.respondToRequest(req.token, 'RELEASE').slot;
+}
+
+test('a released slot with no offer needs an offer', () => {
+  const slot = seedFor(T_LISTS, 'Never offered');
+  assert.equal(store.slotList(slot), store.SLOT_LISTS.NEEDS_OFFER);
+});
+
+test('a live offer moves it to awaiting response', () => {
+  const slot = seedFor(T_LISTS, 'Awaiting');
+  store.createOffers(T_LISTS, slot.id, [{ candidate: 'Spine', service: 'Spine' }]);
+  assert.equal(store.slotList(store.getSlot(T_LISTS, slot.id)), store.SLOT_LISTS.AWAITING);
+});
+
+test('when the last offer is declined the slot is work again, not a wait', () => {
+  const slot = seedFor(T_LISTS, 'Declined');
+  store.createOffers(T_LISTS, slot.id, [{ candidate: 'Dr Reyes', service: 'Spine' }]);
+  const offer = store.getSlot(T_LISTS, slot.id).offers[0];
+  store.respondToOffer(offer.token, 'PASS');
+
+  const after = store.getSlot(T_LISTS, slot.id);
+  // Fixed in the store, not patched in the view: the status itself goes back.
+  assert.equal(after.status, 'OPEN', 'a slot with no live offer must not stay OFFERED');
+  assert.equal(store.slotList(after), store.SLOT_LISTS.NEEDS_OFFER);
+  // ...and it carries the history that makes it a second attempt, not a repeat.
+  assert.equal(after.offers[0].status, 'PASSED');
+  assert.equal(after.offers[0].candidate, 'Dr Reyes');
+});
+
+test('one declined offer among several live ones is still a wait', () => {
+  const slot = seedFor(T_LISTS, 'Partly declined');
+  store.createOffers(T_LISTS, slot.id, [
+    { candidate: 'Dr Reyes', service: 'Spine' },
+    { candidate: 'Dr Okafor', service: 'Robotics-General' },
+  ]);
+  const [first] = store.getSlot(T_LISTS, slot.id).offers;
+  store.respondToOffer(first.token, 'PASS');
+  const after = store.getSlot(T_LISTS, slot.id);
+  assert.equal(after.status, 'OFFERED');
+  assert.equal(store.slotList(after), store.SLOT_LISTS.AWAITING);
+});
+
+test('a claim books the slot and lapses the rest without reopening it', () => {
+  const slot = seedFor(T_LISTS, 'Booked');
+  store.createOffers(T_LISTS, slot.id, [
+    { candidate: 'Dr Reyes', service: 'Spine' },
+    { candidate: 'Dr Okafor', service: 'Robotics-General' },
+  ]);
+  const [first] = store.getSlot(T_LISTS, slot.id).offers;
+  store.respondToOffer(first.token, 'CLAIM');
+  const after = store.getSlot(T_LISTS, slot.id);
+  assert.equal(after.status, 'BOOKED');
+  assert.equal(after.offers[1].status, 'LAPSED');
+  assert.equal(store.slotList(after), store.SLOT_LISTS.BOOKED);
+});
+
+test('every slot lands in exactly one list, and listSlots says which', () => {
+  const slots = store.listSlots(T_LISTS);
+  assert.ok(slots.length >= 5);
+  const buckets = { NEEDS_OFFER: 0, AWAITING: 0, BOOKED: 0 };
+  for (const s of slots) {
+    assert.ok(s.list in buckets, `slot ${s.caseBlock} has no list`);
+    buckets[s.list] += 1;
+  }
+  assert.equal(buckets.NEEDS_OFFER + buckets.AWAITING + buckets.BOOKED, slots.length);
+  for (const k of Object.keys(buckets)) assert.ok(buckets[k] > 0, `${k} is empty`);
+});
+
+test('booked hours on list 3 reconcile with the funnel', () => {
+  const booked = store.listSlots(T_LISTS)
+    .filter(s => s.list === store.SLOT_LISTS.BOOKED)
+    .reduce((t, s) => t + (Number(s.durationMins) || 0), 0);
+  assert.equal(Number(store.summary(T_LISTS).hoursBooked), Math.round((booked / 60) * 10) / 10);
 });

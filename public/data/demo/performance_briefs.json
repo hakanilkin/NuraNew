@@ -411,35 +411,40 @@
           "alloc": 7.0777777777777775,
           "used": 5.006296244444444,
           "outside": 6.170370344444444,
-          "released": 0.35
+          "released": 0.35,
+          "outsideCases": 4.04
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.254814788888889,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.54
         },
         {
           "dow": 2,
           "alloc": 7.0777777777777775,
           "used": 5.8268518,
           "outside": 1.245740688888889,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.78
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 4.2090740222222225,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 2.64
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.42129624444444447,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.23
         }
       ],
       "allocatedHours": 14.2
@@ -488,35 +493,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 3.640648141666666,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 2.02
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.40249999999999997,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.25
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.7165277777777778,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.45
         },
         {
           "dow": 3,
           "alloc": 8.088888888888889,
           "used": 4.848148122222223,
           "outside": 2.872592586111111,
-          "released": 2.78
+          "released": 2.78,
+          "outsideCases": 1.65
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.19314814166666663,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 8.1
@@ -565,35 +575,40 @@
           "alloc": 11.122222222222222,
           "used": 5.955185133333333,
           "outside": 0.5664814555555555,
-          "released": 0.89
+          "released": 0.89,
+          "outsideCases": 0.31
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.3020370111111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 2,
           "alloc": 8.088888888888889,
           "used": 5.9862962444444445,
           "outside": 1.4168517999999999,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.78
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.08814812222222221,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
           "used": 5.843703677777777,
           "outside": 1.2068518,
-          "released": 0.27
+          "released": 0.27,
+          "outsideCases": 0.47
         }
       ],
       "allocatedHours": 27.3
@@ -648,35 +663,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.11796291111111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 1,
           "alloc": 8.088888888888889,
           "used": 2.8181481222222224,
           "outside": 0.22685180000000002,
-          "released": 0.35
+          "released": 0.35,
+          "outsideCases": 0.08
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.5296295777777777,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.78
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 14.014259233333334,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 6.3
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.08037034444444445,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 8.1
@@ -719,35 +739,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.37462961666666666,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.31
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.2631481222222222,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 2,
           "alloc": 8.088888888888889,
           "used": 5.532592566666666,
           "outside": 7.447870344444444,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 5.6
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.21712961666666664,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.23
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
           "used": 4.735370344444444,
           "outside": 0.0959259,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 16.2
@@ -790,35 +815,40 @@
           "alloc": 8.088888888888889,
           "used": 5.00111111111111,
           "outside": 0.2411111111111111,
-          "released": 0.27
+          "released": 0.27,
+          "outsideCases": 0.08
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.12962957777777778,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.8848147888888886,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.86
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 4.0185184666666665,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 1.71
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
           "used": 5.3342592333333325,
           "outside": 0.14777777777777776,
-          "released": 0.45
+          "released": 0.45,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 16.2
@@ -861,35 +891,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.37462961666666666,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.31
         },
         {
           "dow": 1,
           "alloc": 8.088888888888889,
           "used": 5.785370344444444,
           "outside": 0.2631481222222222,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 7.447870344444444,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 5.6
         },
         {
           "dow": 3,
           "alloc": 8.088888888888889,
           "used": 5.207222222222223,
           "outside": 0.21712961666666664,
-          "released": 0.35
+          "released": 0.35,
+          "outsideCases": 0.23
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0959259,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 16.2
@@ -932,35 +967,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 7.281296283333332,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 4.04
         },
         {
           "dow": 1,
           "alloc": 8.088888888888889,
           "used": 5.987592566666667,
           "outside": 0.8049999999999999,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.51
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.4330555555555555,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.89
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 5.745185172222222,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 3.31
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
           "used": 5.125555555555556,
           "outside": 0.38629628333333327,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         }
       ],
       "allocatedHours": 16.2
@@ -1003,35 +1043,40 @@
           "alloc": 8.088888888888889,
           "used": 5.714074022222222,
           "outside": 0.7630863851851851,
-          "released": 0.33
+          "released": 0.33,
+          "outsideCases": 0.31
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 2.626296296296296,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 1.04
         },
         {
           "dow": 2,
           "alloc": 8.088888888888889,
           "used": 6.414074022222223,
           "outside": 0.7838271259259258,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.41
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.22296296296296295,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         }
       ],
       "allocatedHours": 16.2
@@ -1074,35 +1119,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.4511111111111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.31
         },
         {
           "dow": 1,
           "alloc": 7.0777777777777775,
           "used": 5.399074022222223,
           "outside": 0.27870367777777777,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.31
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 4.115740688888889,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 2.72
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.15425923333333333,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 4,
           "alloc": 7.0777777777777775,
           "used": 4.630370344444445,
           "outside": 0.044074022222222224,
-          "released": 0.33
+          "released": 0.33,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 14.2
@@ -1145,35 +1195,40 @@
           "alloc": 8.088888888888889,
           "used": 5.126851800000001,
           "outside": 3.640648141666666,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 2.02
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.40249999999999997,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.25
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.7165277777777778,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.45
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 2.872592586111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 1.65
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.19314814166666663,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 8.1
@@ -1216,35 +1271,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.3461111111111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.47
         },
         {
           "dow": 1,
           "alloc": 8.088888888888889,
           "used": 5.226666666666667,
           "outside": 2.3462962444444444,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 1.56
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.3805555555555555,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 1.24
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.3953703444444444,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.31
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.028518466666666666,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 8.1
@@ -1287,35 +1347,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 3.0851851333333333,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 2.41
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.49518513333333336,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.31
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.5944444444444443,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 1.48
         },
         {
           "dow": 3,
           "alloc": 8.088888888888889,
           "used": 5.430185133333333,
           "outside": 0.08296291111111109,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.05444444444444444,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 8.1
@@ -1358,35 +1423,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.079814788888889,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.93
         },
         {
           "dow": 3,
           "alloc": 8.088888888888889,
           "used": 3.9342592333333335,
           "outside": 0.0,
-          "released": 0.25
+          "released": 0.25,
+          "outsideCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         }
       ],
       "allocatedHours": 8.1
@@ -1429,35 +1499,40 @@
           "alloc": 7.0777777777777775,
           "used": 4.714629577777778,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.4459259,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.62
         },
         {
           "dow": 2,
           "alloc": 7.0777777777777775,
           "used": 5.264259233333333,
           "outside": 0.2631481222222222,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.31
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.2087036777777778,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.06740735555555556,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         }
       ],
       "allocatedHours": 14.2
@@ -1500,35 +1575,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.05703701111111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.3772222222222222,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 7.0777777777777775,
           "used": 4.862407355555556,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         }
       ],
       "allocatedHours": 7.1
@@ -1571,35 +1651,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.7085184666666666,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 1.4
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.044074022222222224,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.6429629111111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.54
         },
         {
           "dow": 3,
           "alloc": 7.0777777777777775,
           "used": 5.973333333333333,
           "outside": 0.4187036777777778,
-          "released": 0.19
+          "released": 0.19,
+          "outsideCases": 0.31
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.23462957777777776,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         }
       ],
       "allocatedHours": 7.1
@@ -1642,35 +1727,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.30851846666666666,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.23
         },
         {
           "dow": 1,
           "alloc": 7.0777777777777775,
           "used": 5.356296244444444,
           "outside": 0.385,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.39
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.4446295777777778,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.39
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.19444444444444445,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.4524073555555555,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.54
         }
       ],
       "allocatedHours": 7.1
@@ -1713,35 +1803,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.38154319259259256,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.313148148148148,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.52
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.3919135629629629,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.21
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.11148148148148147,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
           "used": 5.344629577777778,
           "outside": 0.0,
-          "released": 0.29
+          "released": 0.29,
+          "outsideCases": 0.0
         }
       ],
       "allocatedHours": 8.1
@@ -1784,35 +1879,40 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.15944444444444442,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.16
         },
         {
           "dow": 1,
           "alloc": 8.088888888888889,
           "used": 5.1242592333333326,
           "outside": 0.04796291111111111,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.08
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.1511111111111112,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.93
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 1.0344444444444445,
-          "released": 0.0
+          "released": 0.0,
+          "outsideCases": 0.7
         }
       ],
       "allocatedHours": 8.1
