@@ -8,13 +8,13 @@ import {
   MessageSquareText,
   TrendingUp,
   CalendarDays,
+  CalendarClock,
   Target,
   ChevronRight,
   LogOut,
   ShieldCheck,
   KeyRound,
-  Menu,
-} from 'lucide-react'
+  Menu, Scale } from 'lucide-react'
 import { AuthProvider, useAuth } from './AuthContext'
 import navConfig, { OR_NAV, IP_NAV } from './navConfig'
 import Login            from './pages/Login'
@@ -30,19 +30,23 @@ import IPLengthOfStay         from './pages/IPLengthOfStay'
 import IPBedPlacement         from './pages/IPBedPlacement'
 import IPDischarges           from './pages/IPDischarges'
 import IPForecast             from './pages/IPForecast'
-import AtlasPerformanceBriefs  from './pages/AtlasPerformanceBriefs'
 import ORServiceLines    from './pages/ORServiceLines'
 import AskNura          from './pages/AskNura'
 import Admin            from './pages/Admin'
 import RoomRunning           from './pages/RoomRunning'
+import VolumeImpact     from './pages/VolumeImpact'
+import BlockAllocations from './pages/BlockAllocations'
 import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
+import ReleaseTimeMgmt      from './pages/ReleaseTimeMgmt'
+import BedMeeting           from './pages/BedMeeting'
+import FlowLearning         from './pages/FlowLearning'
 import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 
-const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays, Target }
+const ICON_MAP = { Activity, LayoutGrid, BarChart3, Map, MessageSquareText, TrendingUp, CalendarDays, CalendarClock, Target, Scale }
 
 function collectLeafPaths(items) {
   return items.flatMap(item =>
@@ -179,6 +183,20 @@ function PlaceholderPage({ title }) {
 }
 
 /* ─── Nav renderer ───────────────────────────────────────────────────────── */
+
+/**
+ * Drop anything the tenant does not have the data for, and any group left
+ * empty by that. A nav entry leading to a page that cannot load is worse than
+ * no entry at all.
+ */
+function filterByFeature(items, features) {
+  return items
+    .filter(item => !item.feature || features?.[item.feature])
+    .map(item => (item.children
+      ? { ...item, children: filterByFeature(item.children, features) }
+      : item))
+    .filter(item => item.type !== 'expander' || item.children.length > 0)
+}
 
 function renderNavItems(items, level, { isOpen, toggle }) {
   return items.map(item => {
@@ -446,6 +464,16 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
   const { user }     = useAuth()
   const { pathname } = useLocation()
   const [open,   setOpen]   = useState({ analytics: false, atlas: false })
+  // Which pages this tenant has the data for. Absent until it loads, which
+  // hides the gated entries rather than flashing them.
+  const [features, setFeatures] = useState({})
+
+  useEffect(() => {
+    fetch('/api/tenant-config')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setFeatures(d?.features ?? {}))
+      .catch(() => setFeatures({}))
+  }, [])
   const [domain, setDomain] = useState(() => localStorage.getItem('nura_domain') ?? 'OR')
 
   // Close the mobile drawer whenever navigation happens
@@ -453,12 +481,16 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
     onDrawerClose()
   }, [pathname, onDrawerClose])
 
+  // A tabbed page (/open-time/radar, /ip/bed-meeting/board) belongs to the
+  // group of its base path, so the group stays open on every tab.
+  const inGroup = id => (CHILD_PATHS[id] ?? []).some(p => pathname === p || (p !== '/' && pathname.startsWith(p + '/')))
+
   function isOpen(id) {
-    return !!open[id] || (CHILD_PATHS[id] ?? []).includes(pathname)
+    return !!open[id] || inGroup(id)
   }
 
   function toggle(id) {
-    if ((CHILD_PATHS[id] ?? []).includes(pathname)) return
+    if (inGroup(id)) return
     setOpen(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
@@ -517,7 +549,7 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
 
       {/* ── Nav ── */}
       <nav className="sidebar-nav">
-        {renderNavItems(isOR ? OR_NAV : IP_NAV, 0, { isOpen, toggle })}
+        {renderNavItems(filterByFeature(isOR ? OR_NAV : IP_NAV, features), 0, { isOpen, toggle })}
       </nav>
 
       {/* ── User footer ── */}
@@ -535,7 +567,10 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
 function Topbar({ onMenuClick }) {
   const { pathname } = useLocation()
   const { user }     = useAuth()
-  const title        = PAGE_TITLES[pathname] ?? 'Nura'
+  // Tabbed pages carry their tab in the path; the title is the page's.
+  const title        = PAGE_TITLES[pathname]
+    ?? PAGE_TITLES[Object.keys(PAGE_TITLES).filter(p => p !== '/' && pathname.startsWith(p + '/')).sort((a, b) => b.length - a.length)[0]]
+    ?? 'Nura'
 
   return (
     <header className="topbar">
@@ -573,14 +608,31 @@ function Shell() {
           <Route path="/capacity"          element={<Capacity />} />
           <Route path="/block-utilization" element={<BlockUtilization />} />
           <Route path="/room-running"                  element={<RoomRunning />} />
-          <Route path="/schedule-forecast/cases"     element={<SchedForecastCases />} />
-          <Route path="/schedule-forecast/daily"     element={<SchedForecastDaily />} />
-          <Route path="/schedule-forecast/detail"    element={<DailyDetail />} />
+          {/* One page, four tabs. Every page that used to answer a slice of
+              "what does the forecast do to us" redirects into its tab. */}
+          <Route path="/block-allocations"             element={<BlockAllocations />} />
+          <Route path="/atlas/performance-briefs"      element={<Navigate to="/block-allocations" replace />} />
+          <Route path="/impact"                        element={<VolumeImpact />} />
+          <Route path="/impact/:tab"                   element={<VolumeImpact />} />
+          <Route path="/or-smoothing"                  element={<Navigate to="/impact/inpatient" replace />} />
+          <Route path="/staffing-patterns"             element={<Navigate to="/impact/staffing" replace />} />
+          <Route path="/staffing"                      element={<Navigate to="/impact/staffing" replace />} />
+          <Route path="/outlook"                       element={<Navigate to="/impact/budget" replace />} />
+          <Route path="/outlook/planning"              element={<Navigate to="/impact/budget" replace />} />
+          <Route path="/outlook/detail"                element={<Navigate to="/impact/budget" replace />} />
+          <Route path="/outlook/budget"                element={<Navigate to="/impact/budget" replace />} />
+          <Route path="/schedule-forecast/cases"     element={<Navigate to="/impact/budget" replace />} />
+          <Route path="/schedule-forecast/daily"     element={<Navigate to="/impact/budget" replace />} />
+          <Route path="/schedule-forecast/detail"    element={<Navigate to="/impact/budget" replace />} />
+          {/* One page, four tabs. The old per-view URLs still resolve — they
+              are now the tab parameter, so deep links and the Briefs hand-offs
+              land on the right tab with their query intact. */}
+          <Route path="/open-time"                   element={<ReleaseTimeMgmt />} />
+          <Route path="/open-time/:tab"              element={<ReleaseTimeMgmt />} />
           <Route path="/room-running"      element={<RoomRunning />} />
           <Route path="/or/service-lines" element={<ORServiceLines />} />
           <Route path="/ip-flow"           element={<PlaceholderPage title="IP Flow" />} />
           <Route path="/atlas"             element={<Navigate to="/atlas/fcot" replace />} />
-          <Route path="/atlas/performance-briefs" element={<AtlasPerformanceBriefs />} />
           <Route path="/atlas/fcot"        element={<AtlasFCOT />} />
           <Route path="/atlas/turnover"    element={<AtlasTurnover />} />
           <Route path="/atlas/do-dc"            element={<AtlasDODC />} />
@@ -590,8 +642,15 @@ function Shell() {
           <Route path="/ip/bed-placement"    element={<IPBedPlacement />} />
           <Route path="/ip/discharges"       element={<IPDischarges />} />
           <Route path="/ip/forecast"         element={<IPForecast />} />
+          {/* RTDC: the meeting (four tabs, in the order the morning runs) and
+              the learning (five tabs). Unknown tab ids fall back to the first
+              tab inside the page, as ReleaseTimeMgmt does. */}
+          <Route path="/ip/bed-meeting"        element={<BedMeeting />} />
+          <Route path="/ip/bed-meeting/:tab"   element={<BedMeeting />} />
+          <Route path="/ip/flow-learning"      element={<FlowLearning />} />
+          <Route path="/ip/flow-learning/:tab" element={<FlowLearning />} />
           <Route path="/ask-nura"          element={<AskNura />} />
-          <Route path="/forecasts"         element={<Navigate to="/schedule-forecast/daily" replace />} />
+          <Route path="/forecasts"         element={<Navigate to="/impact/budget" replace />} />
           <Route path="/admin"             element={<RequireAdmin><Admin /></RequireAdmin>} />
         </Routes>
       </div>

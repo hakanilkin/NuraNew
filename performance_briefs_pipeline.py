@@ -377,12 +377,165 @@ for _, row in pivot.iterrows():
         'budget':          None,
     })
 
+# ── Block allocations (BlockAllocations.md) ──────────────────────────────────
+#
+# The briefs above say whether a block's volume matches its allocation. This
+# says whether the *grid* matches how the surgeons actually practise, which is a
+# different question with a different answer: a block on the wrong day looks
+# over-allocated to anything that sums the week.
+#
+# Allocation and in-block use come from V4_BlockResultsView by weekday; the
+# volume that lands outside any block comes from DS_CASES. Both over the current
+# review period, averaged per week.
+
+print()
+print("=" * 60)
+print("Step 7b: Block allocation patterns...")
+print("=" * 60)
+
+import block_patterns as BP  # noqa: E402
+from pipeline_config import _tenant_columns  # noqa: E402
+
+_tenant_block_thresholds = (
+    _tenant_columns().get(cfg.get('tenant_config_key') or '', {})
+    .get('params', {}).get('block_pattern_thresholds'))
+
+_ALLOC_QUERY = f"""
+SELECT ISNULL(CaseBlock, 'Unknown')                  AS CaseBlock,
+       ISNULL(Group_Service, 'Unknown')              AS Service,
+       ISNULL(LocationGroup, 'Unknown')              AS Site,
+       (DATEPART(WEEKDAY, BlockDate) + 5) % 7        AS Dow,
+       SUM(ISNULL(blockTime, 0))   / 60.0            AS AllocHours,
+       SUM(ISNULL(InBlock, 0))     / 60.0            AS UsedHours,
+       SUM(ISNULL(ReleasedTime, 0)) / 60.0           AS ReleasedHours,
+       COUNT(DISTINCT CASE WHEN ISNULL(ReleasedTime, 0) > 0
+                           THEN CAST(BlockDate AS DATE) END)          AS ReleasedDays,
+       COUNT(DISTINCT CAST(BlockDate AS DATE))       AS Instances
+FROM V4_BlockResultsView
+WHERE BlockDate BETWEEN '{curr_start}' AND '{curr_end}'
+  AND DATEPART(WEEKDAY, BlockDate) BETWEEN 2 AND 6
+GROUP BY CaseBlock, Group_Service, LocationGroup, (DATEPART(WEEKDAY, BlockDate) + 5) % 7
+"""
+
+# Volume a block's own service books on a day that block does not hold.
+_OUTSIDE_QUERY = f"""
+SELECT ISNULL(c.Case_SurgeonService, 'Unknown')          AS Service,
+       ISNULL(c.Loc_ORGrp2, 'Unknown')                   AS Site,
+       (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7     AS Dow,
+       SUM(ISNULL(c.Dur_ORIn_OROut, 0)) / 60.0           AS OutsideHours,
+       COUNT(*)                                          AS OutsideCases,
+       COUNT(DISTINCT CAST(c.Date_SchedDate AS DATE))    AS Days
+FROM DS_CASES c
+WHERE c.Date_SchedDate BETWEEN '{curr_start}' AND '{curr_end}'
+  AND c.Case_CanCode IS NULL
+  AND ISNULL(c.Case_CaseBlock, 'Open') = 'Open'
+  AND DATEPART(WEEKDAY, c.Date_SchedDate) BETWEEN 2 AND 6
+GROUP BY c.Case_SurgeonService, c.Loc_ORGrp2, (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7
+"""
+
+# How far into its block the day actually runs, for the wrong-shape test.
+_TAIL_QUERY = f"""
+SELECT ISNULL(CaseBlock, 'Unknown') AS CaseBlock,
+       AVG(CAST(LastOut AS FLOAT))  AS LastOutHours
+FROM (
+  SELECT ISNULL(Case_CaseBlock, 'Open')                    AS CaseBlock,
+         CAST(Date_SchedDate AS DATE)                      AS d,
+         (MAX(DATEPART(HOUR, Time_OROut) * 60 + DATEPART(MINUTE, Time_OROut))
+          - 7 * 60) / 60.0                                 AS LastOut
+  FROM DS_CASES
+  WHERE Date_SchedDate BETWEEN '{curr_start}' AND '{curr_end}'
+    AND Case_CanCode IS NULL AND Time_OROut IS NOT NULL
+    AND ISNULL(Case_CaseBlock, 'Open') <> 'Open'
+  GROUP BY Case_CaseBlock, CAST(Date_SchedDate AS DATE)
+) x
+GROUP BY CaseBlock
+"""
+
+_conn2 = pyodbc.connect(conn_str, timeout=30)
+df_alloc = pd.read_sql(_ALLOC_QUERY, _conn2)
+df_outside = pd.read_sql(_OUTSIDE_QUERY, _conn2)
+df_tail = pd.read_sql(_TAIL_QUERY, _conn2)
+_conn2.close()
+
+_weeks = max(1.0, (curr_end - curr_start).days / 7.0)
+_tail = {r.CaseBlock: r.LastOutHours for r in df_tail.itertuples()}
+
+# Out-of-block hours and cases per service, site and weekday, per week. Cases
+# because a committee argues about cases more readily than about hours.
+_outside = {}
+_outside_cases = {}
+for r in df_outside.itertuples():
+    k = (r.Service, r.Site, int(r.Dow))
+    _outside[k] = float(r.OutsideHours or 0) / _weeks
+    _outside_cases[k] = float(getattr(r, 'OutsideCases', 0) or 0) / _weeks
+
+_service_alloc = (df_alloc[df_alloc['CaseBlock'] != 'Open']
+                  .groupby(['Service', 'Site'])['AllocHours'].sum().to_dict())
+
+allocations = []
+for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Site']):
+    if block == 'Open':
+        continue
+    mine = float(grp['AllocHours'].sum())
+    pool = _service_alloc.get((service, site), 0.0)
+    share = (mine / pool) if pool > 0 else 0.0
+    by_dow, release_events, instances = [], 0, 0
+    released_by_dow = {}
+    outside_cases_by_dow = {}
+    for d in range(5):
+        row = grp[grp['Dow'] == d]
+        alloc = float(row['AllocHours'].sum()) / _weeks
+        used = float(row['UsedHours'].sum()) / _weeks
+        released_by_dow[d] = float(row['ReleasedHours'].sum()) / _weeks
+        release_events += int(row['ReleasedDays'].sum())
+        instances += int(row['Instances'].sum())
+        # Out-of-block volume belongs to this service's blocks in proportion to
+        # what each holds; crediting all of it to every block makes three ortho
+        # blocks each look like they are losing the same hours.
+        by_dow.append({'dow': d, 'alloc': alloc, 'used': used,
+                       'outside': _outside.get((service, site, d), 0.0) * share})
+        # Apportioned on the same share as the hours, so the caption's cases and
+        # its hours describe the same volume.
+        outside_cases_by_dow[d] = _outside_cases.get((service, site, d), 0.0) * share
+    brief = next((g for g in groups if g['caseblock'] == block), None)
+    fwd = (brief or {}).get('context', {}).get('pipeline', {}) if brief else {}
+    trend, trend_pct = BP.classify_trend(fwd.get('forecasted'), fwd.get('scheduled'))
+
+    found = BP.classify_block(
+        by_dow, release_events=release_events, release_of=max(instances, 0),
+        last_case_out_hours=_tail.get(block), trend=trend,
+        cfg=_tenant_block_thresholds)
+    # Released hours are evidence, not a classifier input, so they are merged
+    # back onto the weekdays the taxonomy normalised rather than passed through
+    # it. The drawer's day table has to reconcile to the week shape beside it.
+    found['byDow'] = [{**d,
+                       'released': round(released_by_dow.get(d['dow'], 0.0), 2),
+                       'outsideCases': round(outside_cases_by_dow.get(d['dow'], 0.0), 2)}
+                      for d in found['byDow']]
+    allocations.append({
+        'owner': block, 'service': service, 'site': site,
+        'trendPct': trend_pct, 'instances': instances,
+        'releaseHistory': {'count': release_events, 'of': instances},
+        **found,
+    })
+
+allocations.sort(key=lambda a: -(a['mismatchHours'] or 0))
+print(f"  Owners classified: {len(allocations)}")
+for pat in (BP.ABANDONED, BP.WRONG_DAY, BP.WRONG_SHAPE, BP.FRAGMENTED,
+            BP.MISPLACED, BP.UNDER_ALLOCATED, BP.OVER_ALLOCATED,
+            BP.RIGHT_SIZED, BP.UNCLASSIFIED):
+    n = sum(1 for a in allocations if a['pattern'] == pat)
+    if n:
+        print(f"    {pat:16s} {n}")
+
+
 output = {
     'period': {
         'current_quarter': curr_label,
         'prior_quarter':   prior_label,
     },
     'groups': groups,
+    'allocations': allocations,
 }
 
 print(f"  Groups in output: {len(groups)}")

@@ -41,7 +41,7 @@ print("Step 1: Loading credentials and connecting to database...")
 print("=" * 60)
 
 load_dotenv()
-from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
+from pipeline_config import parse_tenant_arg, get_db_params, unit_category_sql  # noqa: E402
 
 args, cfg = parse_tenant_arg('LOS Segments pipeline — excess LOS segment analysis')
 server, database, user, password = get_db_params(cfg)
@@ -100,6 +100,11 @@ print("=" * 60)
 print("Step 2: Pulling excess LOS segment data...")
 print("=" * 60)
 
+# Unit category mapping comes from config/tenantColumns.json, shared with the
+# Node routes, so a tenant whose departments are named differently is bucketed
+# correctly instead of collapsing into 'Other'.
+_unit_category_sql = unit_category_sql(cfg, column='e.DEP_LASTDEPT', indent='  ')
+
 _enc_hosp_clause = f"\n  AND e.DEP_LASTDEPTHOSPITAL = '{hospital_filter}'" if hospital_filter else ''
 
 QUERY = f"""
@@ -111,19 +116,7 @@ SELECT
   e.ENC_DISCHDISPO,
   e.ACCOUNT_FINANCIALCLASS,
   e.TIME_HOSPADMISSION,
-  CASE
-    WHEN e.DEP_LASTDEPT LIKE '%2E%' OR e.DEP_LASTDEPT LIKE '%2W%' THEN '2nd Floor'
-    WHEN e.DEP_LASTDEPT LIKE '%3E%' OR e.DEP_LASTDEPT LIKE '%3W%' THEN '3rd Floor'
-    WHEN e.DEP_LASTDEPT LIKE '%5W%' OR e.DEP_LASTDEPT LIKE '%6N%' THEN '6N/5W'
-    WHEN e.DEP_LASTDEPT LIKE '%ICU%' OR e.DEP_LASTDEPT LIKE '%CORONARY CARE%' THEN 'ICU'
-    WHEN e.DEP_LASTDEPT LIKE '%PCU%'                               THEN 'PCU'
-    WHEN (e.DEP_LASTDEPT LIKE '%MOTHER BABY%' OR e.DEP_LASTDEPT LIKE '%LABOR%'
-      OR  e.DEP_LASTDEPT LIKE '%SPECIAL CARE NURS%'
-      OR  e.DEP_LASTDEPT LIKE '%NEWBORN%')                         THEN 'Maternal Child Health'
-    WHEN e.DEP_LASTDEPT LIKE '%HOSPITAL AT HOME%'                  THEN 'Hospital at Home'
-    WHEN e.DEP_LASTDEPT LIKE '%IP REHAB%'                          THEN 'Rehab'
-    ELSE 'Other'
-  END AS DEST_CATEGORY
+  {_unit_category_sql} AS DEST_CATEGORY
 FROM DS_Encounters e
 WHERE e.BEDDED = 'Y'{_enc_hosp_clause}
   AND e.TIME_HOSPADMISSION >= '2025-01-01'
@@ -444,17 +437,21 @@ for seg in home_segments[:5]:
 
 print()
 print("=" * 60)
-print("Step 7: Writing public/data/los_segments.json...")
+print(f"Step 7: Writing {os.path.join(cfg['output_dir'], 'los_segments.json')}...")
 print("=" * 60)
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-out_dir    = os.path.join(script_dir, 'public', 'data')
+# Every other pipeline writes to its tenant's directory; this one wrote to the
+# shared root, so a --tenant run produced output no route reads (routes/atlas.js
+# serves los_segments.json from tenantDataDir) and left the tenant's own file
+# missing.
+out_dir    = os.path.join(script_dir, cfg['output_dir'])
 os.makedirs(out_dir, exist_ok=True)
 out_path   = os.path.join(out_dir, 'los_segments.json')
 
 output = {
     'generated_at':      datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    'hospital':          'Our Lady of Lourdes Hospital',
+    'hospital':          cfg['hospital_filter'] or 'All hospitals',
     'headline':          headline,
     'facility_segments': facility_segments,
     'home_segments':     home_segments,

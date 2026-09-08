@@ -1,0 +1,97 @@
+{
+  "system_mean": 27.3,
+  "target_minutes": 30,
+  "total_cases": 628,
+  "combinations": [
+    {
+      "label": "Floor Transfer",
+      "sub": "Stepdown \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 29.0,
+      "above_mean": 1.7,
+      "pct_above_target": 31.1,
+      "cnt": 103
+    },
+    {
+      "label": "Low",
+      "sub": "Stepdown \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 29.0,
+      "above_mean": 1.7,
+      "pct_above_target": 32.3,
+      "cnt": 124
+    },
+    {
+      "label": "Low",
+      "sub": "4 East \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 28.2,
+      "above_mean": 0.9,
+      "pct_above_target": 32.8,
+      "cnt": 122
+    },
+    {
+      "label": "Low",
+      "sub": "Floor Transfer \u00b7 Census \u00d7 Source",
+      "type": "Census \u00d7 Source",
+      "avg_assignment_min": 27.7,
+      "above_mean": 0.4,
+      "pct_above_target": 30.2,
+      "cnt": 533
+    },
+    {
+      "label": "Floor Transfer",
+      "sub": "ICU \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 27.6,
+      "above_mean": 0.3,
+      "pct_above_target": 32.1,
+      "cnt": 140
+    },
+    {
+      "label": "Low",
+      "sub": "ICU \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 27.6,
+      "above_mean": 0.3,
+      "pct_above_target": 32.1,
+      "cnt": 140
+    },
+    {
+      "label": "Low",
+      "sub": "5 Central \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 27.5,
+      "above_mean": 0.2,
+      "pct_above_target": 28.1,
+      "cnt": 121
+    },
+    {
+      "label": "Floor Transfer",
+      "sub": "Overnight \u00b7 Source \u00d7 Time of Day",
+      "type": "Source \u00d7 Time of Day",
+      "avg_assignment_min": 27.1,
+      "above_mean": -0.2,
+      "pct_above_target": 29.0,
+      "cnt": 200
+    },
+    {
+      "label": "Floor Transfer",
+      "sub": "3 West \u00b7 Source \u00d7 Destination",
+      "type": "Source \u00d7 Destination",
+      "avg_assignment_min": 24.9,
+      "above_mean": -2.4,
+      "pct_above_target": 27.5,
+      "cnt": 102
+    },
+    {
+      "label": "Low",
+      "sub": "3 West \u00b7 Census \u00d7 Destination",
+      "type": "Census \u00d7 Destination",
+      "avg_assignment_min": 24.2,
+      "above_mean": -3.1,
+      "pct_above_target": 25.6,
+      "cnt": 121
+    }
+  ]
+}

@@ -1,34 +1,11 @@
 const express = require('express');
 const path    = require('path');
-const fs      = require('fs');
+
+// Path resolution and JSON reading live in lib/tenantData so routes/briefs.js
+// can reuse them rather than growing a second resolver.
+const { DATA_DIR, tenantDataDir, readJsonFile } = require('../lib/tenantData');
 
 const router = express.Router();
-
-// Root of all tenant data directories
-const DATA_DIR = path.join(__dirname, '..', 'public', 'data');
-
-// Resolve a per-tenant data directory, sanitizing the tenant name to prevent
-// path traversal.  Only lowercase alphanumeric chars are kept.
-function tenantDataDir(tenantName) {
-  const safe = (tenantName || 'nhs').toLowerCase().replace(/[^a-z0-9]/g, '') || 'nhs';
-  return path.join(DATA_DIR, safe);
-}
-
-// Read a JSON file at an absolute filePath.
-function readJsonFile(filePath) {
-  let raw;
-  try {
-    raw = fs.readFileSync(filePath, 'utf8');
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      const e = new Error('not_found');
-      e.filePath = filePath;
-      throw e;
-    }
-    throw err;
-  }
-  return JSON.parse(raw);
-}
 
 // Respond with JSON from filePath.
 // opts.noAtlasData  — when file missing, return 200 { error: 'no_atlas_data' }
@@ -209,11 +186,11 @@ function servePerformanceBriefs(req, res) {
     if (err.message === 'not_found') {
       return res.json({
         error:   'no_atlas_data',
-        message: 'Performance briefs have not been generated for this organization yet.',
+        message: 'Block allocations have not been generated for this organization yet.',
       });
     }
     console.error('/api/atlas/performance-briefs read error:', err.message);
-    return res.status(500).json({ error: 'Could not read performance briefs' });
+    return res.status(500).json({ error: 'Could not read block allocations' });
   }
 
   // Merge per-group context by caseblock (best-effort; missing file is fine)

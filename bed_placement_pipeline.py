@@ -39,7 +39,7 @@ print("Step 1: Loading credentials and connecting to database...")
 print("=" * 60)
 
 load_dotenv()
-from pipeline_config import parse_tenant_arg, get_db_params  # noqa: E402
+from pipeline_config import parse_tenant_arg, get_db_params, classify_unit  # noqa: E402
 
 args, cfg = parse_tenant_arg('Bed Placement EBM pipeline — bed assignment delay model')
 server, database, user, password = get_db_params(cfg)
@@ -174,26 +174,12 @@ def classify_source(name):
 
 
 def classify_dest(name):
-    if pd.isna(name) or name in ('NULL', ''):
+    # Tenant-configured mapping (config/tenantColumns.json -> unit_category_map),
+    # shared with the Node routes and the other pipelines. Bed placement
+    # classifies DEST_DEPTNAME rather than DEP_LASTDEPT.
+    if pd.isna(name):
         return 'Other'
-    n = str(name).upper()
-    if '2E' in n or '2W' in n:
-        return '2nd Floor'
-    if '3E' in n or '3W' in n:
-        return '3rd Floor'
-    if '5W' in n or '6N' in n:
-        return '6N/5W'
-    if 'ICU' in n or 'CORONARY CARE' in n:
-        return 'ICU'
-    if 'PCU' in n:
-        return 'PCU'
-    if 'MOTHER BABY' in n or 'LABOR' in n or 'SPECIAL CARE NURS' in n or 'NEWBORN' in n:
-        return 'Maternal Child Health'
-    if 'HOSPITAL AT HOME' in n:
-        return 'Hospital at Home'
-    if 'IP REHAB' in n:
-        return 'Rehab'
-    return 'Other'
+    return classify_unit(cfg, name)
 
 
 df['SOURCE_CATEGORY'] = df['SOURCE_DEPTNAME'].apply(classify_source)

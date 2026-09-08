@@ -1,0 +1,1931 @@
+{
+  "generated_at": "2026-08-24T20:39:12.073233+00:00",
+  "hospital": "Our Lady of Lourdes Hospital",
+  "headline": {
+    "rows": [
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Hospitalist",
+        "n": 994,
+        "avg_excess": 0.43,
+        "total_excess_days": 426.5,
+        "cumulative_pct": 3.8
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Cardiology",
+        "n": 700,
+        "avg_excess": 0.39,
+        "total_excess_days": 274.9,
+        "cumulative_pct": 6.3
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Cardiology",
+        "n": 214,
+        "avg_excess": 0.96,
+        "total_excess_days": 204.7,
+        "cumulative_pct": 8.1
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Pulmonary",
+        "n": 484,
+        "avg_excess": 0.4,
+        "total_excess_days": 193.5,
+        "cumulative_pct": 9.9
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Gastroenterology",
+        "n": 398,
+        "avg_excess": 0.43,
+        "total_excess_days": 170.1,
+        "cumulative_pct": 11.4
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Hospitalist",
+        "n": 287,
+        "avg_excess": 0.52,
+        "total_excess_days": 150.2,
+        "cumulative_pct": 12.7
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Nephrology",
+        "n": 92,
+        "avg_excess": 1.22,
+        "total_excess_days": 112.0,
+        "cumulative_pct": 13.7
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Neurology",
+        "n": 331,
+        "avg_excess": 0.32,
+        "total_excess_days": 105.8,
+        "cumulative_pct": 14.7
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Nephrology",
+        "n": 322,
+        "avg_excess": 0.33,
+        "total_excess_days": 104.9,
+        "cumulative_pct": 15.6
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Hospitalist",
+        "n": 228,
+        "avg_excess": 0.37,
+        "total_excess_days": 84.0,
+        "cumulative_pct": 16.4
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Gastroenterology",
+        "n": 102,
+        "avg_excess": 0.73,
+        "total_excess_days": 74.1,
+        "cumulative_pct": 17.0
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "General Surgery",
+        "n": 69,
+        "avg_excess": 0.97,
+        "total_excess_days": 67.1,
+        "cumulative_pct": 17.6
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Infectious Disease",
+        "n": 62,
+        "avg_excess": 1.03,
+        "total_excess_days": 64.1,
+        "cumulative_pct": 18.2
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Colorectal",
+        "n": 51,
+        "avg_excess": 1.2,
+        "total_excess_days": 61.3,
+        "cumulative_pct": 18.8
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Endocrinology",
+        "n": 36,
+        "avg_excess": 1.47,
+        "total_excess_days": 53.0,
+        "cumulative_pct": 19.2
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Colorectal",
+        "n": 32,
+        "avg_excess": 1.6,
+        "total_excess_days": 51.1,
+        "cumulative_pct": 19.7
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Gastroenterology",
+        "n": 124,
+        "avg_excess": 0.36,
+        "total_excess_days": 44.1,
+        "cumulative_pct": 20.1
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Endocrinology",
+        "n": 205,
+        "avg_excess": 0.21,
+        "total_excess_days": 42.7,
+        "cumulative_pct": 20.5
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Infectious Disease",
+        "n": 249,
+        "avg_excess": 0.14,
+        "total_excess_days": 34.2,
+        "cumulative_pct": 20.8
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Nephrology",
+        "n": 98,
+        "avg_excess": 0.31,
+        "total_excess_days": 30.4,
+        "cumulative_pct": 21.0
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Vascular",
+        "n": 89,
+        "avg_excess": 0.29,
+        "total_excess_days": 25.6,
+        "cumulative_pct": 21.3
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Neurology",
+        "n": 110,
+        "avg_excess": 0.22,
+        "total_excess_days": 24.6,
+        "cumulative_pct": 21.5
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Cardiology",
+        "n": 191,
+        "avg_excess": 0.1,
+        "total_excess_days": 18.2,
+        "cumulative_pct": 21.7
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Robotics-General",
+        "n": 37,
+        "avg_excess": 0.38,
+        "total_excess_days": 14.0,
+        "cumulative_pct": 21.8
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Infectious Disease",
+        "n": 68,
+        "avg_excess": 0.19,
+        "total_excess_days": 12.8,
+        "cumulative_pct": 21.9
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "General Surgery",
+        "n": 56,
+        "avg_excess": 0.12,
+        "total_excess_days": 6.8,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "ENT",
+        "n": 2,
+        "avg_excess": 2.07,
+        "total_excess_days": 4.1,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Urology",
+        "n": 17,
+        "avg_excess": 0.22,
+        "total_excess_days": 3.8,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Pulmonary",
+        "n": 132,
+        "avg_excess": 0.01,
+        "total_excess_days": 1.7,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Plastics",
+        "n": 4,
+        "avg_excess": 0.31,
+        "total_excess_days": 1.2,
+        "cumulative_pct": 22.1
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Pulmonary",
+        "n": 143,
+        "avg_excess": -0.0,
+        "total_excess_days": -0.4,
+        "cumulative_pct": 22.1
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Neurology",
+        "n": 68,
+        "avg_excess": -0.01,
+        "total_excess_days": -0.6,
+        "cumulative_pct": 22.1
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Plastics",
+        "n": 3,
+        "avg_excess": -0.47,
+        "total_excess_days": -1.4,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Spine",
+        "n": 64,
+        "avg_excess": -0.02,
+        "total_excess_days": -1.5,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "ENT",
+        "n": 7,
+        "avg_excess": -0.42,
+        "total_excess_days": -3.0,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Vascular",
+        "n": 22,
+        "avg_excess": -0.21,
+        "total_excess_days": -4.6,
+        "cumulative_pct": 22.0
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Urology",
+        "n": 18,
+        "avg_excess": -0.26,
+        "total_excess_days": -4.7,
+        "cumulative_pct": 21.9
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "GYN",
+        "n": 9,
+        "avg_excess": -0.61,
+        "total_excess_days": -5.5,
+        "cumulative_pct": 21.9
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Colorectal",
+        "n": 137,
+        "avg_excess": -0.04,
+        "total_excess_days": -5.6,
+        "cumulative_pct": 21.8
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Urology",
+        "n": 49,
+        "avg_excess": -0.18,
+        "total_excess_days": -8.9,
+        "cumulative_pct": 21.7
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Endocrinology",
+        "n": 62,
+        "avg_excess": -0.17,
+        "total_excess_days": -10.2,
+        "cumulative_pct": 21.6
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Plastics",
+        "n": 11,
+        "avg_excess": -1.14,
+        "total_excess_days": -12.6,
+        "cumulative_pct": 21.5
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "GYN",
+        "n": 24,
+        "avg_excess": -0.58,
+        "total_excess_days": -13.8,
+        "cumulative_pct": 21.4
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Robotics-General",
+        "n": 20,
+        "avg_excess": -0.84,
+        "total_excess_days": -16.8,
+        "cumulative_pct": 21.3
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Orthopedics",
+        "n": 110,
+        "avg_excess": -0.15,
+        "total_excess_days": -16.8,
+        "cumulative_pct": 21.1
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "ENT",
+        "n": 22,
+        "avg_excess": -0.94,
+        "total_excess_days": -20.6,
+        "cumulative_pct": 20.9
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Vascular",
+        "n": 31,
+        "avg_excess": -0.7,
+        "total_excess_days": -21.8,
+        "cumulative_pct": 20.7
+      },
+      {
+        "disposition": "Home Health",
+        "service_line": "Orthopedics",
+        "n": 80,
+        "avg_excess": -0.31,
+        "total_excess_days": -24.5,
+        "cumulative_pct": 20.5
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "General Surgery",
+        "n": 196,
+        "avg_excess": -0.13,
+        "total_excess_days": -25.1,
+        "cumulative_pct": 20.3
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "GYN",
+        "n": 46,
+        "avg_excess": -0.66,
+        "total_excess_days": -30.6,
+        "cumulative_pct": 20.0
+      },
+      {
+        "disposition": "Facility-bound",
+        "service_line": "Spine",
+        "n": 100,
+        "avg_excess": -0.39,
+        "total_excess_days": -38.9,
+        "cumulative_pct": 19.7
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Spine",
+        "n": 293,
+        "avg_excess": -0.19,
+        "total_excess_days": -54.6,
+        "cumulative_pct": 19.2
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Robotics-General",
+        "n": 100,
+        "avg_excess": -0.6,
+        "total_excess_days": -59.5,
+        "cumulative_pct": 18.6
+      },
+      {
+        "disposition": "Self-care Home",
+        "service_line": "Orthopedics",
+        "n": 354,
+        "avg_excess": -0.22,
+        "total_excess_days": -79.1,
+        "cumulative_pct": 17.9
+      }
+    ],
+    "total_excess_days": 11157.9,
+    "effective_beds": 30.6
+  },
+  "facility_segments": [
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Cardiology",
+      "n": 214,
+      "avg_excess": 0.96,
+      "total_excess_days": 204.7,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 214,
+            "avg_excess": 0.96,
+            "total_excess_days": 204.7
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Medicare",
+            "n": 89,
+            "avg_excess": 0.78,
+            "total_excess_days": 69.2
+          },
+          {
+            "label": "Medicaid",
+            "n": 24,
+            "avg_excess": 2.33,
+            "total_excess_days": 56.0
+          },
+          {
+            "label": "Commercial",
+            "n": 82,
+            "avg_excess": 0.63,
+            "total_excess_days": 52.1
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Hospitalist",
+      "n": 287,
+      "avg_excess": 0.52,
+      "total_excess_days": 150.2,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 287,
+            "avg_excess": 0.52,
+            "total_excess_days": 150.2
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Commercial",
+            "n": 124,
+            "avg_excess": 0.65,
+            "total_excess_days": 81.0
+          },
+          {
+            "label": "Medicaid",
+            "n": 37,
+            "avg_excess": 0.83,
+            "total_excess_days": 30.7
+          },
+          {
+            "label": "Medicare",
+            "n": 99,
+            "avg_excess": 0.16,
+            "total_excess_days": 15.6
+          },
+          {
+            "label": "Other Government",
+            "n": 20,
+            "avg_excess": -0.26,
+            "total_excess_days": -5.2
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "General Surgery",
+      "n": 69,
+      "avg_excess": 0.97,
+      "total_excess_days": 67.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 69,
+            "avg_excess": 0.97,
+            "total_excess_days": 67.1
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Commercial",
+            "n": 34,
+            "avg_excess": 1.05,
+            "total_excess_days": 35.9
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Colorectal",
+      "n": 32,
+      "avg_excess": 1.6,
+      "total_excess_days": 51.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 32,
+            "avg_excess": 1.6,
+            "total_excess_days": 51.1
+          }
+        ],
+        "by_payer": []
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Gastroenterology",
+      "n": 124,
+      "avg_excess": 0.36,
+      "total_excess_days": 44.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 124,
+            "avg_excess": 0.36,
+            "total_excess_days": 44.1
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Commercial",
+            "n": 46,
+            "avg_excess": 0.53,
+            "total_excess_days": 24.2
+          },
+          {
+            "label": "Medicare",
+            "n": 43,
+            "avg_excess": 0.48,
+            "total_excess_days": 20.5
+          },
+          {
+            "label": "Medicaid",
+            "n": 24,
+            "avg_excess": -0.28,
+            "total_excess_days": -6.7
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Nephrology",
+      "n": 98,
+      "avg_excess": 0.31,
+      "total_excess_days": 30.4,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 98,
+            "avg_excess": 0.31,
+            "total_excess_days": 30.4
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Medicare",
+            "n": 39,
+            "avg_excess": 0.25,
+            "total_excess_days": 9.9
+          },
+          {
+            "label": "Commercial",
+            "n": 34,
+            "avg_excess": -0.05,
+            "total_excess_days": -1.8
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Neurology",
+      "n": 110,
+      "avg_excess": 0.22,
+      "total_excess_days": 24.6,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 110,
+            "avg_excess": 0.22,
+            "total_excess_days": 24.6
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Commercial",
+            "n": 36,
+            "avg_excess": 0.3,
+            "total_excess_days": 10.9
+          },
+          {
+            "label": "Medicare",
+            "n": 40,
+            "avg_excess": -0.01,
+            "total_excess_days": -0.6
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Robotics-General",
+      "n": 37,
+      "avg_excess": 0.38,
+      "total_excess_days": 14.0,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 37,
+            "avg_excess": 0.38,
+            "total_excess_days": 14.0
+          }
+        ],
+        "by_payer": []
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Infectious Disease",
+      "n": 68,
+      "avg_excess": 0.19,
+      "total_excess_days": 12.8,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 68,
+            "avg_excess": 0.19,
+            "total_excess_days": 12.8
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Medicare",
+            "n": 24,
+            "avg_excess": 0.48,
+            "total_excess_days": 11.5
+          },
+          {
+            "label": "Commercial",
+            "n": 33,
+            "avg_excess": 0.07,
+            "total_excess_days": 2.3
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Plastics",
+      "n": 4,
+      "avg_excess": 0.31,
+      "total_excess_days": 1.2,
+      "drill": {
+        "by_subspecialty": [],
+        "by_payer": []
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Pulmonary",
+      "n": 143,
+      "avg_excess": -0.0,
+      "total_excess_days": -0.4,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 143,
+            "avg_excess": -0.0,
+            "total_excess_days": -0.4
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Medicaid",
+            "n": 22,
+            "avg_excess": 0.58,
+            "total_excess_days": 12.8
+          },
+          {
+            "label": "Medicare",
+            "n": 58,
+            "avg_excess": 0.1,
+            "total_excess_days": 6.0
+          },
+          {
+            "label": "Commercial",
+            "n": 52,
+            "avg_excess": -0.34,
+            "total_excess_days": -17.6
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "ENT",
+      "n": 7,
+      "avg_excess": -0.42,
+      "total_excess_days": -3.0,
+      "drill": {
+        "by_subspecialty": [],
+        "by_payer": []
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Vascular",
+      "n": 22,
+      "avg_excess": -0.21,
+      "total_excess_days": -4.6,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 22,
+            "avg_excess": -0.21,
+            "total_excess_days": -4.6
+          }
+        ],
+        "by_payer": []
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Urology",
+      "n": 18,
+      "avg_excess": -0.26,
+      "total_excess_days": -4.7,
+      "drill": {
+        "by_subspecialty": [],
+        "by_payer": []
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Endocrinology",
+      "n": 62,
+      "avg_excess": -0.17,
+      "total_excess_days": -10.2,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 62,
+            "avg_excess": -0.17,
+            "total_excess_days": -10.2
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Commercial",
+            "n": 33,
+            "avg_excess": -0.66,
+            "total_excess_days": -21.9
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "GYN",
+      "n": 24,
+      "avg_excess": -0.58,
+      "total_excess_days": -13.8,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 24,
+            "avg_excess": -0.58,
+            "total_excess_days": -13.8
+          }
+        ],
+        "by_payer": []
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Orthopedics",
+      "n": 110,
+      "avg_excess": -0.15,
+      "total_excess_days": -16.8,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 110,
+            "avg_excess": -0.15,
+            "total_excess_days": -16.8
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Commercial",
+            "n": 53,
+            "avg_excess": 0.14,
+            "total_excess_days": 7.2
+          },
+          {
+            "label": "Medicare",
+            "n": 39,
+            "avg_excess": -0.25,
+            "total_excess_days": -9.7
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Facility-bound",
+      "service_line": "Spine",
+      "n": 100,
+      "avg_excess": -0.39,
+      "total_excess_days": -38.9,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 100,
+            "avg_excess": -0.39,
+            "total_excess_days": -38.9
+          }
+        ],
+        "by_payer": [
+          {
+            "label": "Medicare",
+            "n": 33,
+            "avg_excess": -0.02,
+            "total_excess_days": -0.5
+          },
+          {
+            "label": "Medicaid",
+            "n": 20,
+            "avg_excess": -0.41,
+            "total_excess_days": -8.1
+          },
+          {
+            "label": "Commercial",
+            "n": 36,
+            "avg_excess": -0.87,
+            "total_excess_days": -31.3
+          }
+        ]
+      }
+    }
+  ],
+  "home_segments": [
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Hospitalist",
+      "n": 994,
+      "avg_excess": 0.43,
+      "total_excess_days": 426.5,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 994,
+            "avg_excess": 0.43,
+            "total_excess_days": 426.5
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 86,
+            "avg_excess": 0.32,
+            "total_excess_days": 27.5
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 254,
+            "avg_excess": 0.51,
+            "total_excess_days": 129.4
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 318,
+            "avg_excess": 0.4,
+            "total_excess_days": 126.1
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 336,
+            "avg_excess": 0.43,
+            "total_excess_days": 143.5
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Cardiology",
+      "n": 700,
+      "avg_excess": 0.39,
+      "total_excess_days": 274.9,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 700,
+            "avg_excess": 0.39,
+            "total_excess_days": 274.9
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 68,
+            "avg_excess": 0.89,
+            "total_excess_days": 60.7
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 163,
+            "avg_excess": 0.24,
+            "total_excess_days": 39.6
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 224,
+            "avg_excess": 0.38,
+            "total_excess_days": 85.3
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 245,
+            "avg_excess": 0.37,
+            "total_excess_days": 89.4
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Pulmonary",
+      "n": 484,
+      "avg_excess": 0.4,
+      "total_excess_days": 193.5,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 484,
+            "avg_excess": 0.4,
+            "total_excess_days": 193.5
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 47,
+            "avg_excess": 0.89,
+            "total_excess_days": 42.0
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 114,
+            "avg_excess": 0.26,
+            "total_excess_days": 29.7
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 159,
+            "avg_excess": 0.46,
+            "total_excess_days": 73.2
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 164,
+            "avg_excess": 0.3,
+            "total_excess_days": 48.6
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Gastroenterology",
+      "n": 398,
+      "avg_excess": 0.43,
+      "total_excess_days": 170.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 398,
+            "avg_excess": 0.43,
+            "total_excess_days": 170.1
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 43,
+            "avg_excess": -0.03,
+            "total_excess_days": -1.1
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 109,
+            "avg_excess": 0.77,
+            "total_excess_days": 83.8
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 112,
+            "avg_excess": 0.37,
+            "total_excess_days": 41.0
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 134,
+            "avg_excess": 0.35,
+            "total_excess_days": 46.5
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Nephrology",
+      "n": 92,
+      "avg_excess": 1.22,
+      "total_excess_days": 112.0,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 92,
+            "avg_excess": 1.22,
+            "total_excess_days": 112.0
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 12,
+            "avg_excess": 0.81,
+            "total_excess_days": 9.7
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 22,
+            "avg_excess": 1.16,
+            "total_excess_days": 25.6
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 36,
+            "avg_excess": 1.77,
+            "total_excess_days": 63.9
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 22,
+            "avg_excess": 0.59,
+            "total_excess_days": 12.9
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Neurology",
+      "n": 331,
+      "avg_excess": 0.32,
+      "total_excess_days": 105.8,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 331,
+            "avg_excess": 0.32,
+            "total_excess_days": 105.8
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 23,
+            "avg_excess": -1.0,
+            "total_excess_days": -23.1
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 100,
+            "avg_excess": 0.41,
+            "total_excess_days": 40.5
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 113,
+            "avg_excess": 0.24,
+            "total_excess_days": 26.8
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 95,
+            "avg_excess": 0.65,
+            "total_excess_days": 61.6
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Nephrology",
+      "n": 322,
+      "avg_excess": 0.33,
+      "total_excess_days": 104.9,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 322,
+            "avg_excess": 0.33,
+            "total_excess_days": 104.9
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 34,
+            "avg_excess": 1.45,
+            "total_excess_days": 49.3
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 75,
+            "avg_excess": 0.3,
+            "total_excess_days": 22.4
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 104,
+            "avg_excess": 0.38,
+            "total_excess_days": 39.1
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 109,
+            "avg_excess": -0.05,
+            "total_excess_days": -6.0
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Hospitalist",
+      "n": 228,
+      "avg_excess": 0.37,
+      "total_excess_days": 84.0,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 228,
+            "avg_excess": 0.37,
+            "total_excess_days": 84.0
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 21,
+            "avg_excess": -0.02,
+            "total_excess_days": -0.5
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 55,
+            "avg_excess": 1.56,
+            "total_excess_days": 85.7
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 65,
+            "avg_excess": 0.04,
+            "total_excess_days": 2.8
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 87,
+            "avg_excess": -0.05,
+            "total_excess_days": -4.1
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Gastroenterology",
+      "n": 102,
+      "avg_excess": 0.73,
+      "total_excess_days": 74.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 102,
+            "avg_excess": 0.73,
+            "total_excess_days": 74.1
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 8,
+            "avg_excess": -0.68,
+            "total_excess_days": -5.4
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 32,
+            "avg_excess": 0.91,
+            "total_excess_days": 29.1
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 30,
+            "avg_excess": -0.03,
+            "total_excess_days": -0.9
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 32,
+            "avg_excess": 1.6,
+            "total_excess_days": 51.3
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Infectious Disease",
+      "n": 62,
+      "avg_excess": 1.03,
+      "total_excess_days": 64.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 62,
+            "avg_excess": 1.03,
+            "total_excess_days": 64.1
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 6,
+            "avg_excess": -0.63,
+            "total_excess_days": -3.8
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 15,
+            "avg_excess": 0.6,
+            "total_excess_days": 9.0
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 16,
+            "avg_excess": 0.67,
+            "total_excess_days": 10.7
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 25,
+            "avg_excess": 1.92,
+            "total_excess_days": 48.1
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Colorectal",
+      "n": 51,
+      "avg_excess": 1.2,
+      "total_excess_days": 61.3,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 51,
+            "avg_excess": 1.2,
+            "total_excess_days": 61.3
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 12,
+            "avg_excess": -0.63,
+            "total_excess_days": -7.5
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 26,
+            "avg_excess": 1.42,
+            "total_excess_days": 37.0
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 13,
+            "avg_excess": 2.45,
+            "total_excess_days": 31.9
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Endocrinology",
+      "n": 205,
+      "avg_excess": 0.21,
+      "total_excess_days": 42.7,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 205,
+            "avg_excess": 0.21,
+            "total_excess_days": 42.7
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 26,
+            "avg_excess": 0.53,
+            "total_excess_days": 13.7
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 49,
+            "avg_excess": -0.1,
+            "total_excess_days": -4.8
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 65,
+            "avg_excess": 0.21,
+            "total_excess_days": 13.9
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 65,
+            "avg_excess": 0.31,
+            "total_excess_days": 20.0
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Infectious Disease",
+      "n": 249,
+      "avg_excess": 0.14,
+      "total_excess_days": 34.2,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 249,
+            "avg_excess": 0.14,
+            "total_excess_days": 34.2
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 25,
+            "avg_excess": -0.09,
+            "total_excess_days": -2.1
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 62,
+            "avg_excess": 0.76,
+            "total_excess_days": 47.2
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 82,
+            "avg_excess": -0.1,
+            "total_excess_days": -8.3
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 80,
+            "avg_excess": -0.03,
+            "total_excess_days": -2.5
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Vascular",
+      "n": 89,
+      "avg_excess": 0.29,
+      "total_excess_days": 25.6,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 89,
+            "avg_excess": 0.29,
+            "total_excess_days": 25.6
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 28,
+            "avg_excess": -0.08,
+            "total_excess_days": -2.3
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 39,
+            "avg_excess": 0.41,
+            "total_excess_days": 16.1
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 22,
+            "avg_excess": 0.54,
+            "total_excess_days": 11.8
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Cardiology",
+      "n": 191,
+      "avg_excess": 0.1,
+      "total_excess_days": 18.2,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 191,
+            "avg_excess": 0.1,
+            "total_excess_days": 18.2
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 17,
+            "avg_excess": 0.56,
+            "total_excess_days": 9.5
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 57,
+            "avg_excess": -0.06,
+            "total_excess_days": -3.3
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 67,
+            "avg_excess": -0.44,
+            "total_excess_days": -29.2
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 50,
+            "avg_excess": 0.82,
+            "total_excess_days": 41.2
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "General Surgery",
+      "n": 56,
+      "avg_excess": 0.12,
+      "total_excess_days": 6.8,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 56,
+            "avg_excess": 0.12,
+            "total_excess_days": 6.8
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 15,
+            "avg_excess": -0.51,
+            "total_excess_days": -7.7
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 27,
+            "avg_excess": 0.54,
+            "total_excess_days": 14.7
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 14,
+            "avg_excess": -0.01,
+            "total_excess_days": -0.2
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Pulmonary",
+      "n": 132,
+      "avg_excess": 0.01,
+      "total_excess_days": 1.7,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 132,
+            "avg_excess": 0.01,
+            "total_excess_days": 1.7
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 15,
+            "avg_excess": -0.08,
+            "total_excess_days": -1.2
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 29,
+            "avg_excess": 0.36,
+            "total_excess_days": 10.6
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 47,
+            "avg_excess": -0.55,
+            "total_excess_days": -25.7
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 41,
+            "avg_excess": 0.44,
+            "total_excess_days": 18.1
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Neurology",
+      "n": 68,
+      "avg_excess": -0.01,
+      "total_excess_days": -0.6,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Medical",
+            "n": 68,
+            "avg_excess": -0.01,
+            "total_excess_days": -0.6
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Overnight (12a-6a)",
+            "n": 2,
+            "avg_excess": -0.44,
+            "total_excess_days": -0.9
+          },
+          {
+            "label": "Morning (6a-12p)",
+            "n": 15,
+            "avg_excess": 1.21,
+            "total_excess_days": 18.2
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 21,
+            "avg_excess": -0.07,
+            "total_excess_days": -1.5
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 30,
+            "avg_excess": -0.55,
+            "total_excess_days": -16.4
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Spine",
+      "n": 64,
+      "avg_excess": -0.02,
+      "total_excess_days": -1.5,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 64,
+            "avg_excess": -0.02,
+            "total_excess_days": -1.5
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 5,
+            "avg_excess": -1.23,
+            "total_excess_days": -6.2
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 39,
+            "avg_excess": -0.15,
+            "total_excess_days": -5.9
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 20,
+            "avg_excess": 0.53,
+            "total_excess_days": 10.6
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Colorectal",
+      "n": 137,
+      "avg_excess": -0.04,
+      "total_excess_days": -5.6,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 137,
+            "avg_excess": -0.04,
+            "total_excess_days": -5.6
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 35,
+            "avg_excess": 0.39,
+            "total_excess_days": 13.8
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 79,
+            "avg_excess": -0.06,
+            "total_excess_days": -4.5
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 23,
+            "avg_excess": -0.65,
+            "total_excess_days": -14.9
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Home Health",
+      "service_line": "Orthopedics",
+      "n": 80,
+      "avg_excess": -0.31,
+      "total_excess_days": -24.5,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 80,
+            "avg_excess": -0.31,
+            "total_excess_days": -24.5
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 20,
+            "avg_excess": -0.72,
+            "total_excess_days": -14.5
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 46,
+            "avg_excess": -0.12,
+            "total_excess_days": -5.3
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 14,
+            "avg_excess": -0.33,
+            "total_excess_days": -4.7
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "General Surgery",
+      "n": 196,
+      "avg_excess": -0.13,
+      "total_excess_days": -25.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 196,
+            "avg_excess": -0.13,
+            "total_excess_days": -25.1
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 59,
+            "avg_excess": -0.47,
+            "total_excess_days": -27.4
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 96,
+            "avg_excess": 0.19,
+            "total_excess_days": 18.0
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 41,
+            "avg_excess": -0.38,
+            "total_excess_days": -15.7
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Spine",
+      "n": 293,
+      "avg_excess": -0.19,
+      "total_excess_days": -54.6,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 293,
+            "avg_excess": -0.19,
+            "total_excess_days": -54.6
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 43,
+            "avg_excess": -0.4,
+            "total_excess_days": -17.1
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 178,
+            "avg_excess": -0.22,
+            "total_excess_days": -38.5
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 72,
+            "avg_excess": 0.01,
+            "total_excess_days": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Robotics-General",
+      "n": 100,
+      "avg_excess": -0.6,
+      "total_excess_days": -59.5,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 100,
+            "avg_excess": -0.6,
+            "total_excess_days": -59.5
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 23,
+            "avg_excess": -0.64,
+            "total_excess_days": -14.7
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 50,
+            "avg_excess": -0.68,
+            "total_excess_days": -34.2
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 27,
+            "avg_excess": -0.39,
+            "total_excess_days": -10.6
+          }
+        ]
+      }
+    },
+    {
+      "disposition": "Self-care Home",
+      "service_line": "Orthopedics",
+      "n": 354,
+      "avg_excess": -0.22,
+      "total_excess_days": -79.1,
+      "drill": {
+        "by_subspecialty": [
+          {
+            "label": "Surgical",
+            "n": 354,
+            "avg_excess": -0.22,
+            "total_excess_days": -79.1
+          }
+        ],
+        "by_admission_hour": [
+          {
+            "label": "Morning (6a-12p)",
+            "n": 99,
+            "avg_excess": -0.18,
+            "total_excess_days": -18.2
+          },
+          {
+            "label": "Afternoon (12p-5p)",
+            "n": 195,
+            "avg_excess": -0.2,
+            "total_excess_days": -38.1
+          },
+          {
+            "label": "Evening (5p-12a)",
+            "n": 60,
+            "avg_excess": -0.38,
+            "total_excess_days": -22.8
+          }
+        ]
+      }
+    }
+  ]
+}

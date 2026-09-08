@@ -1,5 +1,5 @@
 const express = require('express')
-const { resolveColumn, getParam } = require('../utils/tenantColumns')
+const { resolveColumn, getParam, buildUnitCategorySQL } = require('../utils/tenantColumns')
 
 module.exports = function iplosRoutes(getTenantPool, sql, requireTenant) {
   const router = express.Router()
@@ -54,19 +54,7 @@ WITH base AS (
     PROV_LASTPROV,
     PROV_ADMPROVSPECIALTY,
     PROV_LASTPROVSPECIALTY,
-    CASE
-      WHEN DEP_LASTDEPT LIKE '%2E%' OR DEP_LASTDEPT LIKE '%2W%' THEN '2nd Floor'
-      WHEN DEP_LASTDEPT LIKE '%3E%' OR DEP_LASTDEPT LIKE '%3W%' THEN '3rd Floor'
-      WHEN DEP_LASTDEPT LIKE '%5W%' OR DEP_LASTDEPT LIKE '%6N%' THEN '6N/5W'
-      WHEN DEP_LASTDEPT LIKE '%ICU%' OR DEP_LASTDEPT LIKE '%CORONARY CARE%' THEN 'ICU'
-      WHEN DEP_LASTDEPT LIKE '%PCU%' THEN 'PCU'
-      WHEN (DEP_LASTDEPT LIKE '%MOTHER BABY%' OR DEP_LASTDEPT LIKE '%LABOR%'
-        OR DEP_LASTDEPT LIKE '%SPECIAL CARE NURS%'
-        OR DEP_LASTDEPT LIKE '%NEWBORN%') THEN 'Maternal Child Health'
-      WHEN DEP_LASTDEPT LIKE '%HOSPITAL AT HOME%' THEN 'Hospital at Home'
-      WHEN DEP_LASTDEPT LIKE '%IP REHAB%' THEN 'Rehab'
-      ELSE 'Other'
-    END AS DEST_CATEGORY,
+    ${buildUnitCategorySQL(tenant, { alias: 'DEST_CATEGORY' })},
     TIME_HOSPADMISSION,
     CAST(ACCOUNT_IPLOS     AS FLOAT) AS LOS,
     CAST(DRG_FINALDRGGMLOS AS FLOAT) AS GMLOS,
@@ -259,19 +247,7 @@ WITH base AS (
 WITH base AS (
   SELECT
     FORMAT(TIME_HOSPDISCHARGE, 'yyyy-MM') AS month,
-    CASE
-      WHEN DEP_LASTDEPT LIKE '%2E%' OR DEP_LASTDEPT LIKE '%2W%' THEN '2nd Floor'
-      WHEN DEP_LASTDEPT LIKE '%3E%' OR DEP_LASTDEPT LIKE '%3W%' THEN '3rd Floor'
-      WHEN DEP_LASTDEPT LIKE '%5W%' OR DEP_LASTDEPT LIKE '%6N%' THEN '6N/5W'
-      WHEN DEP_LASTDEPT LIKE '%ICU%' OR DEP_LASTDEPT LIKE '%CORONARY CARE%' THEN 'ICU'
-      WHEN DEP_LASTDEPT LIKE '%PCU%' THEN 'PCU'
-      WHEN (DEP_LASTDEPT LIKE '%MOTHER BABY%' OR DEP_LASTDEPT LIKE '%LABOR%'
-        OR DEP_LASTDEPT LIKE '%SPECIAL CARE NURS%'
-        OR DEP_LASTDEPT LIKE '%NEWBORN%') THEN 'Maternal Child Health'
-      WHEN DEP_LASTDEPT LIKE '%HOSPITAL AT HOME%' THEN 'Hospital at Home'
-      WHEN DEP_LASTDEPT LIKE '%IP REHAB%' THEN 'Rehab'
-      ELSE 'Other'
-    END AS DEST_CATEGORY,
+    ${buildUnitCategorySQL(tenant, { alias: 'DEST_CATEGORY' })},
     CAST(ACCOUNT_IPLOS     AS FLOAT) AS LOS,
     CAST(DRG_FINALDRGGMLOS AS FLOAT) AS GMLOS,
     CAST(ACCOUNT_IPLOS AS FLOAT) - CAST(DRG_FINALDRGGMLOS AS FLOAT) AS EXCESS,

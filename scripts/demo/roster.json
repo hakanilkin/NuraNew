@@ -1,0 +1,868 @@
+{
+  "seed": 42,
+  "system_name": "Bright Memorial Health",
+  "sites": [
+    "Bright Memorial Hospital",
+    "Bright Surgery Center"
+  ],
+  "rooms": [
+    {
+      "room": "BMH OR 01",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 02",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 03",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 04",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 05",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 06",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 07",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 08",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BMH OR 09",
+      "site": "Bright Memorial Hospital",
+      "abbr": "BMH"
+    },
+    {
+      "room": "BSC OR 01",
+      "site": "Bright Surgery Center",
+      "abbr": "BSC"
+    },
+    {
+      "room": "BSC OR 02",
+      "site": "Bright Surgery Center",
+      "abbr": "BSC"
+    },
+    {
+      "room": "BSC OR 03",
+      "site": "Bright Surgery Center",
+      "abbr": "BSC"
+    },
+    {
+      "room": "BSC OR 04",
+      "site": "Bright Surgery Center",
+      "abbr": "BSC"
+    }
+  ],
+  "units": [
+    {
+      "unit": "5 Central",
+      "level_of_care": "Med-Surg",
+      "staffed_beds": 32,
+      "dept_code": "BMH 5 CENTRAL MED SURG"
+    },
+    {
+      "unit": "4 East",
+      "level_of_care": "Med-Surg",
+      "staffed_beds": 28,
+      "dept_code": "BMH 4 EAST MED SURG"
+    },
+    {
+      "unit": "3 West",
+      "level_of_care": "Telemetry",
+      "staffed_beds": 24,
+      "dept_code": "BMH 3 WEST TELEMETRY"
+    },
+    {
+      "unit": "ICU",
+      "level_of_care": "Critical Care",
+      "staffed_beds": 16,
+      "dept_code": "BMH ICU"
+    },
+    {
+      "unit": "Stepdown",
+      "level_of_care": "Stepdown",
+      "staffed_beds": 12,
+      "dept_code": "BMH STEPDOWN PCU"
+    }
+  ],
+  "services": [
+    "Orthopedics",
+    "Spine",
+    "General Surgery",
+    "Urology",
+    "GYN",
+    "ENT",
+    "Plastics",
+    "Vascular",
+    "Colorectal",
+    "Robotics-General"
+  ],
+  "surgeons": [
+    {
+      "name": "Delacroix, Theo A",
+      "service": "Orthopedics",
+      "rank_in_service": 1,
+      "service_share": 0.29995,
+      "roles": []
+    },
+    {
+      "name": "Estrada, Desmond H",
+      "service": "Orthopedics",
+      "rank_in_service": 2,
+      "service_share": 0.17508,
+      "roles": [
+        "st1_light_block_owner"
+      ]
+    },
+    {
+      "name": "Ferrante, Anika D",
+      "service": "Orthopedics",
+      "rank_in_service": 3,
+      "service_share": 0.12032,
+      "roles": []
+    },
+    {
+      "name": "Adeyemi, Tobias V",
+      "service": "Orthopedics",
+      "rank_in_service": 4,
+      "service_share": 0.08928,
+      "roles": []
+    },
+    {
+      "name": "Dalgaard, Ravi P",
+      "service": "Orthopedics",
+      "rank_in_service": 5,
+      "service_share": 0.07955,
+      "roles": []
+    },
+    {
+      "name": "Reinholt, Elena C",
+      "service": "Orthopedics",
+      "rank_in_service": 6,
+      "service_share": 0.07441,
+      "roles": []
+    },
+    {
+      "name": "Strand, Ingrid T",
+      "service": "Orthopedics",
+      "rank_in_service": 7,
+      "service_share": 0.06156,
+      "roles": []
+    },
+    {
+      "name": "Tarrant, Elena V",
+      "service": "Orthopedics",
+      "rank_in_service": 8,
+      "service_share": 0.0478,
+      "roles": []
+    },
+    {
+      "name": "Halloran, Emmett V",
+      "service": "Orthopedics",
+      "rank_in_service": 9,
+      "service_share": 0.05206,
+      "roles": []
+    },
+    {
+      "name": "Aldridge, Ingrid R",
+      "service": "Spine",
+      "rank_in_service": 1,
+      "service_share": 0.45674,
+      "roles": [
+        "st1_spine_surge"
+      ]
+    },
+    {
+      "name": "Rasmussen, Desmond A",
+      "service": "Spine",
+      "rank_in_service": 2,
+      "service_share": 0.25441,
+      "roles": [
+        "st4_fcot_offender"
+      ]
+    },
+    {
+      "name": "Fenwick, Lucia P",
+      "service": "Spine",
+      "rank_in_service": 3,
+      "service_share": 0.16283,
+      "roles": []
+    },
+    {
+      "name": "Solano, Desmond E",
+      "service": "Spine",
+      "rank_in_service": 4,
+      "service_share": 0.12602,
+      "roles": []
+    },
+    {
+      "name": "Strand, Renata L",
+      "service": "General Surgery",
+      "rank_in_service": 1,
+      "service_share": 0.30537,
+      "roles": []
+    },
+    {
+      "name": "Ferreira, Rafael N",
+      "service": "General Surgery",
+      "rank_in_service": 2,
+      "service_share": 0.16255,
+      "roles": []
+    },
+    {
+      "name": "Ferreira, Camille M",
+      "service": "General Surgery",
+      "rank_in_service": 3,
+      "service_share": 0.13772,
+      "roles": []
+    },
+    {
+      "name": "Tarrant, Talia B",
+      "service": "General Surgery",
+      "rank_in_service": 4,
+      "service_share": 0.10779,
+      "roles": []
+    },
+    {
+      "name": "Kovalenko, Kwame V",
+      "service": "General Surgery",
+      "rank_in_service": 5,
+      "service_share": 0.09429,
+      "roles": []
+    },
+    {
+      "name": "Whitlock, Rosalind C",
+      "service": "General Surgery",
+      "rank_in_service": 6,
+      "service_share": 0.0771,
+      "roles": []
+    },
+    {
+      "name": "Voss, Freya M",
+      "service": "General Surgery",
+      "rank_in_service": 7,
+      "service_share": 0.06375,
+      "roles": []
+    },
+    {
+      "name": "Mbeki, Simone C",
+      "service": "General Surgery",
+      "rank_in_service": 8,
+      "service_share": 0.05144,
+      "roles": []
+    },
+    {
+      "name": "Reinholt, Noor H",
+      "service": "Urology",
+      "rank_in_service": 1,
+      "service_share": 0.37363,
+      "roles": []
+    },
+    {
+      "name": "Aurelio, Freya C",
+      "service": "Urology",
+      "rank_in_service": 2,
+      "service_share": 0.21774,
+      "roles": []
+    },
+    {
+      "name": "Ferrante, Naomi N",
+      "service": "Urology",
+      "rank_in_service": 3,
+      "service_share": 0.14283,
+      "roles": []
+    },
+    {
+      "name": "Lindqvist, Kwame M",
+      "service": "Urology",
+      "rank_in_service": 4,
+      "service_share": 0.10357,
+      "roles": []
+    },
+    {
+      "name": "Bellweather, Nils M",
+      "service": "Urology",
+      "rank_in_service": 5,
+      "service_share": 0.08956,
+      "roles": []
+    },
+    {
+      "name": "Strand, Noor J",
+      "service": "Urology",
+      "rank_in_service": 6,
+      "service_share": 0.07267,
+      "roles": []
+    },
+    {
+      "name": "Brannigan, Quinn C",
+      "service": "GYN",
+      "rank_in_service": 1,
+      "service_share": 0.40745,
+      "roles": []
+    },
+    {
+      "name": "Tarrant, Adaeze F",
+      "service": "GYN",
+      "rank_in_service": 2,
+      "service_share": 0.22453,
+      "roles": []
+    },
+    {
+      "name": "Ellery, Sylvie H",
+      "service": "GYN",
+      "rank_in_service": 3,
+      "service_share": 0.15893,
+      "roles": []
+    },
+    {
+      "name": "Bellweather, Kwame N",
+      "service": "GYN",
+      "rank_in_service": 4,
+      "service_share": 0.11578,
+      "roles": []
+    },
+    {
+      "name": "Lindqvist, Adaeze V",
+      "service": "GYN",
+      "rank_in_service": 5,
+      "service_share": 0.0933,
+      "roles": []
+    },
+    {
+      "name": "Ferrante, Quinn L",
+      "service": "ENT",
+      "rank_in_service": 1,
+      "service_share": 0.36994,
+      "roles": []
+    },
+    {
+      "name": "Aurelio, Amos B",
+      "service": "ENT",
+      "rank_in_service": 2,
+      "service_share": 0.21888,
+      "roles": []
+    },
+    {
+      "name": "Ferrante, Priya L",
+      "service": "ENT",
+      "rank_in_service": 3,
+      "service_share": 0.17902,
+      "roles": []
+    },
+    {
+      "name": "Rhodes-Kim, Desmond C",
+      "service": "ENT",
+      "rank_in_service": 4,
+      "service_share": 0.1348,
+      "roles": []
+    },
+    {
+      "name": "Strand, Colette L",
+      "service": "ENT",
+      "rank_in_service": 5,
+      "service_share": 0.09737,
+      "roles": []
+    },
+    {
+      "name": "Strand, Matthias S",
+      "service": "Plastics",
+      "rank_in_service": 1,
+      "service_share": 0.50559,
+      "roles": []
+    },
+    {
+      "name": "Rhodes-Kim, Matthias R",
+      "service": "Plastics",
+      "rank_in_service": 2,
+      "service_share": 0.30393,
+      "roles": []
+    },
+    {
+      "name": "Nakamura, Talia E",
+      "service": "Plastics",
+      "rank_in_service": 3,
+      "service_share": 0.19048,
+      "roles": []
+    },
+    {
+      "name": "Ovadia, Tobias V",
+      "service": "Vascular",
+      "rank_in_service": 1,
+      "service_share": 0.63882,
+      "roles": []
+    },
+    {
+      "name": "Ellery, Talia W",
+      "service": "Vascular",
+      "rank_in_service": 2,
+      "service_share": 0.36118,
+      "roles": []
+    },
+    {
+      "name": "Vasquez-Bell, Ravi N",
+      "service": "Colorectal",
+      "rank_in_service": 1,
+      "service_share": 0.66596,
+      "roles": []
+    },
+    {
+      "name": "Devereaux, Ingrid E",
+      "service": "Colorectal",
+      "rank_in_service": 2,
+      "service_share": 0.33404,
+      "roles": []
+    },
+    {
+      "name": "Petrosian, Emil C",
+      "service": "Robotics-General",
+      "rank_in_service": 1,
+      "service_share": 0.41288,
+      "roles": [
+        "st5_turnover_offender"
+      ]
+    },
+    {
+      "name": "Fenwick, Devin D",
+      "service": "Robotics-General",
+      "rank_in_service": 2,
+      "service_share": 0.26131,
+      "roles": []
+    },
+    {
+      "name": "Nakamura, Adaeze F",
+      "service": "Robotics-General",
+      "rank_in_service": 3,
+      "service_share": 0.19742,
+      "roles": []
+    },
+    {
+      "name": "Adeyemi, Cyrus C",
+      "service": "Robotics-General",
+      "rank_in_service": 4,
+      "service_share": 0.1284,
+      "roles": []
+    }
+  ],
+  "blocks": [
+    {
+      "block": "ASC ENT",
+      "site": "Bright Surgery Center",
+      "rooms": [
+        "BSC OR 03"
+      ],
+      "weekdays": [
+        0,
+        2
+      ],
+      "services": [
+        "ENT"
+      ],
+      "panel": [
+        "Ferrante, Quinn L",
+        "Aurelio, Amos B",
+        "Ferrante, Priya L"
+      ]
+    },
+    {
+      "block": "ASC General",
+      "site": "Bright Surgery Center",
+      "rooms": [
+        "BSC OR 04"
+      ],
+      "weekdays": [
+        1,
+        4
+      ],
+      "services": [
+        "General Surgery"
+      ],
+      "panel": [
+        "Strand, Renata L",
+        "Ferreira, Rafael N",
+        "Ferreira, Camille M"
+      ]
+    },
+    {
+      "block": "ASC Ortho",
+      "site": "Bright Surgery Center",
+      "rooms": [
+        "BSC OR 01"
+      ],
+      "weekdays": [
+        0,
+        2
+      ],
+      "services": [
+        "Orthopedics"
+      ],
+      "panel": [
+        "Delacroix, Theo A",
+        "Estrada, Desmond H",
+        "Ferrante, Anika D"
+      ]
+    },
+    {
+      "block": "ASC Plastics",
+      "site": "Bright Surgery Center",
+      "rooms": [
+        "BSC OR 03"
+      ],
+      "weekdays": [
+        4
+      ],
+      "services": [
+        "Plastics"
+      ],
+      "panel": [
+        "Strand, Matthias S",
+        "Rhodes-Kim, Matthias R"
+      ]
+    },
+    {
+      "block": "ASC Uro/Gyn",
+      "site": "Bright Surgery Center",
+      "rooms": [
+        "BSC OR 02"
+      ],
+      "weekdays": [
+        1,
+        3
+      ],
+      "services": [
+        "Urology",
+        "GYN"
+      ],
+      "panel": [
+        "Reinholt, Noor H",
+        "Aurelio, Freya C",
+        "Ferrante, Naomi N",
+        "Brannigan, Quinn C",
+        "Tarrant, Adaeze F",
+        "Ellery, Sylvie H"
+      ]
+    },
+    {
+      "block": "Colorectal",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 08"
+      ],
+      "weekdays": [
+        0,
+        4
+      ],
+      "services": [
+        "Colorectal"
+      ],
+      "panel": [
+        "Vasquez-Bell, Ravi N",
+        "Devereaux, Ingrid E"
+      ]
+    },
+    {
+      "block": "ENT",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 09"
+      ],
+      "weekdays": [
+        1
+      ],
+      "services": [
+        "ENT"
+      ],
+      "panel": [
+        "Ferrante, Quinn L",
+        "Aurelio, Amos B"
+      ]
+    },
+    {
+      "block": "General A",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 04"
+      ],
+      "weekdays": [
+        1,
+        3
+      ],
+      "services": [
+        "General Surgery"
+      ],
+      "panel": [
+        "Strand, Renata L",
+        "Ferreira, Rafael N",
+        "Ferreira, Camille M"
+      ]
+    },
+    {
+      "block": "General B",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 05"
+      ],
+      "weekdays": [
+        2,
+        4
+      ],
+      "services": [
+        "General Surgery"
+      ],
+      "panel": [
+        "Strand, Renata L",
+        "Ferreira, Rafael N",
+        "Ferreira, Camille M"
+      ]
+    },
+    {
+      "block": "Ortho A",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 01"
+      ],
+      "weekdays": [
+        3
+      ],
+      "services": [
+        "Orthopedics"
+      ],
+      "panel": [
+        "Delacroix, Theo A",
+        "Estrada, Desmond H"
+      ]
+    },
+    {
+      "block": "Ortho B",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 02"
+      ],
+      "weekdays": [
+        1,
+        4
+      ],
+      "services": [
+        "Orthopedics"
+      ],
+      "panel": [
+        "Delacroix, Theo A",
+        "Estrada, Desmond H",
+        "Ferrante, Anika D"
+      ]
+    },
+    {
+      "block": "Ortho C",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 01"
+      ],
+      "weekdays": [
+        0
+      ],
+      "services": [
+        "Orthopedics"
+      ],
+      "panel": [
+        "Delacroix, Theo A",
+        "Estrada, Desmond H"
+      ]
+    },
+    {
+      "block": "Plastics",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 09"
+      ],
+      "weekdays": [
+        3
+      ],
+      "services": [
+        "Plastics"
+      ],
+      "panel": [
+        "Strand, Matthias S",
+        "Rhodes-Kim, Matthias R"
+      ]
+    },
+    {
+      "block": "Robotics 1",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 06"
+      ],
+      "weekdays": [
+        0,
+        2,
+        4
+      ],
+      "services": [
+        "Robotics-General"
+      ],
+      "panel": [
+        "Petrosian, Emil C",
+        "Fenwick, Devin D",
+        "Nakamura, Adaeze F"
+      ]
+    },
+    {
+      "block": "Spine",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 03"
+      ],
+      "weekdays": [
+        0,
+        2
+      ],
+      "services": [
+        "Spine"
+      ],
+      "panel": [
+        "Aldridge, Ingrid R",
+        "Rasmussen, Desmond A",
+        "Fenwick, Lucia P"
+      ]
+    },
+    {
+      "block": "Spine B",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 03"
+      ],
+      "weekdays": [
+        4
+      ],
+      "services": [
+        "Spine"
+      ],
+      "panel": [
+        "Aldridge, Ingrid R",
+        "Rasmussen, Desmond A"
+      ]
+    },
+    {
+      "block": "Uro/Gyn",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 07"
+      ],
+      "weekdays": [
+        1,
+        3
+      ],
+      "services": [
+        "Urology",
+        "GYN"
+      ],
+      "panel": [
+        "Reinholt, Noor H",
+        "Aurelio, Freya C",
+        "Ferrante, Naomi N",
+        "Brannigan, Quinn C",
+        "Tarrant, Adaeze F",
+        "Ellery, Sylvie H"
+      ]
+    },
+    {
+      "block": "Vascular",
+      "site": "Bright Memorial Hospital",
+      "rooms": [
+        "BMH OR 08"
+      ],
+      "weekdays": [
+        1
+      ],
+      "services": [
+        "Vascular"
+      ],
+      "panel": [
+        "Ovadia, Tobias V",
+        "Ellery, Talia W"
+      ]
+    }
+  ],
+  "service_unit_map": {
+    "Orthopedics": {
+      "5 Central": 68,
+      "4 East": 24,
+      "3 West": 5,
+      "Stepdown": 3
+    },
+    "Spine": {
+      "5 Central": 62,
+      "4 East": 18,
+      "3 West": 12,
+      "Stepdown": 6,
+      "ICU": 2
+    },
+    "General Surgery": {
+      "4 East": 52,
+      "5 Central": 28,
+      "3 West": 12,
+      "ICU": 5,
+      "Stepdown": 3
+    },
+    "Urology": {
+      "4 East": 58,
+      "5 Central": 30,
+      "3 West": 12
+    },
+    "GYN": {
+      "4 East": 64,
+      "5 Central": 26,
+      "3 West": 10
+    },
+    "ENT": {
+      "4 East": 60,
+      "3 West": 30,
+      "Stepdown": 10
+    },
+    "Plastics": {
+      "4 East": 70,
+      "5 Central": 30
+    },
+    "Vascular": {
+      "3 West": 44,
+      "Stepdown": 22,
+      "ICU": 20,
+      "4 East": 14
+    },
+    "Colorectal": {
+      "4 East": 46,
+      "5 Central": 30,
+      "3 West": 14,
+      "ICU": 10
+    },
+    "Robotics-General": {
+      "4 East": 50,
+      "5 Central": 30,
+      "3 West": 14,
+      "ICU": 6
+    }
+  },
+  "cast": {
+    "st1_light_block_owner": "Estrada, Desmond H",
+    "st1_spine_surge": "Aldridge, Ingrid R",
+    "st4_fcot_offender": "Rasmussen, Desmond A",
+    "st5_turnover_offender": "Petrosian, Emil C"
+  }
+}
