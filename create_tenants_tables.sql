@@ -27,15 +27,18 @@ CREATE TABLE UserTenants (
 --
 -- NOTE: the NHS tenant's DBName is still 'Virtua' — the client was renamed
 -- but the underlying Azure SQL database was not.  TenantName drives the UI
--- label and the public/data/<name> Atlas folder; DBName drives the connection.
+-- label and, by default, the public/data/<name> Atlas folder; DBName drives
+-- the connection.  A tenant whose display name differs from its pipeline
+-- output directory overrides the folder with a `data_dir` param in
+-- config/tenantColumns.json (see lib/tenantData.js).
 -- ----------------------------------------------------------------
 INSERT INTO Tenants (TenantName, DBServer, DBName, DBUser, DBPassword)
 VALUES
   ('NHS', 'brighthospital.database.windows.net', 'Virtua', 'hakantest@brighthospital', 'YOUR_PASSWORD'),
   ('OHS', 'brighthospital.database.windows.net', 'OHS',    'hakantest@brighthospital', 'YOUR_PASSWORD'),
-  -- Demo tenant. TenantName must stay exactly 'Bright Memorial Health': it
-  -- sanitizes to 'brightmemorialhealth', which is the Atlas data directory
-  -- routes/atlas.js looks for and the tenant key in pipeline_config.py.
+  -- Demo tenant, keyed 'Demo' in config/tenantColumns.json and pipeline_config.py.
+  -- The display name resolves to that entry through its `aliases` list, and the
+  -- entry's `data_dir` param points the Atlas folder at public/data/demo.
   ('Bright Memorial Health', 'brighthospital.database.windows.net', 'Demo', 'hakantest@brighthospital', 'YOUR_PASSWORD');
 
 -- ----------------------------------------------------------------
