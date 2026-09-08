@@ -55,6 +55,19 @@ export const IP_NAV = [
     ],
   },
   { id: 'ask-nura',    label: 'Ask Nura',    icon: 'MessageSquareText', type: 'link', path: '/ask-nura' },
+  {
+    // what to do about it today, and what we're learning. The methodology's
+    // own name, in the position the OR domain gives Capacity Decisions, so the
+    // two domains read the same way. Gated by the tenant feature flag so a
+    // tenant without snapshots never sees an entry it cannot load.
+    id: 'rtdc', label: 'RTDC', icon: 'Scale', type: 'expander', feature: 'rtdc',
+    children: [
+      // Today: the meeting and its aftermath — the board and the red-unit Ns are one page, four tabs, in the order the morning runs.
+      { id: 'bed-meeting',   label: 'Bed Meeting',   type: 'link', path: '/ip/bed-meeting' },
+      // Over time: are we getting better, which units are always mismatched, and what keeps getting in the way.
+      { id: 'flow-learning', label: 'Flow Learning', type: 'link', path: '/ip/flow-learning' },
+    ],
+  },
   { id: 'forecasts',   label: 'Forecasts',   icon: 'TrendingUp',        type: 'link', path: '/ip/forecast' },
 ]
 
@@ -71,6 +84,7 @@ const navConfig = [
     children: [...childrenOf(OR_NAV, 'atlas'), ...childrenOf(IP_NAV, 'atlas')] },
   { id: 'ask-nura', type: 'link', path: '/ask-nura' },
   { id: 'capacity-decisions', type: 'expander', children: childrenOf(OR_NAV, 'capacity-decisions') },
+  { id: 'rtdc', type: 'expander', children: childrenOf(IP_NAV, 'rtdc') },
   { id: 'ip-forecast', type: 'link', path: '/ip/forecast', label: 'Forecasts' },
 ]
 

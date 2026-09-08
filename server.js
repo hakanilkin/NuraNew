@@ -289,6 +289,7 @@ const isscmRouter          = require('./routes/isscm')(getTenantPool, sql, requi
 const impactRouter         = require('./routes/impact')(getTenantPool, sql, requireTenant);
 const blocksRouter         = require('./routes/blocks')(getTenantPool, sql, requireTenant,
                                require('./lib/openTimeStore'));
+const rtdcRouter           = require('./routes/rtdc')(getTenantPool, sql, requireTenant, requireAdmin);
 
 app.use('/api/auth',           authRouter);
 app.use('/api/admin',          adminRouter);
@@ -301,6 +302,7 @@ app.use('/api/opentime',       openTimeRouter);
 app.use('/api/isscm',          isscmRouter);
 app.use('/api/impact',         impactRouter);
 app.use('/api/blocks',         blocksRouter);
+app.use('/api/rtdc',           rtdcRouter);
 app.use('/api',        analyticsRouter);
 app.use('/api',        askNuraRouter);
 

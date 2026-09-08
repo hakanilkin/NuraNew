@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Building2 } from 'lucide-react'
+import RtdcSettings from '../components/rtdc/RtdcSettings'
+import '../components/rtdc/rtdc.css'
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
@@ -480,6 +482,9 @@ export default function Admin() {
           </div>
         )}
       </div>
+
+      {/* Per-tenant RTDC configuration; renders nothing for tenants without it. */}
+      <RtdcSettings />
 
       {modal && (
         <UserModal

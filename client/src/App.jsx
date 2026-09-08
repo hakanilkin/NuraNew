@@ -40,6 +40,8 @@ import SchedForecastCases   from './pages/SchedForecastCases'
 import SchedForecastDaily   from './pages/SchedForecastDaily'
 import DailyDetail          from './pages/DailyDetail'
 import ReleaseTimeMgmt      from './pages/ReleaseTimeMgmt'
+import BedMeeting           from './pages/BedMeeting'
+import FlowLearning         from './pages/FlowLearning'
 import ChangePassword     from './pages/ChangePassword'
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
@@ -479,12 +481,16 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
     onDrawerClose()
   }, [pathname, onDrawerClose])
 
+  // A tabbed page (/open-time/radar, /ip/bed-meeting/board) belongs to the
+  // group of its base path, so the group stays open on every tab.
+  const inGroup = id => (CHILD_PATHS[id] ?? []).some(p => pathname === p || (p !== '/' && pathname.startsWith(p + '/')))
+
   function isOpen(id) {
-    return !!open[id] || (CHILD_PATHS[id] ?? []).includes(pathname)
+    return !!open[id] || inGroup(id)
   }
 
   function toggle(id) {
-    if ((CHILD_PATHS[id] ?? []).includes(pathname)) return
+    if (inGroup(id)) return
     setOpen(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
@@ -561,7 +567,10 @@ function Sidebar({ drawerOpen, onDrawerClose }) {
 function Topbar({ onMenuClick }) {
   const { pathname } = useLocation()
   const { user }     = useAuth()
-  const title        = PAGE_TITLES[pathname] ?? 'Nura'
+  // Tabbed pages carry their tab in the path; the title is the page's.
+  const title        = PAGE_TITLES[pathname]
+    ?? PAGE_TITLES[Object.keys(PAGE_TITLES).filter(p => p !== '/' && pathname.startsWith(p + '/')).sort((a, b) => b.length - a.length)[0]]
+    ?? 'Nura'
 
   return (
     <header className="topbar">
@@ -633,6 +642,13 @@ function Shell() {
           <Route path="/ip/bed-placement"    element={<IPBedPlacement />} />
           <Route path="/ip/discharges"       element={<IPDischarges />} />
           <Route path="/ip/forecast"         element={<IPForecast />} />
+          {/* RTDC: the meeting (four tabs, in the order the morning runs) and
+              the learning (five tabs). Unknown tab ids fall back to the first
+              tab inside the page, as ReleaseTimeMgmt does. */}
+          <Route path="/ip/bed-meeting"        element={<BedMeeting />} />
+          <Route path="/ip/bed-meeting/:tab"   element={<BedMeeting />} />
+          <Route path="/ip/flow-learning"      element={<FlowLearning />} />
+          <Route path="/ip/flow-learning/:tab" element={<FlowLearning />} />
           <Route path="/ask-nura"          element={<AskNura />} />
           <Route path="/forecasts"         element={<Navigate to="/impact/budget" replace />} />
           <Route path="/admin"             element={<RequireAdmin><Admin /></RequireAdmin>} />

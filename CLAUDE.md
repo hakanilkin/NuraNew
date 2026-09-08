@@ -33,6 +33,9 @@ natural-language query assistant.
 - `routes/analytics.js` — OR analytics queries; `routes/filters.js` shared SQL filters.
 - `routes/atlas.js` — serves model JSON from `public/data`.
 - `routes/askNura.js` — Anthropic tool-use loop over live data + model JSON.
+- `routes/rtdc.js` + `lib/rtdc*.js`, `lib/moveToYes.js` — RTDC (Bed Meeting /
+  Flow Learning). Reads `DS_RTDC_*` snapshot tables or the synthetic demo
+  source; writes only to `lib/rtdcStore.js`. Spec: `RTDC.md`.
 - `lib/secrets.js` — AES-256-GCM encryption for tenant DB passwords.
 - `middleware/rateLimit.js` — in-memory limiter for auth endpoints.
 - `client/src/App.jsx` — shell, sidebar, routing; `navConfig.js` is the single
