@@ -6,15 +6,15 @@
   "groups": [
     {
       "caseblock": "ASC ENT",
-      "status": "right_sized",
-      "inblock_util": 70.5,
-      "primetime_util": 70.5,
-      "volume": 133,
+      "status": "watch",
+      "inblock_util": 64.9,
+      "primetime_util": 64.9,
+      "volume": 123,
       "deltas": {
-        "volume": 6,
-        "volume_pct": 4.7,
-        "inblock_util": 2.8,
-        "primetime_util": 2.8
+        "volume": -3,
+        "volume_pct": -2.4,
+        "inblock_util": -4.8,
+        "primetime_util": -4.8
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -23,14 +23,14 @@
     {
       "caseblock": "ASC General",
       "status": "right_sized",
-      "inblock_util": 70.9,
-      "primetime_util": 70.9,
-      "volume": 99,
+      "inblock_util": 74.7,
+      "primetime_util": 74.7,
+      "volume": 104,
       "deltas": {
-        "volume": -5,
-        "volume_pct": -4.8,
-        "inblock_util": -5.9,
-        "primetime_util": -5.9
+        "volume": 6,
+        "volume_pct": 6.1,
+        "inblock_util": 1.3,
+        "primetime_util": 1.3
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -39,14 +39,14 @@
     {
       "caseblock": "ASC Ortho",
       "status": "under_allocated",
-      "inblock_util": 76.5,
-      "primetime_util": 76.5,
-      "volume": 83,
+      "inblock_util": 77.6,
+      "primetime_util": 77.6,
+      "volume": 87,
       "deltas": {
-        "volume": 0,
-        "volume_pct": 0.0,
-        "inblock_util": -1.8,
-        "primetime_util": -1.8
+        "volume": -7,
+        "volume_pct": -7.4,
+        "inblock_util": -5.5,
+        "primetime_util": -5.5
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -54,31 +54,42 @@
     },
     {
       "caseblock": "ASC Plastics",
-      "status": "watch",
-      "inblock_util": 68.7,
-      "primetime_util": 68.7,
-      "volume": 51,
+      "status": "over_allocated",
+      "inblock_util": 56.6,
+      "primetime_util": 56.6,
+      "volume": 45,
       "deltas": {
-        "volume": 2,
-        "volume_pct": 4.1,
-        "inblock_util": 4.3,
-        "primetime_util": 4.3
+        "volume": -4,
+        "volume_pct": -8.2,
+        "inblock_util": -11.4,
+        "primetime_util": -11.4
       },
-      "findings": [],
+      "findings": [
+        {
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 68.0% to 56.6% QoQ (-11.4 pts).",
+          "severity": 3
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 68.0% to 56.6% QoQ (-11.4 pts).",
+          "severity": 3
+        }
+      ],
       "allocated_hours": 91.0,
       "budget": null
     },
     {
       "caseblock": "ASC Uro/Gyn",
       "status": "under_allocated",
-      "inblock_util": 80.0,
-      "primetime_util": 80.0,
-      "volume": 130,
+      "inblock_util": 79.3,
+      "primetime_util": 79.3,
+      "volume": 127,
       "deltas": {
-        "volume": 3,
-        "volume_pct": 2.4,
-        "inblock_util": 3.5,
-        "primetime_util": 3.5
+        "volume": -4,
+        "volume_pct": -3.1,
+        "inblock_util": 1.4,
+        "primetime_util": 1.4
       },
       "findings": [],
       "allocated_hours": 182.0,
@@ -87,25 +98,20 @@
     {
       "caseblock": "Colorectal",
       "status": "watch",
-      "inblock_util": 63.9,
-      "primetime_util": 63.9,
-      "volume": 71,
+      "inblock_util": 67.2,
+      "primetime_util": 67.2,
+      "volume": 67,
       "deltas": {
-        "volume": 0,
-        "volume_pct": 0.0,
-        "inblock_util": -10.2,
-        "primetime_util": -10.2
+        "volume": -10,
+        "volume_pct": -13.0,
+        "inblock_util": -2.5,
+        "primetime_util": -2.5
       },
       "findings": [
         {
-          "type": "inblock_util_qoq",
-          "text": "In-block utilization moved from 74.1% to 63.9% QoQ (-10.2 pts).",
-          "severity": 3
-        },
-        {
-          "type": "primetime_util_qoq",
-          "text": "Primetime utilization moved from 74.1% to 63.9% QoQ (-10.2 pts).",
-          "severity": 3
+          "type": "volume_qoq",
+          "text": "Volume moved from 77 to 67 cases QoQ (-13%).",
+          "severity": 2
         }
       ],
       "allocated_hours": 208.0,
@@ -113,15 +119,15 @@
     },
     {
       "caseblock": "ENT",
-      "status": "watch",
-      "inblock_util": 64.6,
-      "primetime_util": 64.6,
-      "volume": 72,
+      "status": "over_allocated",
+      "inblock_util": 58.9,
+      "primetime_util": 58.9,
+      "volume": 71,
       "deltas": {
         "volume": 3,
-        "volume_pct": 4.3,
-        "inblock_util": 0.5,
-        "primetime_util": 0.5
+        "volume_pct": 4.4,
+        "inblock_util": 1.5,
+        "primetime_util": 1.5
       },
       "findings": [],
       "allocated_hours": 104.0,
@@ -130,14 +136,14 @@
     {
       "caseblock": "General A",
       "status": "watch",
-      "inblock_util": 67.9,
-      "primetime_util": 67.9,
+      "inblock_util": 64.6,
+      "primetime_util": 64.6,
       "volume": 111,
       "deltas": {
-        "volume": -7,
-        "volume_pct": -5.9,
-        "inblock_util": 1.6,
-        "primetime_util": 1.6
+        "volume": 7,
+        "volume_pct": 6.7,
+        "inblock_util": -3.3,
+        "primetime_util": -3.3
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -146,14 +152,14 @@
     {
       "caseblock": "General B",
       "status": "watch",
-      "inblock_util": 63.5,
-      "primetime_util": 63.5,
-      "volume": 104,
+      "inblock_util": 64.1,
+      "primetime_util": 64.1,
+      "volume": 107,
       "deltas": {
         "volume": 7,
-        "volume_pct": 7.2,
-        "inblock_util": 2.9,
-        "primetime_util": 2.9
+        "volume_pct": 7.0,
+        "inblock_util": -0.2,
+        "primetime_util": -0.2
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -163,40 +169,40 @@
       "caseblock": "Open",
       "status": "misaligned",
       "inblock_util": 0.0,
-      "primetime_util": 77.7,
-      "volume": 1062,
+      "primetime_util": 79.0,
+      "volume": 1145,
       "deltas": {
-        "volume": 16,
-        "volume_pct": 1.5,
+        "volume": 97,
+        "volume_pct": 9.3,
         "inblock_util": 0.0,
         "primetime_util": 1.4
       },
       "findings": [
         {
           "type": "outofblock_high",
-          "text": "100% of OR time was out-of-block this quarter (103,221 min out of 103,221 min total).",
+          "text": "100% of OR time was out-of-block this quarter (106,161 min out of 106,161 min total).",
           "severity": 2
         }
       ],
-      "allocated_hours": 2213.33,
+      "allocated_hours": 2240.0,
       "budget": null
     },
     {
       "caseblock": "Ortho A",
-      "status": "over_allocated",
-      "inblock_util": 59.9,
-      "primetime_util": 59.9,
-      "volume": 33,
+      "status": "watch",
+      "inblock_util": 60.3,
+      "primetime_util": 60.3,
+      "volume": 37,
       "deltas": {
-        "volume": -3,
-        "volume_pct": -8.3,
-        "inblock_util": 0.3,
-        "primetime_util": 0.3
+        "volume": 2,
+        "volume_pct": 5.7,
+        "inblock_util": 1.2,
+        "primetime_util": 1.2
       },
       "findings": [
         {
           "type": "released_high",
-          "text": "34% of allocated block time was released this quarter (2,145 min of 6,240 min allocated).",
+          "text": "19% of allocated block time was released this quarter (1,155 min of 6,240 min allocated).",
           "severity": 1
         }
       ],
@@ -206,14 +212,14 @@
     {
       "caseblock": "Ortho B",
       "status": "watch",
-      "inblock_util": 68.7,
-      "primetime_util": 68.7,
-      "volume": 89,
+      "inblock_util": 67.9,
+      "primetime_util": 67.9,
+      "volume": 94,
       "deltas": {
-        "volume": -3,
-        "volume_pct": -3.3,
-        "inblock_util": -0.7,
-        "primetime_util": -0.7
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": -3.4,
+        "primetime_util": -3.4
       },
       "findings": [],
       "allocated_hours": 208.0,
@@ -222,19 +228,19 @@
     {
       "caseblock": "Ortho C",
       "status": "watch",
-      "inblock_util": 63.4,
-      "primetime_util": 63.4,
-      "volume": 40,
+      "inblock_util": 62.0,
+      "primetime_util": 62.0,
+      "volume": 44,
       "deltas": {
-        "volume": -5,
-        "volume_pct": -11.1,
-        "inblock_util": 0.1,
-        "primetime_util": 0.1
+        "volume": 6,
+        "volume_pct": 15.8,
+        "inblock_util": 0.0,
+        "primetime_util": 0.0
       },
       "findings": [
         {
           "type": "volume_qoq",
-          "text": "Volume moved from 45 to 40 cases QoQ (-11%).",
+          "text": "Volume moved from 38 to 44 cases QoQ (+16%).",
           "severity": 2
         }
       ],
@@ -244,19 +250,24 @@
     {
       "caseblock": "Plastics",
       "status": "over_allocated",
-      "inblock_util": 48.6,
-      "primetime_util": 48.6,
-      "volume": 36,
+      "inblock_util": 50.9,
+      "primetime_util": 50.9,
+      "volume": 35,
       "deltas": {
-        "volume": 4,
-        "volume_pct": 12.5,
-        "inblock_util": 5.0,
-        "primetime_util": 5.0
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": 9.4,
+        "primetime_util": 9.4
       },
       "findings": [
         {
-          "type": "volume_qoq",
-          "text": "Volume moved from 32 to 36 cases QoQ (+12%).",
+          "type": "inblock_util_qoq",
+          "text": "In-block utilization moved from 41.5% to 50.9% QoQ (+9.5 pts).",
+          "severity": 2
+        },
+        {
+          "type": "primetime_util_qoq",
+          "text": "Primetime utilization moved from 41.5% to 50.9% QoQ (+9.5 pts).",
           "severity": 2
         }
       ],
@@ -266,108 +277,92 @@
     {
       "caseblock": "Robotics 1",
       "status": "watch",
-      "inblock_util": 65.1,
-      "primetime_util": 65.1,
-      "volume": 105,
+      "inblock_util": 61.4,
+      "primetime_util": 61.4,
+      "volume": 113,
       "deltas": {
-        "volume": 0,
-        "volume_pct": 0.0,
-        "inblock_util": 3.6,
-        "primetime_util": 3.6
+        "volume": 11,
+        "volume_pct": 10.8,
+        "inblock_util": -1.6,
+        "primetime_util": -1.6
       },
-      "findings": [],
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 102 to 113 cases QoQ (+11%).",
+          "severity": 2
+        }
+      ],
       "allocated_hours": 351.0,
       "budget": null
     },
     {
       "caseblock": "Spine",
-      "status": "right_sized",
-      "inblock_util": 75.0,
-      "primetime_util": 75.0,
-      "volume": 67,
+      "status": "watch",
+      "inblock_util": 70.0,
+      "primetime_util": 70.0,
+      "volume": 76,
       "deltas": {
-        "volume": -5,
-        "volume_pct": -6.9,
-        "inblock_util": 3.8,
-        "primetime_util": 3.8
+        "volume": 7,
+        "volume_pct": 10.1,
+        "inblock_util": -3.8,
+        "primetime_util": -3.8
       },
-      "findings": [],
+      "findings": [
+        {
+          "type": "volume_qoq",
+          "text": "Volume moved from 69 to 76 cases QoQ (+10%).",
+          "severity": 2
+        }
+      ],
       "allocated_hours": 208.0,
       "budget": null
     },
     {
       "caseblock": "Spine B",
-      "status": "watch",
-      "inblock_util": 66.1,
-      "primetime_util": 66.1,
-      "volume": 31,
+      "status": "right_sized",
+      "inblock_util": 73.6,
+      "primetime_util": 73.6,
+      "volume": 33,
       "deltas": {
-        "volume": -7,
-        "volume_pct": -18.4,
-        "inblock_util": -9.3,
-        "primetime_util": -9.3
+        "volume": 0,
+        "volume_pct": 0.0,
+        "inblock_util": 1.1,
+        "primetime_util": 1.1
       },
-      "findings": [
-        {
-          "type": "inblock_util_qoq",
-          "text": "In-block utilization moved from 75.4% to 66.1% QoQ (-9.3 pts).",
-          "severity": 3
-        },
-        {
-          "type": "primetime_util_qoq",
-          "text": "Primetime utilization moved from 75.4% to 66.1% QoQ (-9.3 pts).",
-          "severity": 3
-        },
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 38 to 31 cases QoQ (-18%).",
-          "severity": 2
-        }
-      ],
+      "findings": [],
       "allocated_hours": 104.0,
       "budget": null
     },
     {
       "caseblock": "Uro/Gyn",
       "status": "watch",
-      "inblock_util": 65.2,
-      "primetime_util": 65.2,
-      "volume": 128,
+      "inblock_util": 67.6,
+      "primetime_util": 67.6,
+      "volume": 121,
       "deltas": {
-        "volume": 20,
-        "volume_pct": 18.5,
-        "inblock_util": -0.2,
-        "primetime_util": -0.2
+        "volume": -4,
+        "volume_pct": -3.2,
+        "inblock_util": 6.8,
+        "primetime_util": 6.8
       },
-      "findings": [
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 108 to 128 cases QoQ (+19%).",
-          "severity": 2
-        }
-      ],
+      "findings": [],
       "allocated_hours": 208.0,
       "budget": null
     },
     {
       "caseblock": "Vascular",
       "status": "over_allocated",
-      "inblock_util": 34.8,
-      "primetime_util": 34.8,
-      "volume": 14,
+      "inblock_util": 33.2,
+      "primetime_util": 33.2,
+      "volume": 15,
       "deltas": {
-        "volume": -4,
-        "volume_pct": -22.2,
-        "inblock_util": -3.0,
-        "primetime_util": -3.0
+        "volume": 1,
+        "volume_pct": 7.1,
+        "inblock_util": 0.7,
+        "primetime_util": 0.7
       },
-      "findings": [
-        {
-          "type": "volume_qoq",
-          "text": "Volume moved from 18 to 14 cases QoQ (-22%).",
-          "severity": 2
-        }
-      ],
+      "findings": [],
       "allocated_hours": 104.0,
       "budget": null
     }
@@ -380,28 +375,28 @@
       "trendPct": null,
       "instances": 26,
       "releaseHistory": {
-        "count": 2,
+        "count": 1,
         "of": 26
       },
       "pattern": "UNDER_ALLOCATED",
-      "mismatchHours": 13.3,
+      "mismatchHours": 13.2,
       "recommendation": {
-        "text": "Add about 10.0h a week \u2014 the block runs at 76.5% and 13.3h is already spilling outside it.",
-        "deltaHours": 10.0,
+        "text": "Add about 9.9h a week \u2014 the block runs at 77.6% and 13.2h of daytime work is already spilling outside it.",
+        "deltaHours": 9.9,
         "targetDow": null
       },
       "drivers": [
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 76.5,
-          "detail": "10.8h used of 14.2h allocated (76.5%)"
+          "contribution": 77.6,
+          "detail": "11.0h used of 14.2h allocated (77.6%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 13.3,
-          "detail": "13.3h a week booked outside any block"
+          "contribution": 13.4,
+          "detail": "13.4h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -409,81 +404,107 @@
         {
           "dow": 0,
           "alloc": 7.0777777777777775,
-          "used": 5.006296244444444,
-          "outside": 6.170370344444444,
-          "released": 0.35,
-          "outsideCases": 4.04
+          "used": 5.1579629111111105,
+          "outside": 3.808518466666666,
+          "outsidePrime": 3.808518466666666,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 2.33,
+          "outsidePrimeCases": 2.33,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 1.254814788888889,
+          "outside": 1.0655555555555554,
+          "outsidePrime": 1.0162962444444443,
+          "outsideNonPrime": 0.04925923333333333,
           "released": 0.0,
-          "outsideCases": 0.54
+          "outsideCases": 0.7,
+          "outsidePrimeCases": 0.7,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 7.0777777777777775,
-          "used": 5.8268518,
-          "outside": 1.245740688888889,
-          "released": 0.0,
-          "outsideCases": 0.78
+          "used": 5.833333333333333,
+          "outside": 1.6035184666666664,
+          "outsidePrime": 1.587962911111111,
+          "outsideNonPrime": 0.015555555555555555,
+          "released": 0.27,
+          "outsideCases": 0.78,
+          "outsidePrimeCases": 0.78,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 4.2090740222222225,
+          "outside": 6.467222222222222,
+          "outsidePrime": 6.337592566666666,
+          "outsideNonPrime": 0.12962957777777778,
           "released": 0.0,
-          "outsideCases": 2.64
+          "outsideCases": 4.04,
+          "outsidePrimeCases": 3.97,
+          "outsideNonPrimeCases": 0.08
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.42129624444444447,
+          "outside": 0.4446295777777778,
+          "outsidePrime": 0.4446295777777778,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.23
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 14.2
     },
     {
-      "owner": "Ortho A",
-      "service": "Orthopedics",
+      "owner": "Vascular",
+      "service": "Vascular",
       "site": "Bright Memorial Hospital",
       "trendPct": null,
       "instances": 13,
       "releaseHistory": {
-        "count": 11,
+        "count": 0,
         "of": 13
       },
-      "pattern": "ABANDONED",
+      "pattern": "WRONG_DAY",
       "mismatchHours": 8.1,
       "recommendation": {
-        "text": "Released 11 of the last 13 instances \u2014 reallocate rather than re-release.",
-        "deltaHours": -8.1,
-        "targetDow": null
+        "text": "Move the Tuesday block to Thursday \u2014 12.4h a week is already being booked there.",
+        "deltaHours": 0.0,
+        "targetDow": 3
       },
       "drivers": [
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 59.9,
-          "detail": "4.8h used of 8.1h allocated (59.9%)"
+          "contribution": 33.2,
+          "detail": "2.7h used of 8.1h allocated (33.2%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 7.8,
-          "detail": "7.8h a week booked outside any block"
+          "contribution": 14.4,
+          "detail": "14.4h a week booked outside any block"
         },
         {
-          "key": "releases",
-          "label": "Release history",
-          "contribution": 11.0,
-          "detail": "Released 11 of 13 instances (85%)"
+          "key": "held_day",
+          "label": "Tuesday allocation",
+          "contribution": 5.4,
+          "detail": "Tuesday: 2.7h used of 8.1h held"
+        },
+        {
+          "key": "busy_day",
+          "label": "Thursday volume",
+          "contribution": 12.4,
+          "detail": "Thursday: 12.4h booked with no block"
         }
       ],
       "trend": "STABLE",
@@ -492,41 +513,61 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 3.640648141666666,
+          "outside": 0.5405555555555556,
+          "outsidePrime": 0.5405555555555556,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 2.02
+          "outsideCases": 0.31,
+          "outsidePrimeCases": 0.31,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.40249999999999997,
+          "alloc": 8.088888888888889,
+          "used": 2.6872222222222217,
+          "outside": 0.23592589999999997,
+          "outsidePrime": 0.23592589999999997,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.25
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.7165277777777778,
+          "outside": 0.5275925666666667,
+          "outsidePrime": 0.47962957777777776,
+          "outsideNonPrime": 0.04796291111111111,
           "released": 0.0,
-          "outsideCases": 0.45
+          "outsideCases": 0.31,
+          "outsidePrimeCases": 0.31,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 3,
-          "alloc": 8.088888888888889,
-          "used": 4.848148122222223,
-          "outside": 2.872592586111111,
-          "released": 2.78,
-          "outsideCases": 1.65
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 13.13796291111111,
+          "outsidePrime": 12.405555555555555,
+          "outsideNonPrime": 0.7324073555555555,
+          "released": 0.0,
+          "outsideCases": 6.22,
+          "outsidePrimeCases": 5.83,
+          "outsideNonPrimeCases": 0.39
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.19314814166666663,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 8.1
@@ -542,30 +583,30 @@
         "of": 39
       },
       "pattern": "WRONG_SHAPE",
-      "mismatchHours": 8.1,
+      "mismatchHours": 7.7,
       "recommendation": {
-        "text": "Shorten Monday from 11.1h to 8.9h, or pair a second owner into the tail.",
-        "deltaHours": -2.7,
+        "text": "Shorten Monday from 11.1h to 9.0h, or pair a second owner into the tail.",
+        "deltaHours": -2.6,
         "targetDow": null
       },
       "drivers": [
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 65.1,
-          "detail": "17.8h used of 27.3h allocated (65.1%)"
+          "contribution": 61.4,
+          "detail": "16.8h used of 27.3h allocated (61.4%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 3.6,
-          "detail": "3.6h a week booked outside any block"
+          "contribution": 4.1,
+          "detail": "4.1h a week booked outside any block"
         },
         {
           "key": "tail",
           "label": "Unused tail",
-          "contribution": 2.7,
-          "detail": "Cases consistently finish by 8.4h into a 11.1h block"
+          "contribution": 2.6,
+          "detail": "Cases consistently finish by 8.5h into a 11.1h block"
         }
       ],
       "trend": "STABLE",
@@ -573,133 +614,65 @@
         {
           "dow": 0,
           "alloc": 11.122222222222222,
-          "used": 5.955185133333333,
-          "outside": 0.5664814555555555,
-          "released": 0.89,
-          "outsideCases": 0.31
+          "used": 5.046481455555555,
+          "outside": 0.5483333333333333,
+          "outsidePrime": 0.5483333333333333,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.31,
+          "outsidePrimeCases": 0.31,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.3020370111111111,
+          "outside": 0.6974073555555556,
+          "outsidePrime": 0.6662962444444444,
+          "outsideNonPrime": 0.03111111111111111,
           "released": 0.0,
-          "outsideCases": 0.16
+          "outsideCases": 0.23,
+          "outsidePrimeCases": 0.23,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 8.088888888888889,
-          "used": 5.9862962444444445,
-          "outside": 1.4168517999999999,
+          "used": 6.121111111111111,
+          "outside": 0.8814814555555555,
+          "outsidePrime": 0.8257406888888889,
+          "outsideNonPrime": 0.05574068888888889,
           "released": 0.0,
-          "outsideCases": 0.78
+          "outsideCases": 0.47,
+          "outsidePrimeCases": 0.47,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.08814812222222221,
+          "outside": 0.20481478888888888,
+          "outsidePrime": 0.20481478888888888,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
-          "used": 5.843703677777777,
-          "outside": 1.2068518,
-          "released": 0.27,
-          "outsideCases": 0.47
+          "used": 5.606481455555555,
+          "outside": 1.7318518,
+          "outsidePrime": 1.7020370111111112,
+          "outsideNonPrime": 0.029814788888888884,
+          "released": 0.78,
+          "outsideCases": 0.78,
+          "outsidePrimeCases": 0.78,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 27.3
-    },
-    {
-      "owner": "Vascular",
-      "service": "Vascular",
-      "site": "Bright Memorial Hospital",
-      "trendPct": null,
-      "instances": 13,
-      "releaseHistory": {
-        "count": 1,
-        "of": 13
-      },
-      "pattern": "WRONG_DAY",
-      "mismatchHours": 8.1,
-      "recommendation": {
-        "text": "Move the Tuesday block to Thursday \u2014 14.0h a week is already being booked there.",
-        "deltaHours": 0.0,
-        "targetDow": 3
-      },
-      "drivers": [
-        {
-          "key": "utilisation",
-          "label": "In-block utilisation",
-          "contribution": 34.8,
-          "detail": "2.8h used of 8.1h allocated (34.8%)"
-        },
-        {
-          "key": "outside",
-          "label": "Booked outside block",
-          "contribution": 16.0,
-          "detail": "16.0h a week booked outside any block"
-        },
-        {
-          "key": "held_day",
-          "label": "Tuesday allocation",
-          "contribution": 5.3,
-          "detail": "Tuesday: 2.8h used of 8.1h held"
-        },
-        {
-          "key": "busy_day",
-          "label": "Thursday volume",
-          "contribution": 14.0,
-          "detail": "Thursday: 14.0h booked with no block"
-        }
-      ],
-      "trend": "STABLE",
-      "byDow": [
-        {
-          "dow": 0,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.11796291111111111,
-          "released": 0.0,
-          "outsideCases": 0.08
-        },
-        {
-          "dow": 1,
-          "alloc": 8.088888888888889,
-          "used": 2.8181481222222224,
-          "outside": 0.22685180000000002,
-          "released": 0.35,
-          "outsideCases": 0.08
-        },
-        {
-          "dow": 2,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 1.5296295777777777,
-          "released": 0.0,
-          "outsideCases": 0.78
-        },
-        {
-          "dow": 3,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 14.014259233333334,
-          "released": 0.0,
-          "outsideCases": 6.3
-        },
-        {
-          "dow": 4,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.08037034444444445,
-          "released": 0.0,
-          "outsideCases": 0.08
-        }
-      ],
-      "allocatedHours": 8.1
     },
     {
       "owner": "General B",
@@ -708,89 +681,13 @@
       "trendPct": null,
       "instances": 26,
       "releaseHistory": {
-        "count": 0,
-        "of": 26
-      },
-      "pattern": "MISPLACED",
-      "mismatchHours": 5.9,
-      "recommendation": {
-        "text": "Uses 63.5% of a 8.1h block while booking 8.4h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
-        "deltaHours": 0.0,
-        "targetDow": null
-      },
-      "drivers": [
-        {
-          "key": "utilisation",
-          "label": "In-block utilisation",
-          "contribution": 63.5,
-          "detail": "10.3h used of 16.2h allocated (63.5%)"
-        },
-        {
-          "key": "outside",
-          "label": "Booked outside block",
-          "contribution": 8.4,
-          "detail": "8.4h a week booked outside any block"
-        }
-      ],
-      "trend": "STABLE",
-      "byDow": [
-        {
-          "dow": 0,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.37462961666666666,
-          "released": 0.0,
-          "outsideCases": 0.31
-        },
-        {
-          "dow": 1,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.2631481222222222,
-          "released": 0.0,
-          "outsideCases": 0.16
-        },
-        {
-          "dow": 2,
-          "alloc": 8.088888888888889,
-          "used": 5.532592566666666,
-          "outside": 7.447870344444444,
-          "released": 0.0,
-          "outsideCases": 5.6
-        },
-        {
-          "dow": 3,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.21712961666666664,
-          "released": 0.0,
-          "outsideCases": 0.23
-        },
-        {
-          "dow": 4,
-          "alloc": 8.088888888888889,
-          "used": 4.735370344444444,
-          "outside": 0.0959259,
-          "released": 0.0,
-          "outsideCases": 0.08
-        }
-      ],
-      "allocatedHours": 16.2
-    },
-    {
-      "owner": "Colorectal",
-      "service": "Colorectal",
-      "site": "Bright Memorial Hospital",
-      "trendPct": null,
-      "instances": 26,
-      "releaseHistory": {
-        "count": 3,
+        "count": 4,
         "of": 26
       },
       "pattern": "MISPLACED",
       "mismatchHours": 5.8,
       "recommendation": {
-        "text": "Uses 63.9% of a 8.1h block while booking 6.4h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "text": "Uses 64.1% of a 8.1h block while booking 9.1h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
         "deltaHours": 0.0,
         "targetDow": null
       },
@@ -798,60 +695,182 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 63.9,
-          "detail": "10.3h used of 16.2h allocated (63.9%)"
+          "contribution": 64.1,
+          "detail": "10.4h used of 16.2h allocated (64.1%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 6.4,
-          "detail": "6.4h a week booked outside any block"
+          "contribution": 9.1,
+          "detail": "9.1h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
       "byDow": [
         {
           "dow": 0,
-          "alloc": 8.088888888888889,
-          "used": 5.00111111111111,
-          "outside": 0.2411111111111111,
-          "released": 0.27,
-          "outsideCases": 0.08
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.4997222222222222,
+          "outsidePrime": 0.4984259,
+          "outsideNonPrime": 0.0012962833333333334,
+          "released": 0.0,
+          "outsideCases": 0.35,
+          "outsidePrimeCases": 0.35,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.12962957777777778,
+          "outside": 0.30462961666666666,
+          "outsidePrime": 0.2949073944444444,
+          "outsideNonPrime": 0.009722222222222222,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.19,
+          "outsidePrimeCases": 0.19,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 1.8848147888888886,
-          "released": 0.0,
-          "outsideCases": 0.86
+          "alloc": 8.088888888888889,
+          "used": 5.086666666666667,
+          "outside": 7.89703701111111,
+          "outsidePrime": 7.553518505555555,
+          "outsideNonPrime": 0.3435185055555555,
+          "released": 0.82,
+          "outsideCases": 5.68,
+          "outsidePrimeCases": 5.37,
+          "outsideNonPrimeCases": 0.31
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 4.0185184666666665,
+          "outside": 0.26055555555555554,
+          "outsidePrime": 0.26055555555555554,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 1.71
+          "outsideCases": 0.19,
+          "outsidePrimeCases": 0.19,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
-          "used": 5.3342592333333325,
-          "outside": 0.14777777777777776,
-          "released": 0.45,
-          "outsideCases": 0.08
+          "used": 5.286296244444444,
+          "outside": 0.13935183888888888,
+          "outsidePrime": 0.13935183888888888,
+          "outsideNonPrime": 0.0,
+          "released": 0.21,
+          "outsideCases": 0.12,
+          "outsidePrimeCases": 0.12,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 16.2
+    },
+    {
+      "owner": "ENT",
+      "service": "ENT",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 1,
+        "of": 13
+      },
+      "pattern": "NON_PRIME_TIME",
+      "mismatchHours": 5.7,
+      "recommendation": {
+        "text": "5.7h/wk landing after the operating day. Review start times, case-length estimates and add-on routing before changing allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 58.9,
+          "detail": "4.8h used of 8.1h allocated (58.9%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 8.8,
+          "detail": "8.8h a week booked outside any block"
+        },
+        {
+          "key": "after_hours",
+          "label": "After-hours share",
+          "contribution": 65.5,
+          "detail": "65% of outside work lands after the operating day"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.24370367777777777,
+          "outsidePrime": 0.24370367777777777,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.31,
+          "outsidePrimeCases": 0.31,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 8.088888888888889,
+          "used": 4.766481455555556,
+          "outside": 4.172777777777777,
+          "outsidePrime": 1.2587036777777778,
+          "outsideNonPrime": 2.9140740222222217,
+          "released": 0.27,
+          "outsideCases": 3.27,
+          "outsidePrimeCases": 1.24,
+          "outsideNonPrimeCases": 2.02
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 3.6127777777777776,
+          "outsidePrime": 0.7933333333333332,
+          "outsideNonPrime": 2.819444444444444,
+          "released": 0.0,
+          "outsideCases": 2.96,
+          "outsidePrimeCases": 0.93,
+          "outsideNonPrimeCases": 2.02
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3888888888888889,
+          "outsidePrime": 0.3888888888888889,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.39,
+          "outsidePrimeCases": 0.39,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3383333333333333,
+          "outsidePrime": 0.3383333333333333,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.23,
+          "outsidePrimeCases": 0.23,
+          "outsideNonPrimeCases": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
     },
     {
       "owner": "General A",
@@ -860,13 +879,13 @@
       "trendPct": null,
       "instances": 26,
       "releaseHistory": {
-        "count": 1,
+        "count": 2,
         "of": 26
       },
       "pattern": "MISPLACED",
-      "mismatchHours": 5.2,
+      "mismatchHours": 5.7,
       "recommendation": {
-        "text": "Uses 67.9% of a 8.1h block while booking 8.4h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "text": "Uses 64.6% of a 8.1h block while booking 9.1h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
         "deltaHours": 0.0,
         "targetDow": null
       },
@@ -874,14 +893,14 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 67.9,
-          "detail": "11.0h used of 16.2h allocated (67.9%)"
+          "contribution": 64.6,
+          "detail": "10.4h used of 16.2h allocated (64.6%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 8.4,
-          "detail": "8.4h a week booked outside any block"
+          "contribution": 9.1,
+          "detail": "9.1h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -890,41 +909,61 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.37462961666666666,
+          "outside": 0.4997222222222222,
+          "outsidePrime": 0.4984259,
+          "outsideNonPrime": 0.0012962833333333334,
           "released": 0.0,
-          "outsideCases": 0.31
+          "outsideCases": 0.35,
+          "outsidePrimeCases": 0.35,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 8.088888888888889,
-          "used": 5.785370344444444,
-          "outside": 0.2631481222222222,
-          "released": 0.0,
-          "outsideCases": 0.16
+          "used": 5.3951851333333325,
+          "outside": 0.30462961666666666,
+          "outsidePrime": 0.2949073944444444,
+          "outsideNonPrime": 0.009722222222222222,
+          "released": 0.16,
+          "outsideCases": 0.19,
+          "outsidePrimeCases": 0.19,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 7.447870344444444,
+          "outside": 7.89703701111111,
+          "outsidePrime": 7.553518505555555,
+          "outsideNonPrime": 0.3435185055555555,
           "released": 0.0,
-          "outsideCases": 5.6
+          "outsideCases": 5.68,
+          "outsidePrimeCases": 5.37,
+          "outsideNonPrimeCases": 0.31
         },
         {
           "dow": 3,
           "alloc": 8.088888888888889,
-          "used": 5.207222222222223,
-          "outside": 0.21712961666666664,
-          "released": 0.35,
-          "outsideCases": 0.23
+          "used": 5.051666666666667,
+          "outside": 0.26055555555555554,
+          "outsidePrime": 0.26055555555555554,
+          "outsideNonPrime": 0.0,
+          "released": 0.23,
+          "outsideCases": 0.19,
+          "outsidePrimeCases": 0.19,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.0959259,
+          "outside": 0.13935183888888888,
+          "outsidePrime": 0.13935183888888888,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.12,
+          "outsidePrimeCases": 0.12,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 16.2
@@ -940,9 +979,9 @@
         "of": 26
       },
       "pattern": "MISPLACED",
-      "mismatchHours": 5.1,
+      "mismatchHours": 5.2,
       "recommendation": {
-        "text": "Uses 68.7% of a 8.1h block while booking 15.7h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "text": "Uses 67.9% of a 8.1h block while booking 15.6h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
         "deltaHours": 0.0,
         "targetDow": null
       },
@@ -950,14 +989,14 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 68.7,
-          "detail": "11.1h used of 16.2h allocated (68.7%)"
+          "contribution": 67.9,
+          "detail": "11.0h used of 16.2h allocated (67.9%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 15.7,
-          "detail": "15.7h a week booked outside any block"
+          "contribution": 15.6,
+          "detail": "15.6h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -966,41 +1005,61 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 7.281296283333332,
+          "outside": 6.553425899999999,
+          "outsidePrime": 6.416666666666666,
+          "outsideNonPrime": 0.1367592333333333,
           "released": 0.0,
-          "outsideCases": 4.04
+          "outsideCases": 3.93,
+          "outsidePrimeCases": 3.81,
+          "outsideNonPrimeCases": 0.12
         },
         {
           "dow": 1,
           "alloc": 8.088888888888889,
-          "used": 5.987592566666667,
-          "outside": 0.8049999999999999,
+          "used": 5.587037011111111,
+          "outside": 1.0007407277777776,
+          "outsidePrime": 1.0007407277777776,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.51
+          "outsideCases": 0.54,
+          "outsidePrimeCases": 0.54,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 1.4330555555555555,
+          "outside": 1.728611111111111,
+          "outsidePrime": 1.5827777777777778,
+          "outsideNonPrime": 0.14583333333333331,
           "released": 0.0,
-          "outsideCases": 0.89
+          "outsideCases": 0.89,
+          "outsidePrimeCases": 0.78,
+          "outsideNonPrimeCases": 0.12
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 5.745185172222222,
+          "outside": 6.116574061111111,
+          "outsidePrime": 5.647962949999999,
+          "outsideNonPrime": 0.46861111111111114,
           "released": 0.0,
-          "outsideCases": 3.31
+          "outsideCases": 3.34,
+          "outsidePrimeCases": 2.96,
+          "outsideNonPrimeCases": 0.39
         },
         {
           "dow": 4,
           "alloc": 8.088888888888889,
-          "used": 5.125555555555556,
-          "outside": 0.38629628333333327,
+          "used": 5.4029629111111115,
+          "outside": 0.17629628333333333,
+          "outsidePrime": 0.17629628333333333,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.16
+          "outsideCases": 0.12,
+          "outsidePrimeCases": 0.12,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 16.2
@@ -1012,28 +1071,28 @@
       "trendPct": null,
       "instances": 26,
       "releaseHistory": {
-        "count": 1,
+        "count": 5,
         "of": 26
       },
-      "pattern": "UNDER_ALLOCATED",
-      "mismatchHours": 4.4,
+      "pattern": "MISPLACED",
+      "mismatchHours": 4.9,
       "recommendation": {
-        "text": "Add about 3.3h a week \u2014 the block runs at 75.0% and 4.4h is already spilling outside it.",
-        "deltaHours": 3.3,
+        "text": "Uses 70.0% of a 8.1h block while booking 8.2h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
         "targetDow": null
       },
       "drivers": [
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 75.0,
-          "detail": "12.1h used of 16.2h allocated (75.0%)"
+          "contribution": 70.0,
+          "detail": "11.3h used of 16.2h allocated (70.0%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 4.4,
-          "detail": "4.4h a week booked outside any block"
+          "contribution": 8.2,
+          "detail": "8.2h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1041,42 +1100,62 @@
         {
           "dow": 0,
           "alloc": 8.088888888888889,
-          "used": 5.714074022222222,
-          "outside": 0.7630863851851851,
-          "released": 0.33,
-          "outsideCases": 0.31
+          "used": 5.139814788888889,
+          "outside": 1.2228394888888887,
+          "outsidePrime": 1.113086385185185,
+          "outsideNonPrime": 0.10975305185185183,
+          "released": 0.45,
+          "outsideCases": 0.57,
+          "outsidePrimeCases": 0.52,
+          "outsideNonPrimeCases": 0.05
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 2.626296296296296,
+          "outside": 4.416913562962963,
+          "outsidePrime": 4.3979012,
+          "outsideNonPrime": 0.01901231111111111,
           "released": 0.0,
-          "outsideCases": 1.04
+          "outsideCases": 1.3,
+          "outsidePrimeCases": 1.3,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 8.088888888888889,
-          "used": 6.414074022222223,
-          "outside": 0.7838271259259258,
-          "released": 0.0,
-          "outsideCases": 0.41
+          "used": 6.176851800000001,
+          "outside": 1.7595061555555553,
+          "outsidePrime": 1.6782715703703703,
+          "outsideNonPrime": 0.08123453333333332,
+          "released": 1.03,
+          "outsideCases": 0.83,
+          "outsidePrimeCases": 0.78,
+          "outsideNonPrimeCases": 0.05
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.22296296296296295,
+          "outside": 0.77,
+          "outsidePrime": 0.6913580074074074,
+          "outsideNonPrime": 0.07864194074074074,
           "released": 0.0,
-          "outsideCases": 0.16
+          "outsideCases": 0.36,
+          "outsidePrimeCases": 0.26,
+          "outsideNonPrimeCases": 0.1
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.0
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 16.2
@@ -1088,28 +1167,28 @@
       "trendPct": null,
       "instances": 26,
       "releaseHistory": {
-        "count": 2,
+        "count": 0,
         "of": 26
       },
-      "pattern": "MISPLACED",
-      "mismatchHours": 4.1,
+      "pattern": "UNDER_ALLOCATED",
+      "mismatchHours": 4.7,
       "recommendation": {
-        "text": "Uses 70.9% of a 7.1h block while booking 5.0h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
-        "deltaHours": 0.0,
+        "text": "Add about 3.5h a week \u2014 the block runs at 74.7% and 4.7h of daytime work is already spilling outside it.",
+        "deltaHours": 3.5,
         "targetDow": null
       },
       "drivers": [
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 70.9,
-          "detail": "10.0h used of 14.2h allocated (70.9%)"
+          "contribution": 74.7,
+          "detail": "10.6h used of 14.2h allocated (74.7%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 5.0,
-          "detail": "5.0h a week booked outside any block"
+          "contribution": 4.7,
+          "detail": "4.7h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1118,44 +1197,160 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.4511111111111111,
+          "outside": 0.15685179999999999,
+          "outsidePrime": 0.15685179999999999,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.31
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 7.0777777777777775,
-          "used": 5.399074022222223,
-          "outside": 0.27870367777777777,
+          "used": 5.848888888888889,
+          "outside": 0.23462957777777776,
+          "outsidePrime": 0.23462957777777776,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.31
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 4.115740688888889,
+          "outside": 4.071666666666666,
+          "outsidePrime": 4.048333333333333,
+          "outsideNonPrime": 0.02333333333333333,
           "released": 0.0,
-          "outsideCases": 2.72
+          "outsideCases": 2.8,
+          "outsidePrimeCases": 2.8,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.15425923333333333,
+          "outside": 0.17370367777777776,
+          "outsidePrime": 0.17370367777777776,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 7.0777777777777775,
-          "used": 4.630370344444445,
-          "outside": 0.044074022222222224,
-          "released": 0.33,
-          "outsideCases": 0.08
+          "used": 4.730185133333333,
+          "outside": 0.03759256666666667,
+          "outsidePrime": 0.03759256666666667,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 14.2
+    },
+    {
+      "owner": "Ortho A",
+      "service": "Orthopedics",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 6,
+        "of": 13
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 3.2,
+      "recommendation": {
+        "text": "Uses 60.3% of a 8.1h block while booking 7.8h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 60.3,
+          "detail": "4.9h used of 8.1h allocated (60.3%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 7.8,
+          "detail": "7.8h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 3.2767129499999994,
+          "outsidePrime": 3.208333333333333,
+          "outsideNonPrime": 0.06837961666666666,
+          "released": 0.0,
+          "outsideCases": 1.96,
+          "outsidePrimeCases": 1.91,
+          "outsideNonPrimeCases": 0.06
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.5003703638888888,
+          "outsidePrime": 0.5003703638888888,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.27,
+          "outsidePrimeCases": 0.27,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.8643055555555555,
+          "outsidePrime": 0.7913888888888889,
+          "outsideNonPrime": 0.07291666666666666,
+          "released": 0.0,
+          "outsideCases": 0.45,
+          "outsidePrimeCases": 0.39,
+          "outsideNonPrimeCases": 0.06
+        },
+        {
+          "dow": 3,
+          "alloc": 8.088888888888889,
+          "used": 4.879259233333333,
+          "outside": 3.0582870305555554,
+          "outsidePrime": 2.8239814749999996,
+          "outsideNonPrime": 0.23430555555555557,
+          "released": 1.5,
+          "outsideCases": 1.67,
+          "outsidePrimeCases": 1.48,
+          "outsideNonPrimeCases": 0.19
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.08814814166666667,
+          "outsidePrime": 0.08814814166666667,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.06,
+          "outsidePrimeCases": 0.06,
+          "outsideNonPrimeCases": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
     },
     {
       "owner": "Ortho C",
@@ -1164,13 +1359,13 @@
       "trendPct": null,
       "instances": 13,
       "releaseHistory": {
-        "count": 0,
+        "count": 2,
         "of": 13
       },
       "pattern": "MISPLACED",
-      "mismatchHours": 3.0,
+      "mismatchHours": 3.1,
       "recommendation": {
-        "text": "Uses 63.4% of a 8.1h block while booking 7.8h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "text": "Uses 62.0% of a 8.1h block while booking 7.8h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
         "deltaHours": 0.0,
         "targetDow": null
       },
@@ -1178,8 +1373,8 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 63.4,
-          "detail": "5.1h used of 8.1h allocated (63.4%)"
+          "contribution": 62.0,
+          "detail": "5.0h used of 8.1h allocated (62.0%)"
         },
         {
           "key": "outside",
@@ -1193,118 +1388,62 @@
         {
           "dow": 0,
           "alloc": 8.088888888888889,
-          "used": 5.126851800000001,
-          "outside": 3.640648141666666,
-          "released": 0.0,
-          "outsideCases": 2.02
+          "used": 5.014074022222222,
+          "outside": 3.2767129499999994,
+          "outsidePrime": 3.208333333333333,
+          "outsideNonPrime": 0.06837961666666666,
+          "released": 0.54,
+          "outsideCases": 1.96,
+          "outsidePrimeCases": 1.91,
+          "outsideNonPrimeCases": 0.06
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.40249999999999997,
+          "outside": 0.5003703638888888,
+          "outsidePrime": 0.5003703638888888,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.25
+          "outsideCases": 0.27,
+          "outsidePrimeCases": 0.27,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.7165277777777778,
+          "outside": 0.8643055555555555,
+          "outsidePrime": 0.7913888888888889,
+          "outsideNonPrime": 0.07291666666666666,
           "released": 0.0,
-          "outsideCases": 0.45
+          "outsideCases": 0.45,
+          "outsidePrimeCases": 0.39,
+          "outsideNonPrimeCases": 0.06
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 2.872592586111111,
+          "outside": 3.0582870305555554,
+          "outsidePrime": 2.8239814749999996,
+          "outsideNonPrime": 0.23430555555555557,
           "released": 0.0,
-          "outsideCases": 1.65
+          "outsideCases": 1.67,
+          "outsidePrimeCases": 1.48,
+          "outsideNonPrimeCases": 0.19
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.19314814166666663,
+          "outside": 0.08814814166666667,
+          "outsidePrime": 0.08814814166666667,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
-        }
-      ],
-      "allocatedHours": 8.1
-    },
-    {
-      "owner": "ENT",
-      "service": "ENT",
-      "site": "Bright Memorial Hospital",
-      "trendPct": null,
-      "instances": 13,
-      "releaseHistory": {
-        "count": 0,
-        "of": 13
-      },
-      "pattern": "MISPLACED",
-      "mismatchHours": 2.9,
-      "recommendation": {
-        "text": "Uses 64.6% of a 8.1h block while booking 4.5h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
-        "deltaHours": 0.0,
-        "targetDow": null
-      },
-      "drivers": [
-        {
-          "key": "utilisation",
-          "label": "In-block utilisation",
-          "contribution": 64.6,
-          "detail": "5.2h used of 8.1h allocated (64.6%)"
-        },
-        {
-          "key": "outside",
-          "label": "Booked outside block",
-          "contribution": 4.5,
-          "detail": "4.5h a week booked outside any block"
-        }
-      ],
-      "trend": "STABLE",
-      "byDow": [
-        {
-          "dow": 0,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.3461111111111111,
-          "released": 0.0,
-          "outsideCases": 0.47
-        },
-        {
-          "dow": 1,
-          "alloc": 8.088888888888889,
-          "used": 5.226666666666667,
-          "outside": 2.3462962444444444,
-          "released": 0.0,
-          "outsideCases": 1.56
-        },
-        {
-          "dow": 2,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 1.3805555555555555,
-          "released": 0.0,
-          "outsideCases": 1.24
-        },
-        {
-          "dow": 3,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.3953703444444444,
-          "released": 0.0,
-          "outsideCases": 0.31
-        },
-        {
-          "dow": 4,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.028518466666666666,
-          "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.06,
+          "outsidePrimeCases": 0.06,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 8.1
@@ -1320,9 +1459,9 @@
         "of": 13
       },
       "pattern": "MISPLACED",
-      "mismatchHours": 2.7,
+      "mismatchHours": 2.4,
       "recommendation": {
-        "text": "Uses 67.1% of a 8.1h block while booking 5.3h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "text": "Uses 70.3% of a 8.1h block while booking 5.4h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
         "deltaHours": 0.0,
         "targetDow": null
       },
@@ -1330,14 +1469,14 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 67.1,
-          "detail": "5.4h used of 8.1h allocated (67.1%)"
+          "contribution": 70.3,
+          "detail": "5.7h used of 8.1h allocated (70.3%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 5.3,
-          "detail": "5.3h a week booked outside any block"
+          "contribution": 5.4,
+          "detail": "5.4h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1346,41 +1485,157 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 3.0851851333333333,
+          "outside": 2.844074022222222,
+          "outsidePrime": 2.7792592333333332,
+          "outsideNonPrime": 0.06481478888888889,
           "released": 0.0,
-          "outsideCases": 2.41
+          "outsideCases": 2.33,
+          "outsidePrimeCases": 2.26,
+          "outsideNonPrimeCases": 0.08
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.49518513333333336,
+          "outside": 0.5418518,
+          "outsidePrime": 0.5301851333333333,
+          "outsideNonPrime": 0.011666666666666665,
           "released": 0.0,
-          "outsideCases": 0.31
+          "outsideCases": 0.31,
+          "outsidePrimeCases": 0.31,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 1.5944444444444443,
+          "outside": 1.6696295777777777,
+          "outsidePrime": 1.4699999999999998,
+          "outsideNonPrime": 0.1996295777777778,
           "released": 0.0,
-          "outsideCases": 1.48
+          "outsideCases": 1.24,
+          "outsidePrimeCases": 1.17,
+          "outsideNonPrimeCases": 0.08
         },
         {
           "dow": 3,
           "alloc": 8.088888888888889,
-          "used": 5.430185133333333,
-          "outside": 0.08296291111111109,
+          "used": 5.682962911111111,
+          "outside": 0.2657406888888889,
+          "outsidePrime": 0.2657406888888889,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.23,
+          "outsidePrimeCases": 0.23,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.05444444444444444,
+          "outside": 0.058333333333333334,
+          "outsidePrime": 0.058333333333333334,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "Spine B",
+      "service": "Spine",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 0,
+        "of": 13
+      },
+      "pattern": "MISPLACED",
+      "mismatchHours": 2.1,
+      "recommendation": {
+        "text": "Uses 73.6% of a 8.1h block while booking 4.1h a week outside it \u2014 review day and shape with the owner before changing the allocation.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 73.6,
+          "detail": "6.0h used of 8.1h allocated (73.6%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 4.1,
+          "detail": "4.1h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.6114197444444444,
+          "outsidePrime": 0.5565431925925926,
+          "outsideNonPrime": 0.054876525925925915,
+          "released": 0.0,
+          "outsideCases": 0.29,
+          "outsidePrimeCases": 0.26,
+          "outsideNonPrimeCases": 0.03
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 2.2084567814814813,
+          "outsidePrime": 2.1989506,
+          "outsideNonPrime": 0.009506155555555555,
+          "released": 0.0,
+          "outsideCases": 0.65,
+          "outsidePrimeCases": 0.65,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.8797530777777777,
+          "outsidePrime": 0.8391357851851852,
+          "outsideNonPrime": 0.04061726666666666,
+          "released": 0.0,
+          "outsideCases": 0.41,
+          "outsidePrimeCases": 0.39,
+          "outsideNonPrimeCases": 0.03
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.385,
+          "outsidePrime": 0.3456790037037037,
+          "outsideNonPrime": 0.03932097037037037,
+          "released": 0.0,
+          "outsideCases": 0.18,
+          "outsidePrimeCases": 0.13,
+          "outsideNonPrimeCases": 0.05
+        },
+        {
+          "dow": 4,
+          "alloc": 8.088888888888889,
+          "used": 5.951296244444444,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 8.1
@@ -1396,24 +1651,120 @@
         "of": 13
       },
       "pattern": "OVER_ALLOCATED",
-      "mismatchHours": 2.3,
+      "mismatchHours": 1.7,
       "recommendation": {
-        "text": "Reduce from 8.1h to about 5.8h a week \u2014 the volume is not there and little is booking elsewhere.",
-        "deltaHours": -2.3,
+        "text": "Reduce from 8.1h to about 6.4h a week \u2014 the volume is not there and little is booking elsewhere.",
+        "deltaHours": -1.7,
         "targetDow": null
       },
       "drivers": [
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 48.6,
-          "detail": "3.9h used of 8.1h allocated (48.6%)"
+          "contribution": 50.9,
+          "detail": "4.1h used of 8.1h allocated (50.9%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 1.1,
-          "detail": "1.1h a week booked outside any block"
+          "contribution": 1.4,
+          "detail": "1.4h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.041481455555555546,
+          "outsidePrime": 0.041481455555555546,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 1.3429629111111112,
+          "outsidePrime": 1.2185184666666666,
+          "outsideNonPrime": 0.12444444444444444,
+          "released": 0.0,
+          "outsideCases": 1.09,
+          "outsidePrimeCases": 1.01,
+          "outsideNonPrimeCases": 0.08
+        },
+        {
+          "dow": 3,
+          "alloc": 8.088888888888889,
+          "used": 4.1209259,
+          "outside": 0.04796291111111111,
+          "outsidePrime": 0.04796291111111111,
+          "outsideNonPrime": 0.0,
+          "released": 0.25,
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
+        }
+      ],
+      "allocatedHours": 8.1
+    },
+    {
+      "owner": "ASC Plastics",
+      "service": "Plastics",
+      "site": "Bright Surgery Center",
+      "trendPct": null,
+      "instances": 13,
+      "releaseHistory": {
+        "count": 3,
+        "of": 13
+      },
+      "pattern": "OVER_ALLOCATED",
+      "mismatchHours": 1.4,
+      "recommendation": {
+        "text": "Reduce from 7.1h to about 5.6h a week \u2014 the volume is not there and little is booking elsewhere.",
+        "deltaHours": -1.4,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 56.6,
+          "detail": "4.0h used of 7.1h allocated (56.6%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 0.9,
+          "detail": "0.9h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1423,43 +1774,63 @@
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.0
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.0,
+          "outside": 0.10759256666666665,
+          "outsidePrime": 0.10759256666666665,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.0
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 1.079814788888889,
+          "outside": 0.7933333333333332,
+          "outsidePrime": 0.7933333333333332,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.93
+          "outsideCases": 0.62,
+          "outsidePrimeCases": 0.62,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 3,
-          "alloc": 8.088888888888889,
-          "used": 3.9342592333333335,
-          "outside": 0.0,
-          "released": 0.25,
-          "outsideCases": 0.0
-        },
-        {
-          "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
           "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.0
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 4,
+          "alloc": 7.0777777777777775,
+          "used": 4.008148122222222,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
+          "released": 0.72,
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         }
       ],
-      "allocatedHours": 8.1
+      "allocatedHours": 7.1
     },
     {
       "owner": "ASC ENT",
@@ -1482,14 +1853,14 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 70.5,
-          "detail": "10.0h used of 14.2h allocated (70.5%)"
+          "contribution": 64.9,
+          "detail": "9.2h used of 14.2h allocated (64.9%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 1.0,
-          "detail": "1.0h a week booked outside any block"
+          "contribution": 1.5,
+          "detail": "1.5h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1497,121 +1868,65 @@
         {
           "dow": 0,
           "alloc": 7.0777777777777775,
-          "used": 4.714629577777778,
-          "outside": 0.0,
+          "used": 4.4618518,
+          "outside": 0.06870367777777778,
+          "outsidePrime": 0.06870367777777778,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.0
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.4459259,
+          "outside": 0.7440740222222222,
+          "outsidePrime": 0.7207406888888889,
+          "outsideNonPrime": 0.02333333333333333,
           "released": 0.0,
-          "outsideCases": 0.62
+          "outsideCases": 0.78,
+          "outsidePrimeCases": 0.78,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 7.0777777777777775,
-          "used": 5.264259233333333,
-          "outside": 0.2631481222222222,
+          "used": 4.726296244444445,
+          "outside": 0.43296291111111107,
+          "outsidePrime": 0.37851846666666666,
+          "outsideNonPrime": 0.05444444444444444,
           "released": 0.0,
-          "outsideCases": 0.31
+          "outsideCases": 0.62,
+          "outsidePrimeCases": 0.54,
+          "outsideNonPrimeCases": 0.08
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.2087036777777778,
+          "outside": 0.18537034444444442,
+          "outsidePrime": 0.18537034444444442,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.16
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.06740735555555556,
+          "outside": 0.02722222222222222,
+          "outsidePrime": 0.014259233333333333,
+          "outsideNonPrime": 0.01296291111111111,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 14.2
-    },
-    {
-      "owner": "ASC Plastics",
-      "service": "Plastics",
-      "site": "Bright Surgery Center",
-      "trendPct": null,
-      "instances": 13,
-      "releaseHistory": {
-        "count": 0,
-        "of": 13
-      },
-      "pattern": "RIGHT_SIZED",
-      "mismatchHours": 0.0,
-      "recommendation": {
-        "text": "No change.",
-        "deltaHours": 0.0,
-        "targetDow": null
-      },
-      "drivers": [
-        {
-          "key": "utilisation",
-          "label": "In-block utilisation",
-          "contribution": 68.7,
-          "detail": "4.9h used of 7.1h allocated (68.7%)"
-        },
-        {
-          "key": "outside",
-          "label": "Booked outside block",
-          "contribution": 0.4,
-          "detail": "0.4h a week booked outside any block"
-        }
-      ],
-      "trend": "STABLE",
-      "byDow": [
-        {
-          "dow": 0,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.0,
-          "released": 0.0,
-          "outsideCases": 0.0
-        },
-        {
-          "dow": 1,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.05703701111111111,
-          "released": 0.0,
-          "outsideCases": 0.08
-        },
-        {
-          "dow": 2,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.3772222222222222,
-          "released": 0.0,
-          "outsideCases": 0.16
-        },
-        {
-          "dow": 3,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.0,
-          "released": 0.0,
-          "outsideCases": 0.0
-        },
-        {
-          "dow": 4,
-          "alloc": 7.0777777777777775,
-          "used": 4.862407355555556,
-          "outside": 0.0,
-          "released": 0.0,
-          "outsideCases": 0.0
-        }
-      ],
-      "allocatedHours": 7.1
     },
     {
       "owner": "ASC Uro/Gyn",
@@ -1634,14 +1949,14 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 84.4,
-          "detail": "6.0h used of 7.1h allocated (84.4%)"
+          "contribution": 83.6,
+          "detail": "5.9h used of 7.1h allocated (83.6%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 3.0,
-          "detail": "3.0h a week booked outside any block"
+          "contribution": 1.9,
+          "detail": "1.9h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1650,41 +1965,61 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 1.7085184666666666,
+          "outside": 1.2224073555555555,
+          "outsidePrime": 1.2224073555555555,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 1.4
+          "outsideCases": 0.93,
+          "outsidePrimeCases": 0.93,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.044074022222222224,
+          "outside": 0.35259256666666666,
+          "outsidePrime": 0.35259256666666666,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.08
+          "outsideCases": 0.23,
+          "outsidePrimeCases": 0.23,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.6429629111111111,
+          "outside": 0.3720370111111111,
+          "outsidePrime": 0.3720370111111111,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.54
+          "outsideCases": 0.39,
+          "outsidePrimeCases": 0.39,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 3,
           "alloc": 7.0777777777777775,
-          "used": 5.973333333333333,
-          "outside": 0.4187036777777778,
-          "released": 0.19,
-          "outsideCases": 0.31
+          "used": 5.917592566666666,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
+          "released": 0.25,
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.23462957777777776,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.16
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 7.1
@@ -1710,14 +2045,14 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 75.7,
-          "detail": "5.4h used of 7.1h allocated (75.7%)"
+          "contribution": 75.0,
+          "detail": "5.3h used of 7.1h allocated (75.0%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 1.8,
-          "detail": "1.8h a week booked outside any block"
+          "contribution": 0.9,
+          "detail": "0.9h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1726,48 +2061,164 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.30851846666666666,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.23
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
           "alloc": 7.0777777777777775,
-          "used": 5.356296244444444,
-          "outside": 0.385,
+          "used": 5.309629577777778,
+          "outside": 0.1698147888888889,
+          "outsidePrime": 0.15037034444444444,
+          "outsideNonPrime": 0.019444444444444445,
           "released": 0.0,
-          "outsideCases": 0.39
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.4446295777777778,
+          "outside": 0.595,
+          "outsidePrime": 0.5729629111111111,
+          "outsideNonPrime": 0.022037011111111112,
           "released": 0.0,
-          "outsideCases": 0.39
+          "outsideCases": 0.47,
+          "outsidePrimeCases": 0.47,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.19444444444444445,
+          "outside": 0.0,
+          "outsidePrime": 0.0,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.16
+          "outsideCases": 0.0,
+          "outsidePrimeCases": 0.0,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.4524073555555555,
+          "outside": 0.12185179999999998,
+          "outsidePrime": 0.09203701111111111,
+          "outsideNonPrime": 0.029814788888888884,
           "released": 0.0,
-          "outsideCases": 0.54
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 7.1
     },
     {
-      "owner": "Spine B",
-      "service": "Spine",
+      "owner": "Colorectal",
+      "service": "Colorectal",
+      "site": "Bright Memorial Hospital",
+      "trendPct": null,
+      "instances": 26,
+      "releaseHistory": {
+        "count": 1,
+        "of": 26
+      },
+      "pattern": "RIGHT_SIZED",
+      "mismatchHours": 0.0,
+      "recommendation": {
+        "text": "No change.",
+        "deltaHours": 0.0,
+        "targetDow": null
+      },
+      "drivers": [
+        {
+          "key": "utilisation",
+          "label": "In-block utilisation",
+          "contribution": 67.2,
+          "detail": "10.9h used of 16.2h allocated (67.2%)"
+        },
+        {
+          "key": "outside",
+          "label": "Booked outside block",
+          "contribution": 2.9,
+          "detail": "2.9h a week booked outside any block"
+        }
+      ],
+      "trend": "STABLE",
+      "byDow": [
+        {
+          "dow": 0,
+          "alloc": 8.088888888888889,
+          "used": 5.396481455555555,
+          "outside": 0.17888888888888888,
+          "outsidePrime": 0.17888888888888888,
+          "outsideNonPrime": 0.0,
+          "released": 0.31,
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 1,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.3811111111111111,
+          "outsidePrime": 0.24759256666666668,
+          "outsideNonPrime": 0.13351846666666667,
+          "released": 0.0,
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.08
+        },
+        {
+          "dow": 2,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 0.22685180000000002,
+          "outsidePrime": 0.22555555555555554,
+          "outsideNonPrime": 0.0012962444444444444,
+          "released": 0.0,
+          "outsideCases": 0.16,
+          "outsidePrimeCases": 0.16,
+          "outsideNonPrimeCases": 0.0
+        },
+        {
+          "dow": 3,
+          "alloc": 0.0,
+          "used": 0.0,
+          "outside": 2.0403703444444443,
+          "outsidePrime": 1.9703703444444443,
+          "outsideNonPrime": 0.06999999999999999,
+          "released": 0.0,
+          "outsideCases": 0.93,
+          "outsidePrimeCases": 0.86,
+          "outsideNonPrimeCases": 0.08
+        },
+        {
+          "dow": 4,
+          "alloc": 8.088888888888889,
+          "used": 5.469074022222222,
+          "outside": 0.0998147888888889,
+          "outsidePrime": 0.0998147888888889,
+          "outsideNonPrime": 0.0,
+          "released": 0.0,
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
+        }
+      ],
+      "allocatedHours": 16.2
+    },
+    {
+      "owner": "Uro/Gyn",
+      "service": "Urology",
       "site": "Bright Memorial Hospital",
       "trendPct": null,
       "instances": 13,
@@ -1786,14 +2237,14 @@
         {
           "key": "utilisation",
           "label": "In-block utilisation",
-          "contribution": 66.1,
-          "detail": "5.3h used of 8.1h allocated (66.1%)"
+          "contribution": 64.9,
+          "detail": "5.2h used of 8.1h allocated (64.9%)"
         },
         {
           "key": "outside",
           "label": "Booked outside block",
-          "contribution": 2.2,
-          "detail": "2.2h a week booked outside any block"
+          "contribution": 3.1,
+          "detail": "3.1h a week booked outside any block"
         }
       ],
       "trend": "STABLE",
@@ -1802,117 +2253,61 @@
           "dow": 0,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.38154319259259256,
+          "outside": 0.38240735555555555,
+          "outsidePrime": 0.38240735555555555,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.16
+          "outsideCases": 0.47,
+          "outsidePrimeCases": 0.47,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 1,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 1.313148148148148,
-          "released": 0.0,
-          "outsideCases": 0.52
+          "alloc": 8.088888888888889,
+          "used": 5.25,
+          "outside": 0.105,
+          "outsidePrime": 0.105,
+          "outsideNonPrime": 0.0,
+          "released": 0.23,
+          "outsideCases": 0.08,
+          "outsidePrimeCases": 0.08,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 2,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.3919135629629629,
+          "outside": 1.5944444444444443,
+          "outsidePrime": 1.545185133333333,
+          "outsideNonPrime": 0.04925923333333333,
           "released": 0.0,
-          "outsideCases": 0.21
+          "outsideCases": 1.48,
+          "outsidePrimeCases": 1.4,
+          "outsideNonPrimeCases": 0.08
         },
         {
           "dow": 3,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 0.11148148148148147,
+          "outside": 0.5353703444444444,
+          "outsidePrime": 0.48351846666666665,
+          "outsideNonPrime": 0.051851799999999997,
           "released": 0.0,
-          "outsideCases": 0.08
-        },
-        {
-          "dow": 4,
-          "alloc": 8.088888888888889,
-          "used": 5.344629577777778,
-          "outside": 0.0,
-          "released": 0.29,
-          "outsideCases": 0.0
-        }
-      ],
-      "allocatedHours": 8.1
-    },
-    {
-      "owner": "Uro/Gyn",
-      "service": "Urology",
-      "site": "Bright Memorial Hospital",
-      "trendPct": null,
-      "instances": 13,
-      "releaseHistory": {
-        "count": 0,
-        "of": 13
-      },
-      "pattern": "RIGHT_SIZED",
-      "mismatchHours": 0.0,
-      "recommendation": {
-        "text": "No change.",
-        "deltaHours": 0.0,
-        "targetDow": null
-      },
-      "drivers": [
-        {
-          "key": "utilisation",
-          "label": "In-block utilisation",
-          "contribution": 63.3,
-          "detail": "5.1h used of 8.1h allocated (63.3%)"
-        },
-        {
-          "key": "outside",
-          "label": "Booked outside block",
-          "contribution": 2.4,
-          "detail": "2.4h a week booked outside any block"
-        }
-      ],
-      "trend": "STABLE",
-      "byDow": [
-        {
-          "dow": 0,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.15944444444444442,
-          "released": 0.0,
-          "outsideCases": 0.16
-        },
-        {
-          "dow": 1,
-          "alloc": 8.088888888888889,
-          "used": 5.1242592333333326,
-          "outside": 0.04796291111111111,
-          "released": 0.0,
-          "outsideCases": 0.08
-        },
-        {
-          "dow": 2,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 1.1511111111111112,
-          "released": 0.0,
-          "outsideCases": 0.93
-        },
-        {
-          "dow": 3,
-          "alloc": 0.0,
-          "used": 0.0,
-          "outside": 0.0,
-          "released": 0.0,
-          "outsideCases": 0.0
+          "outsideCases": 0.39,
+          "outsidePrimeCases": 0.39,
+          "outsideNonPrimeCases": 0.0
         },
         {
           "dow": 4,
           "alloc": 0.0,
           "used": 0.0,
-          "outside": 1.0344444444444445,
+          "outside": 0.5211111111111111,
+          "outsidePrime": 0.5211111111111111,
+          "outsideNonPrime": 0.0,
           "released": 0.0,
-          "outsideCases": 0.7
+          "outsideCases": 0.54,
+          "outsidePrimeCases": 0.54,
+          "outsideNonPrimeCases": 0.0
         }
       ],
       "allocatedHours": 8.1
