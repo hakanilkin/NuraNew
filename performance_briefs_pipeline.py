@@ -474,6 +474,13 @@ _prime_override = (
     .get('params', {}).get('prime_time_window') or {})
 
 _prime_windows = {}   # (site, dow) -> (start_min, end_min)
+_site_env = {}        # site -> (start_min, end_min): the fallback for a thin/absent dow
+
+# In-block cases are daytime, but normalise defensively so a case that crosses
+# midnight (OutMin < InMin) does not corrupt the envelope quantiles.
+if len(df_inblock):
+    df_inblock.loc[df_inblock['OutMin'] < df_inblock['InMin'], 'OutMin'] += 1440
+
 try:
     # Derived envelope, guarded so one late outlier does not stretch it.
     if len(df_inblock):
@@ -482,23 +489,25 @@ try:
                                  float(grp['OutMin'].quantile(0.90)))
                    for (s, d), grp in g}
         # Per-site fallback across weekdays for a (site, dow) with thin data.
-        site_env = {s: (float(grp['InMin'].quantile(0.10)),
-                        float(grp['OutMin'].quantile(0.90)))
-                    for s, grp in df_inblock.groupby('Site')}
+        _site_env = {s: (float(grp['InMin'].quantile(0.10)),
+                         float(grp['OutMin'].quantile(0.90)))
+                     for s, grp in df_inblock.groupby('Site')}
         counts = g.size().to_dict()
         for (s, d), w in derived.items():
-            _prime_windows[(s, d)] = w if counts.get((s, d), 0) >= 20 else site_env.get(s, w)
-    # Override is authoritative and applies to every weekday at that site.
+            _prime_windows[(s, d)] = w if counts.get((s, d), 0) >= 20 else _site_env.get(s, w)
+    # Override is authoritative and applies to every weekday at that site, and is
+    # its own site-level fallback too.
     for site, win in _prime_override.items():
         try:
             ws, we = _hhmm_to_min(win[0]), _hhmm_to_min(win[1])
             for d in range(5):
                 _prime_windows[(site, d)] = (ws, we)
+            _site_env[site] = (ws, we)
         except (ValueError, IndexError, TypeError):
             print(f"  Warning: bad prime_time_window for {site!r}; ignoring.")
 except Exception as e:  # derivation must never take the pipeline down
     print(f"  Warning: prime window derivation failed ({e}); split suppressed.")
-    _prime_windows = {}
+    _prime_windows, _site_env = {}, {}
 
 _split = bool(_prime_windows)
 print(f"  Prime windows resolved for {len(_prime_windows)} site×dow "
@@ -525,9 +534,17 @@ if _split and len(df_inblock):
 # per-(site,dow) window bounds are injected below. Cases are counted whole into
 # whichever bucket holds the majority of their minutes.
 if _split:
+    # Exact (site, dow) rows, plus a site-level fallback row per site with a
+    # sentinel Dow of -1. A (site, dow) with no window of its own falls back to
+    # the site envelope rather than being counted as fully prime — which would
+    # suppress NON_PRIME_TIME exactly where in-block data is thinnest.
+    def _q(s):
+        return s.replace(chr(39), chr(39) * 2)
     _vals = ', '.join(
-        f"('{s.replace(chr(39), chr(39)*2)}', {d}, {int(ws)}, {int(we)})"
-        for (s, d), (ws, we) in _prime_windows.items())
+        [f"('{_q(s)}', {d}, {int(ws)}, {int(we)})"
+         for (s, d), (ws, we) in _prime_windows.items()]
+        + [f"('{_q(s)}', -1, {int(ws)}, {int(we)})"
+           for s, (ws, we) in _site_env.items()])
     _OUTSIDE_QUERY = f"""
 WITH oc AS (
   SELECT ISNULL(c.Case_SurgeonService, 'Unknown')          AS Service,
@@ -536,7 +553,13 @@ WITH oc AS (
          CAST(c.Date_SchedDate AS DATE)                    AS D,
          ISNULL(c.Dur_ORIn_OROut, 0)                       AS DurMin,
          DATEPART(HOUR, c.Time_ORin)  * 60 + DATEPART(MINUTE, c.Time_ORin)  AS InMin,
-         DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut) AS OutMin
+         -- Minutes from midnight; a case crossing midnight has OutMin < InMin,
+         -- so carry it into the next day before any overlap is measured.
+         CASE WHEN (DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut))
+                 < (DATEPART(HOUR, c.Time_ORin)  * 60 + DATEPART(MINUTE, c.Time_ORin))
+              THEN (DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut)) + 1440
+              ELSE (DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut))
+         END                                               AS OutMin
   FROM DS_CASES c
   WHERE c.Date_SchedDate BETWEEN '{curr_start}' AND '{curr_end}'
     AND c.Case_CanCode IS NULL
@@ -544,18 +567,27 @@ WITH oc AS (
     AND c.Time_ORin IS NOT NULL AND c.Time_OROut IS NOT NULL
     AND DATEPART(WEEKDAY, c.Date_SchedDate) BETWEEN 2 AND 6
 ),
-w (Site, Dow, Ws, We) AS ( VALUES {_vals} ),
+w (Site, Dow, Ws, We) AS (
+  SELECT * FROM (VALUES {_vals}) AS v (Site, Dow, Ws, We)
+),
 split AS (
   SELECT oc.Service, oc.Site, oc.Dow, oc.D, oc.DurMin,
     CASE
-      WHEN w.Ws IS NULL THEN oc.DurMin
-      WHEN (CASE WHEN oc.OutMin < w.We THEN oc.OutMin ELSE w.We END)
-         - (CASE WHEN oc.InMin  > w.Ws THEN oc.InMin  ELSE w.Ws END) > 0
-      THEN (CASE WHEN oc.OutMin < w.We THEN oc.OutMin ELSE w.We END)
-         - (CASE WHEN oc.InMin  > w.Ws THEN oc.InMin  ELSE w.Ws END)
+      WHEN wm.Ws IS NULL THEN oc.DurMin
+      WHEN (CASE WHEN oc.OutMin < wm.We THEN oc.OutMin ELSE wm.We END)
+         - (CASE WHEN oc.InMin  > wm.Ws THEN oc.InMin  ELSE wm.Ws END) > 0
+      THEN (CASE WHEN oc.OutMin < wm.We THEN oc.OutMin ELSE wm.We END)
+         - (CASE WHEN oc.InMin  > wm.Ws THEN oc.InMin  ELSE wm.Ws END)
       ELSE 0
     END AS PrimeMin
-  FROM oc LEFT JOIN w ON w.Site = oc.Site AND w.Dow = oc.Dow
+  FROM oc
+  -- Prefer the exact (site, dow) window; fall back to the site envelope (-1).
+  OUTER APPLY (
+    SELECT TOP 1 wv.Ws, wv.We
+    FROM w wv
+    WHERE wv.Site = oc.Site AND (wv.Dow = oc.Dow OR wv.Dow = -1)
+    ORDER BY CASE WHEN wv.Dow = oc.Dow THEN 0 ELSE 1 END
+  ) wm
 )
 SELECT Service, Site, Dow,
        SUM(DurMin) / 60.0                 AS OutsideHours,
