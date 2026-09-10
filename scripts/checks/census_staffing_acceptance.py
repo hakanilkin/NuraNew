@@ -100,8 +100,12 @@ def main():
     # reads DS_RR. A room occupied for five minutes of a fifteen-minute slot
     # counts as the whole slot, so the ledger reads a few hours higher. Both are
     # correct for what they measure; the band allows for the difference.
+    # Upper bound widened from 20: ST-8's after-hours ENT emergent list
+    # (NON_PRIME_TIME) is real overtime the demo did not carry before. The
+    # slot-based ledger reads a few hours above verify.py's room-minute figure,
+    # so its ceiling sits above ST-3's own (see demo_config st3).
     check('ST-3 overtime room-hours per week (DS_RR slots)', total_ot,
-          10.0 <= total_ot <= 20.0, '10–20', 'h')
+          10.0 <= total_ot <= 28.0, '10–28', 'h')
     check('ST-3 Friday idle staffed room-hours', fri_idle, fri_idle >= 25, '>= 25', 'h')
     mean_cliff = st.mean(cliff)
     check('ST-3 rooms running at 15:30 (Tue–Thu)', mean_cliff, 2.6 <= mean_cliff <= 4.2, '2.6–4.2', 'rooms')

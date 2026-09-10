@@ -389,6 +389,46 @@ def _st8(tables, ctx):
            ortho['pattern'] if ortho else None, 'ABANDONED',
            PASS if (ortho and ortho['pattern'] == BP.ABANDONED) else FAIL)
 
+    # The prime/non-prime split has to be visible in the data and pointing the
+    # right way: the after-hours service reads NON_PRIME_TIME with the spill
+    # non-prime-dominant, and the daytime-spill block reads UNDER_ALLOCATED with
+    # it prime-dominant (BlockAllocationsPrimeTime.md section 8).
+    import json as _json2
+    import os as _os2
+    _th = {**BP.DEFAULT_THRESHOLDS,
+           **(_json2.load(open(_os2.path.join(root, 'config', 'tenantColumns.json'),
+                               encoding='utf-8'))['Demo']['params']
+              .get('block_pattern_thresholds') or {})}
+
+    def _prime_share(f):
+        op = sum(d.get('outsidePrime', 0) for d in f['byDow'])
+        onp = sum(d.get('outsideNonPrime', 0) for d in f['byDow'])
+        return (op / (op + onp) * 100) if (op + onp) > 0 else None
+
+    npb = by_owner.get(s8['non_prime_block'])
+    _check(f'ST-8 {s8["non_prime_block"]} is NON_PRIME_TIME',
+           npb['pattern'] if npb else None, 'NON_PRIME_TIME',
+           PASS if (npb and npb['pattern'] == BP.NON_PRIME_TIME) else FAIL)
+    nps = _prime_share(npb) if npb else None
+    _check('ST-8 the after-hours block is non-prime-dominant',
+           round(nps, 1) if nps is not None else None,
+           f'<= {_th["prime_share_low_pct"]:g}',
+           PASS if (nps is not None and nps <= _th['prime_share_low_pct']) else FAIL, '%')
+
+    # The prime-dominant UNDER_ALLOCATED requirement is "one such block exists",
+    # not "this named one" — which block clears the utilisation bar drifts with
+    # the anchor, so pinning it to Spine is fragile. Assert the finding, not the
+    # owner: some UNDER_ALLOCATED block whose spill is daytime.
+    prime_unders = [(f, _prime_share(f)) for f in findings
+                    if f['pattern'] == BP.UNDER_ALLOCATED]
+    prime_unders = [(f, ps) for f, ps in prime_unders
+                    if ps is not None and ps >= _th['prime_share_high_pct']]
+    best = max((ps for _, ps in prime_unders), default=None)
+    _check('ST-8 a daytime-spill block reads UNDER_ALLOCATED, prime-dominant',
+           f'{prime_unders[0][0]["owner"]} {round(best, 1)}%' if prime_unders else None,
+           f'>= {_th["prime_share_high_pct"]:g}%',
+           PASS if prime_unders else FAIL)
+
     # A roster of "no change" is not a demo. UNCLASSIFIED counts as inert too:
     # an honest gap is still not a finding a committee can act on.
     inert = sum(1 for f in findings

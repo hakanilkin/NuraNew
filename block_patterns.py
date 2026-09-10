@@ -24,6 +24,11 @@ WRONG_SHAPE = 'WRONG_SHAPE'
 FRAGMENTED = 'FRAGMENTED'
 MISPLACED = 'MISPLACED'
 UNDER_ALLOCATED = 'UNDER_ALLOCATED'
+# Out-of-block work that lands after the operating day ends — late starts, long
+# cases, add-ons, emergent volume. A different problem from UNDER_ALLOCATED, and
+# the answer is investigation, not a bigger daytime allocation. Display label
+# "Non-prime time" (BlockAllocationsPrimeTime.md).
+NON_PRIME_TIME = 'NON_PRIME_TIME'
 OVER_ALLOCATED = 'OVER_ALLOCATED'
 RIGHT_SIZED = 'RIGHT_SIZED'
 # Nothing matched. An honest gap, never an endorsement: a silent fallback that
@@ -45,6 +50,14 @@ DEFAULT_THRESHOLDS = {
     # it is simply not landing in the block. A single threshold, so a value
     # between two of them can never match nothing.
     'material_outside_hours': 3.0,
+    # Prime vs non-prime split of the outside hours (BlockAllocationsPrimeTime.md).
+    # primeShare = outsidePrime / (outsidePrime + outsideNonPrime), as a percent.
+    # At or above high → the spill is daytime, an allocation ask (UNDER_ALLOCATED);
+    # at or below low → it lands after the operating day (NON_PRIME_TIME); between
+    # is a stated mix. Undefined below low_outside_hours — never classified on noise.
+    'prime_share_high_pct': 60.0,
+    'prime_share_low_pct':  40.0,
+    'low_outside_hours':    1.0,
     # WRONG_DAY: a held day this empty, against an unheld day this busy.
     'wrong_day_held_used_pct': 45.0,
     'wrong_day_outside_hours': 2.5,
@@ -104,27 +117,53 @@ def classify_block(by_dow, release_events=0, release_of=0,
     One owner's week, classified.
 
     `by_dow` is a list of dicts, one per weekday, each with hours per week:
-      alloc   — allocated block hours
-      used    — in-block case hours
-      outside — case hours booked outside any block that day
+      alloc          — allocated block hours
+      used           — in-block case hours
+      outside        — case hours booked outside any block that day
+      outsidePrime   — of `outside`, the part inside the prime (block-day) window
+      outsideNonPrime — of `outside`, the part after the operating day ends
+
+    The prime split is optional: when it is absent (a tenant whose prime window
+    cannot be derived) the taxonomy falls back to the single `outside` number and
+    NON_PRIME_TIME never fires, exactly as before the split existed.
 
     Returns the pattern, the mismatch in hours per week, drivers, and a specific
     recommendation. Never "consider adjusting": the committee is deciding
     between numbers, so the numbers are in the sentence.
     """
     t = {**DEFAULT_THRESHOLDS, **(cfg or {})}
+    # A tenant either carries the prime/non-prime split on every day or on none;
+    # presence of the key on any day is the signal to use it.
+    split_present = any(('outsidePrime' in x or 'outsideNonPrime' in x) for x in by_dow)
     days = []
     for d in range(5):
         row = next((x for x in by_dow if int(x.get('dow', -1)) == d), None) or {}
+        out = _num(row.get('outside'))
+        op = _num(row.get('outsidePrime')) if split_present else out
+        onp = _num(row.get('outsideNonPrime')) if split_present else 0.0
         days.append({'dow': d, 'alloc': _num(row.get('alloc')),
-                     'used': _num(row.get('used')), 'outside': _num(row.get('outside'))})
+                     'used': _num(row.get('used')), 'outside': out,
+                     'outsidePrime': op, 'outsideNonPrime': onp})
 
     alloc = sum(d['alloc'] for d in days)
     used = sum(d['used'] for d in days)
     outside = sum(d['outside'] for d in days)
+    outside_prime = sum(d['outsidePrime'] for d in days)
+    outside_nonprime = sum(d['outsideNonPrime'] for d in days)
     total = used + outside
     util = (used / alloc * 100) if alloc > 0 else None
     held_days = [d for d in days if d['alloc'] > 0.5]
+
+    # Share of the spill that is daytime. Undefined on noise — a block with a
+    # few minutes outside is not classified on the direction of those minutes.
+    prime_share = None
+    if split_present and (outside_prime + outside_nonprime) >= t['low_outside_hours']:
+        denom = outside_prime + outside_nonprime
+        prime_share = (outside_prime / denom * 100) if denom > 0 else None
+    # The day-based rules read daytime spill only: volume that lands at 18:00 is
+    # evidence the day runs long, not that the day needs a block.
+    def _out_prime(dd):
+        return dd['outsidePrime'] if split_present else dd['outside']
 
     drivers = [
         driver('utilisation', 'In-block utilisation', util,
@@ -158,23 +197,23 @@ def classify_block(by_dow, release_events=0, release_of=0,
                   if d['alloc'] > 0
                   and (d['used'] / d['alloc'] * 100) < t['wrong_day_held_used_pct']]
     busy_unheld = [d for d in days
-                   if d['alloc'] <= 0.5 and d['outside'] >= t['wrong_day_outside_hours']]
+                   if d['alloc'] <= 0.5 and _out_prime(d) >= t['wrong_day_outside_hours']]
     if empty_held and busy_unheld:
         frm = max(empty_held, key=lambda d: d['alloc'] - d['used'])
-        to = max(busy_unheld, key=lambda d: d['outside'])
+        to = max(busy_unheld, key=_out_prime)
         return _result(
             WRONG_DAY, alloc, drivers + [
                 driver('held_day', f'{DOW_LABEL[frm["dow"]]} allocation',
                        frm['alloc'] - frm['used'],
                        f'{DOW_LABEL[frm["dow"]]}: {_round1(frm["used"])}h used of '
                        f'{_round1(frm["alloc"])}h held'),
-                driver('busy_day', f'{DOW_LABEL[to["dow"]]} volume', to['outside'],
-                       f'{DOW_LABEL[to["dow"]]}: {_round1(to["outside"])}h booked with no block'),
+                driver('busy_day', f'{DOW_LABEL[to["dow"]]} volume', _out_prime(to),
+                       f'{DOW_LABEL[to["dow"]]}: {_round1(_out_prime(to))}h booked with no block'),
             ],
             f'Move the {DOW_LABEL[frm["dow"]]} block to {DOW_LABEL[to["dow"]]} — '
-            f'{_round1(to["outside"])}h a week is already being booked there.',
+            f'{_round1(_out_prime(to))}h a week is already being booked there.',
             delta_hours=0.0, trend=trend, cfg=t, days=days,
-            target_dow=to['dow'], mismatch_override=min(frm['alloc'], to['outside']))
+            target_dow=to['dow'], mismatch_override=min(frm['alloc'], _out_prime(to)))
 
     # ── 3. Wrong shape ──────────────────────────────────────────────────────
     if last_case_out_hours is not None and held_days:
@@ -214,6 +253,12 @@ def classify_block(by_dow, release_events=0, release_of=0,
     # move, and excluding it a second time drops it into nothing at all.
     if util is not None and util < t['under_allocated_gt_pct'] \
             and outside >= t['material_outside_hours']:
+        # After-hours-dominant spill is not misplaced daytime work; it is the day
+        # running long. Split it to NON_PRIME_TIME. The rest is MISPLACED, judged
+        # on the daytime portion — that is the volume a day/shape review is about.
+        if prime_share is not None and prime_share <= t['prime_share_low_pct']:
+            return _non_prime_result(alloc, drivers, outside_nonprime, prime_share,
+                                     trend, t, days)
         window = max((d['alloc'] for d in held_days), default=0.0)
         return _result(
             MISPLACED, alloc, drivers,
@@ -221,7 +266,7 @@ def classify_block(by_dow, release_events=0, release_of=0,
             f'{_round1(outside)}h a week outside it — review day and shape with the '
             f'owner before changing the allocation.',
             delta_hours=0.0, trend=trend, cfg=t, days=days,
-            mismatch_override=min(alloc - used, outside))
+            mismatch_override=min(alloc - used, outside_prime))
 
     # ── 5. Fragmented ───────────────────────────────────────────────────────
     if len(held_days) >= t['fragmented_min_days'] \
@@ -238,13 +283,29 @@ def classify_block(by_dow, release_events=0, release_of=0,
     # ── 6. Volume patterns ──────────────────────────────────────────────────
     if util is not None and util > t['under_allocated_gt_pct'] \
             and outside >= t['material_outside_hours']:
-        add = _round1(outside * 0.75)
+        # High utilisation with material spill was a single UNDER_ALLOCATED leaf;
+        # it is now a branch on where the spill lands. After-hours-dominant → the
+        # answer is not more block; prime-dominant → it is; a middle band adds the
+        # block for the daytime part and says so.
+        if prime_share is not None and prime_share <= t['prime_share_low_pct']:
+            return _non_prime_result(alloc, drivers, outside_nonprime, prime_share,
+                                     trend, t, days)
+        # The block time you would actually add is the daytime spill only, so both
+        # the ask and the mismatch are sized on outsidePrime, not the total.
+        spill = outside_prime
+        add = _round1(spill * 0.75)
+        if prime_share is not None and prime_share < t['prime_share_high_pct']:
+            text = (f'Add about {add}h a week — the block runs at {_round1(util)}% and '
+                    f'{_round1(spill)}h of daytime work is spilling outside it; the '
+                    f'other {_round1(outside_nonprime)}h a week lands after the operating '
+                    f'day and will not be fixed by more block.')
+        else:
+            text = (f'Add about {add}h a week — the block runs at {_round1(util)}% and '
+                    f'{_round1(spill)}h of daytime work is already spilling outside it.')
         return _result(
             UNDER_ALLOCATED, alloc, drivers,
-            f'Add about {add}h a week — the block runs at {_round1(util)}% and '
-            f'{_round1(outside)}h is already spilling outside it.',
-            delta_hours=add, trend=trend, cfg=t, days=days,
-            mismatch_override=outside)
+            text, delta_hours=add, trend=trend, cfg=t, days=days,
+            mismatch_override=spill)
 
     # One threshold with two sides rather than two that can overlap or leave a
     # gap: volume outside the block is either material or it is not.
@@ -275,6 +336,26 @@ def classify_block(by_dow, release_events=0, release_of=0,
         'No clear pattern — the numbers do not match any rule cleanly. '
         'Review with the owner.',
         delta_hours=0.0, trend=trend, cfg=t, days=days, mismatch_override=0.0)
+
+
+def _non_prime_result(alloc, drivers, nonprime_hours, prime_share, trend, cfg, days):
+    """
+    Out-of-block work that lands after the operating day. Opens a question, does
+    not assert a failure — emergent volume is folded in, so a service that takes
+    call surfaces here while doing its job correctly. The mismatch is the size of
+    the investigation, not the size of an allocation ask.
+    """
+    after = None if prime_share is None else 100 - prime_share
+    d2 = drivers + [driver(
+        'after_hours', 'After-hours share', after,
+        f'{round(after)}% of outside work lands after the operating day'
+        if after is not None else 'Outside work lands after the operating day')]
+    return _result(
+        NON_PRIME_TIME, alloc, d2,
+        f'{_round1(nonprime_hours)}h/wk landing after the operating day. Review start '
+        f'times, case-length estimates and add-on routing before changing allocation.',
+        delta_hours=0.0, trend=trend, cfg=cfg, days=days,
+        mismatch_override=nonprime_hours)
 
 
 def _result(pattern, alloc, drivers, recommendation, delta_hours, trend, cfg, days,

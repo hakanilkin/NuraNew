@@ -631,6 +631,79 @@ def generate_cases(calendar, roster, params, rng, anchor):
                 'dow_long': day['dow_long'],
             })
 
+    # ── ST-8: an after-hours emergent list (NON_PRIME_TIME) ──────────────────
+    # One service does real work that lands after the operating day ends. It is
+    # not misplaced daytime volume and not a case for more block — the fix is
+    # start-time / case-length / add-on review. Booked 'Open' at the main site,
+    # starting just after prime time, on days chosen to sit clear of the daytime
+    # storylines and ST-9's Thursday PACU peak.
+    np_cfg   = st8
+    main_cfg = C.SITES[C.MAIN_SITE]
+    np_pstart, np_pend = _hm(main_cfg['prime_start']), _hm(main_cfg['prime_end'])
+    np_pool  = surgeons_by_service.get(np_cfg['non_prime_service'], [])
+    np_room  = main_cfg['rooms'][0]
+    for day in calendar:
+        if day['is_weekend'] or day['is_future'] or day['holiday']:
+            continue
+        if day['weekday'] not in np_cfg['non_prime_days']:
+            continue
+        d, wd = day['date'], day['weekday']
+        cursor = np_pend + np_cfg['non_prime_start_after_min']
+        for _ in range(np_cfg['non_prime_cases_per_day']):
+            dur = round(max(45.0, min(210.0,
+                          float(rng.normal(np_cfg['non_prime_case_minutes'], 25)))) / 5) * 5
+            start_min, end_min = cursor, cursor + dur
+            cursor = end_min + 20
+            prime = _overlap(start_min, end_min, np_pstart, np_pend)
+            surgeon = (_weighted_choice(rng, [s['name'] for s in np_pool],
+                                        [s['service_share'] for s in np_pool])
+                       if np_pool else 'Unknown')
+            or_in  = dt.datetime.combine(d, dt.time()) + dt.timedelta(minutes=round(start_min))
+            or_out = dt.datetime.combine(d, dt.time()) + dt.timedelta(minutes=round(end_min))
+            case_id += 1
+            cases.append({
+                '_ID_CaseID':                    case_id,
+                'Date_SchedDate':                d,
+                'Loc_ORGrp2':                    C.MAIN_SITE,
+                'Loc_ORLoc':                     np_room,
+                'Case_CaseBlock':                'Open',
+                'Case_Surgeon':                  surgeon,
+                'Case_SurgeonService':           np_cfg['non_prime_service'],
+                'Case_CaseType':                 'Emergent' if rng.random() < 0.5 else 'Urgent',
+                'Case_AddOnCode':                C.ADDON_CODE_YES,
+                'Case_ASACode':                  _weighted_choice(rng, asa_items, asa_w),
+                'Case_CanCode':                  None,
+                'Case_DaysScheduledAhead':       0,
+                'Anes_Anestype':                 _weighted_choice(rng, anes_items, anes_w),
+                'Sched_SchedDur':                int(dur),
+                'Dur_ORIn_OROut':                int(dur),
+                'Dur_Act_vs_SchedDur':           0,
+                'Dur_Act_vs_SchedStart':         0,
+                'Time_ORin':                     or_in,
+                'Time_OROut':                    or_out,
+                'Turnover_Turnover':             None,
+                'Turnover_Orderofcaseinroom':    1,
+                'Turnover_Maxnumofcasesinroom':  1,
+                'Turnover_NextCaseSameSurgeon':  None,
+                'DD_DOW_Long':                   day['dow_long'],
+                'DD_Holiday':                    0,
+                'DD_WeekOfMonth':                day['week_of_month'],
+                'DD_Month_Int':                  d.month,
+                'DD_Year_Month':                 f'{d.year}-{d.month:02d}',
+                'CaseLogStatus':                 C.CASE_LOG_STATUS,
+                '__prime_min':      prime,
+                '__nonprime_min':   dur - prime,
+                '__start_min':      start_min,
+                '__end_min':        end_min,
+                '__or_in':          or_in,
+                '__or_out':         or_out,
+                '__is_future':      False,
+                '__inpatient':      False,
+                '__cancelled':      False,
+                '__weekday':        wd,
+                '__site_inpatient': main_cfg['inpatient'],
+            })
+
     return cases, block_instances
 
 

@@ -24,6 +24,7 @@ function patternConfig(p) {
     case 'FRAGMENTED':      return { label: 'Fragmented',      glyph: '⋯', color: '#0e7490', bg: 'rgba(14,116,144,0.13)' }
     case 'OVER_ALLOCATED':  return { label: 'Over-allocated',  glyph: '▼', color: '#dc2626', bg: 'rgba(239,68,68,0.11)' }
     case 'UNDER_ALLOCATED': return { label: 'Under-allocated', glyph: '▲', color: '#2563eb', bg: 'rgba(59,130,246,0.12)' }
+    case 'NON_PRIME_TIME':  return { label: 'Non-prime time',  glyph: '☾', color: '#0891b2', bg: 'rgba(8,145,178,0.12)' }
     case 'MISPLACED':       return { label: 'Misplaced',       glyph: '◇', color: '#9333ea', bg: 'rgba(147,51,234,0.12)' }
     case 'RIGHT_SIZED':     return { label: 'Right-sized',     glyph: '■', color: '#15803d', bg: 'rgba(34,197,94,0.12)' }
     // Never an endorsement. A silent fallback that reads as "fine" is the thing
@@ -125,6 +126,10 @@ export function ShapeCaption({ byDow }) {
   const outside = sum('outside')
   const cases = (byDow ?? []).some(d => d.outsideCases != null) ? sum('outsideCases') : null
   const util = alloc > 0 ? (used / alloc) * 100 : null
+  // Share of the outside hours that is daytime (prime). Drops entirely when the
+  // split is unavailable for a tenant, so the line degrades to hours and cases.
+  const hasSplit = (byDow ?? []).some(d => d.outsidePrime != null)
+  const primePct = (hasSplit && outside > 0) ? Math.round(sum('outsidePrime') / outside * 100) : null
 
   const line = { fontSize: 11, lineHeight: 1.45, color: 'var(--color-gray-500)',
                  fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
@@ -138,6 +143,7 @@ export function ShapeCaption({ byDow }) {
       {outside >= 0.5 && (
         <div style={line}>
           {fmt1(outside)}h{cases == null ? '' : ` · ${Math.round(cases)} cases`} outside
+          {primePct == null ? '' : ` (${primePct}% prime)`}
         </div>
       )}
     </div>
@@ -218,28 +224,32 @@ function PipelineChart({ pipeline }) {
 function DayTable({ byDow }) {
   const tot = k => byDow.reduce((t, d) => t + (d[k] ?? 0), 0)
   const cell = { ...TD_BASE, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
+  // The Outside column splits into prime (operating-day) and non-prime (after it)
+  // where the tenant carries the split; prime + non-prime reconcile to the
+  // caption's total. Without it, the single Outside column stands as before.
+  const hasSplit = byDow.some(d => d.outsidePrime != null)
+  const cols = hasSplit
+    ? ['alloc', 'used', 'outsidePrime', 'outsideNonPrime', 'released']
+    : ['alloc', 'used', 'outside', 'released']
+  const head = hasSplit
+    ? ['Allocated', 'Used', 'Outside (prime)', 'Outside (non-prime)', 'Released']
+    : ['Allocated', 'Used', 'Outside', 'Released']
   return (
     <table style={{ borderCollapse: 'collapse', width: '100%' }}>
       <thead><tr>
         <th style={{ ...TH_BASE }}>Day</th>
-        <th style={{ ...TH_BASE, textAlign: 'right' }}>Allocated</th>
-        <th style={{ ...TH_BASE, textAlign: 'right' }}>Used</th>
-        <th style={{ ...TH_BASE, textAlign: 'right' }}>Outside</th>
-        <th style={{ ...TH_BASE, textAlign: 'right' }}>Released</th>
+        {head.map(h => <th key={h} style={{ ...TH_BASE, textAlign: 'right' }}>{h}</th>)}
       </tr></thead>
       <tbody>
         {byDow.map(d => (
           <tr key={d.dow}>
             <td style={TD_BASE}>{DOW[d.dow]}</td>
-            <td style={cell}>{fmt1(d.alloc)}</td>
-            <td style={cell}>{fmt1(d.used)}</td>
-            <td style={cell}>{fmt1(d.outside)}</td>
-            <td style={cell}>{fmt1(d.released ?? 0)}</td>
+            {cols.map(k => <td key={k} style={cell}>{fmt1(k === 'released' ? (d[k] ?? 0) : d[k])}</td>)}
           </tr>
         ))}
         <tr style={{ fontWeight: 700, color: 'var(--color-gray-900)' }}>
           <td style={{ ...TD_BASE, borderTop: '1px solid var(--color-border-secondary)' }}>Week</td>
-          {['alloc', 'used', 'outside', 'released'].map(k => (
+          {cols.map(k => (
             <td key={k} style={{ ...cell, borderTop: '1px solid var(--color-border-secondary)' }}>
               {fmt1(tot(k))}
             </td>
@@ -545,7 +555,7 @@ export default function BlockAllocations() {
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
                         marginBottom: 'var(--space-4)' }}>
-            {['WRONG_DAY', 'WRONG_SHAPE', 'MISPLACED', 'ABANDONED', 'FRAGMENTED',
+            {['WRONG_DAY', 'WRONG_SHAPE', 'MISPLACED', 'NON_PRIME_TIME', 'ABANDONED', 'FRAGMENTED',
               'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'RIGHT_SIZED', 'UNCLASSIFIED']
               .filter(p => counts[p])
               .map(p => {

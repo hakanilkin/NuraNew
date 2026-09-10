@@ -343,7 +343,12 @@ STORYLINES = {
         'cliff_time': '15:30',
         'cliff_weekdays': [1, 2, 3],      # Tue-Thu
         'rooms_running_at_cliff': (3, 4),
-        'overtime_room_hours_per_week': (10.0, 14.0),
+        # Widened from (10, 14): ST-8's after-hours ENT emergent list
+        # (NON_PRIME_TIME) is real overtime the demo did not carry before. The
+        # daytime cliff and Friday flex-down — ST-3's actual subject — are the
+        # assertions above and below; this band just no longer contradicts the
+        # after-hours story the same data now tells.
+        'overtime_room_hours_per_week': (10.0, 22.0),
         'friday_peak_rooms': 6,
         # Rev 2026-08-24: the original ~12/week point target was arithmetically
         # impossible against 9 staffed rooms and a 6-room peak. The storyline is
@@ -482,6 +487,21 @@ STORYLINES = {
         # clear the day the room actually runs, not the time it operates.
         'wrong_shape_window_extra_min': 180,
         'wrong_shape_used_pct': 78.0,
+        # The prime/non-prime split (BlockAllocationsPrimeTime.md). Two well-used
+        # blocks, opposite findings: Spine's spill is daytime (UNDER_ALLOCATED —
+        # add block), and one service runs an after-hours emergent list whose
+        # spill lands past the operating day (NON_PRIME_TIME — investigate, do not
+        # allocate). ENT carries the second: a single-service block that takes
+        # airway/epistaxis call, so an after-hours list is real, and it holds
+        # little daytime spill, so the evening volume makes it cleanly non-prime-
+        # dominant without disturbing the daytime storylines. Placed off ST-9's
+        # Thursday PACU peak. (Its overtime is reflected in ST-3's band.)
+        'non_prime_service':       'ENT',
+        'non_prime_block':         'ENT',
+        'non_prime_days':          [1, 2],   # Tuesday and Wednesday evenings
+        'non_prime_cases_per_day': 2,
+        'non_prime_case_minutes':  85,
+        'non_prime_start_after_min': 15,     # list starts just after prime ends
         'over_allocated_block': 'Plastics',
         'over_allocated_util_pct': 50.0,
         # Over-allocation means the volume genuinely is not there. With the
@@ -494,7 +514,8 @@ STORYLINES = {
         # Every actionable pattern, not four of six: a taxonomy the page names
         # but never demonstrates is a taxonomy nobody trusts.
         'required_patterns': ['WRONG_DAY', 'WRONG_SHAPE', 'MISPLACED',
-                              'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'ABANDONED'],
+                              'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'ABANDONED',
+                              'NON_PRIME_TIME'],
         # Ceiling on blocks that say "no change" or "no clear pattern".
         'max_inert_share': 0.5,
     },

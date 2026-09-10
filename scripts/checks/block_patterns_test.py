@@ -27,8 +27,14 @@ def check(label, cond, detail=''):
         failures.append(label)
 
 
-def day(d, alloc=0.0, used=0.0, outside=0.0):
-    return {'dow': d, 'alloc': alloc, 'used': used, 'outside': outside}
+def day(d, alloc=0.0, used=0.0, outside=0.0, outside_prime=None, outside_nonprime=None):
+    row = {'dow': d, 'alloc': alloc, 'used': used, 'outside': outside}
+    # Only carry the split when a test supplies it, so the un-split cases exercise
+    # the fallback path (no prime window derivable) exactly as a real tenant would.
+    if outside_prime is not None or outside_nonprime is not None:
+        row['outsidePrime'] = outside_prime or 0.0
+        row['outsideNonPrime'] = outside_nonprime or 0.0
+    return row
 
 
 # ── Evaluation order ────────────────────────────────────────────────────────
@@ -91,6 +97,55 @@ check('high use with material spill is UNDER_ALLOCATED',
       under['pattern'] == B.UNDER_ALLOCATED, under['pattern'])
 check('and the addition is sized from what is spilling',
       under['recommendation']['deltaHours'] > 0)
+
+# ── Prime / non-prime split (BlockAllocationsPrimeTime.md) ──────────────────
+# Same block, same 4h of spill. Where it lands decides the finding and the fix.
+under_prime = B.classify_block([day(3, alloc=8, used=7.4, outside=4.0,
+                                    outside_prime=3.4, outside_nonprime=0.6)])
+check('high use with daytime spill stays UNDER_ALLOCATED',
+      under_prime['pattern'] == B.UNDER_ALLOCATED, under_prime['pattern'])
+check('and the ask and mismatch are sized on the daytime spill only',
+      under_prime['mismatchHours'] == 3.4
+      and under_prime['recommendation']['deltaHours'] == 2.5)   # 3.4 * 0.75, one dp
+
+non_prime = B.classify_block([day(3, alloc=8, used=7.4, outside=4.0,
+                                  outside_prime=0.6, outside_nonprime=3.4)])
+check('the same spill landing after the day is NON_PRIME_TIME',
+      non_prime['pattern'] == B.NON_PRIME_TIME, non_prime['pattern'])
+check('and it opens a question rather than asserting an allocation',
+      'after the operating day' in non_prime['recommendation']['text']
+      and 'before changing allocation' in non_prime['recommendation']['text'])
+check('and its mismatch is the after-hours hours — the size of the investigation',
+      non_prime['mismatchHours'] == 3.4)
+
+non_prime_low = B.classify_block([day(3, alloc=8, used=4.0, outside=4.0,
+                                     outside_prime=0.8, outside_nonprime=3.2)])
+check('low use with after-hours spill is NON_PRIME_TIME, not MISPLACED',
+      non_prime_low['pattern'] == B.NON_PRIME_TIME, non_prime_low['pattern'])
+
+misplaced = B.classify_block([day(3, alloc=8, used=4.0, outside=4.0,
+                                  outside_prime=3.6, outside_nonprime=0.4)])
+check('low use with daytime spill stays MISPLACED',
+      misplaced['pattern'] == B.MISPLACED, misplaced['pattern'])
+
+mixed = B.classify_block([day(3, alloc=8, used=7.4, outside=4.0,
+                             outside_prime=2.0, outside_nonprime=2.0)])
+check('a mixed split reads UNDER_ALLOCATED with the after-hours part stated',
+      mixed['pattern'] == B.UNDER_ALLOCATED
+      and 'after the operating day' in mixed['recommendation']['text'],
+      mixed['pattern'])
+
+wrong_day_np = B.classify_block([day(1, alloc=8, used=3.0, outside=0.2,
+                                    outside_prime=0.2, outside_nonprime=0.0),
+                                 day(3, outside=5.4, outside_prime=0.5,
+                                     outside_nonprime=4.9)])
+check('after-hours volume on an unheld day is not read as WRONG_DAY',
+      wrong_day_np['pattern'] != B.WRONG_DAY, wrong_day_np['pattern'])
+
+noise = B.classify_block([day(3, alloc=8, used=7.4, outside=0.6,
+                             outside_prime=0.0, outside_nonprime=0.6)])
+check('spill below the noise floor does not fire NON_PRIME_TIME',
+      noise['pattern'] != B.NON_PRIME_TIME, noise['pattern'])
 
 right = B.classify_block([day(3, alloc=8, used=6.2, outside=0.4)])
 check('a block matching its volume is RIGHT_SIZED', right['pattern'] == B.RIGHT_SIZED,
