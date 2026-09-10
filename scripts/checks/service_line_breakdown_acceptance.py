@@ -144,6 +144,24 @@ def main():
     check('ST-3 and visibly so', f'{by_dow[4] / busiest * 100:.0f}% of the peak',
           by_dow[4] <= busiest * 0.85, '<= 85% of the busiest day')
 
+    # Patient-type split (ServiceLineBreakdownPatientType.md): the three type
+    # totals reconcile to the grand total over the window. Inpatient nets out
+    # SDA, so OP + SDA + (IP - SDA) must equal the total the grid already draws.
+    start = ANCHOR + dt.timedelta(days=1)
+    end = start + dt.timedelta(days=WINDOW_WEEKS * 7 - 1)
+    op = sda = ip_full = grand = 0.0
+    for r in tables['V4_FORECAST_COMPILE']:
+        d = r['Date']
+        if not (start <= d <= end) or d.weekday() > 4:
+            continue
+        op += float(r.get('SCHEDULED_OUTPATIENT') or 0) + float(r.get('FORECAST_OUTPATIENT') or 0)
+        sda += float(r.get('SCHEDULED_SDA') or 0) + float(r.get('FORECAST_SDA') or 0)
+        ip_full += float(r.get('SCHEDULED_INPATIENT') or 0) + float(r.get('FORECAST_INPATIENT') or 0)
+        grand += sum(float(r.get(c) or 0) for c in CASE_COLS)
+    types_sum = op + sda + (ip_full - sda)
+    check('patient type: OP + SDA + IP reconciles to the window total',
+          f'{types_sum:.0f} vs {grand:.0f}', abs(types_sum - grand) < 0.5, 'equal')
+
     print()
     if failures:
         print(f'  Service Line Breakdown acceptance: {len(failures)} failure(s)\n')

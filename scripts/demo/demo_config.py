@@ -175,6 +175,23 @@ SERVICE_INPATIENT_RATE = {
     'Robotics-General': 0.22,
 }
 
+# Share of a service's INPATIENTS who arrive from home the morning of surgery
+# (same-day admit) rather than already occupying a bed. A subset of inpatient,
+# never a sibling (ServiceLineBreakdownPatientType.md). Placeholders pending
+# Kartheek — the shape (elective near 0.9, vascular/colorectal lower) is the point.
+SERVICE_SDA_RATE = {
+    'Orthopedics':      0.88,
+    'Spine':            0.92,
+    'General Surgery':  0.70,
+    'Urology':          0.85,
+    'GYN':              0.90,
+    'ENT':              0.85,
+    'Plastics':         0.80,
+    'Vascular':         0.60,
+    'Colorectal':       0.68,
+    'Robotics-General': 0.85,
+}
+
 # ServiceUnitMap: where a service's admitted patients land. Shares sum to 100.
 SERVICE_UNIT_MAP = {
     'Orthopedics':      {'5 Central': 68, '4 East': 24, '3 West':  5, 'Stepdown': 3},

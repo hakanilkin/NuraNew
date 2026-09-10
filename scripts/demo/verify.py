@@ -666,13 +666,27 @@ def _st6(tables, ctx):
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 
+def _sda(tables, ctx):
+    """
+    Patient-type split (ServiceLineBreakdownPatientType.md): same-day admit is a
+    subset of inpatient, so SCHEDULED_SDA <= SCHEDULED_INPATIENT and FORECAST_SDA
+    <= FORECAST_INPATIENT on every forecast row, or the subset invariant is broken.
+    """
+    rows = tables.get('V4_FORECAST_COMPILE', [])
+    bad = sum(1 for r in rows
+              if (r.get('SCHEDULED_SDA') or 0) > (r.get('SCHEDULED_INPATIENT') or 0) + 1e-9
+              or (r.get('FORECAST_SDA')  or 0) > (r.get('FORECAST_INPATIENT')  or 0) + 1e-9)
+    _check('Patient type: SDA <= INPATIENT on every forecast row', bad, '0',
+           PASS if bad == 0 else FAIL, 'rows')
+
+
 def run(tables, ctx):
     _results.clear()
     print('=' * 72)
     print('  Storyline reconciliation — DemoTenant.md section 10')
     print('=' * 72)
 
-    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6, _st7, _st8, _st9):
+    for fn in (_background, _st1, _st2, _st3, _st4, _st5, _st6, _st7, _st8, _st9, _sda):
         try:
             fn(tables, ctx)
         except Exception as exc:                    # a broken check must not hide the rest

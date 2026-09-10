@@ -289,6 +289,13 @@ def generate_cases(calendar, roster, params, rng, anchor):
     block_instances = []     # one per (date, block, room) — allocation and release
     case_id = 100000
 
+    # Same-day-admit decision draws from an INDEPENDENT stream
+    # (ServiceLineBreakdownPatientType.md section 3): spawn() derives a child
+    # from the seed without consuming the shared rng, so every existing draw —
+    # utilisations, durations, block patterns, the prime-time work — stays
+    # byte-identical and only the two new SDA columns appear.
+    sda_rng = rng.spawn(1)[0]
+
     for day in calendar:
         d, wd = day['date'], day['weekday']
         holiday_factor = C.HOLIDAY_VOLUME_FACTOR if day['holiday'] else 1.0
@@ -515,6 +522,10 @@ def generate_cases(calendar, roster, params, rng, anchor):
                     inpatient_intent = rng.random() < (
                         C.SERVICE_INPATIENT_RATE[service] if site_cfg['inpatient'] else 0.0
                     )
+                    # Of the inpatients, those admitted from home the morning of
+                    # surgery (a subset — never more than the inpatient count).
+                    sda_intent = inpatient_intent and \
+                        sda_rng.random() < C.SERVICE_SDA_RATE.get(service, 0.0)
 
                     case_id += 1
                     cases.append({
@@ -559,6 +570,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
                         '__or_out':         or_out,
                         '__is_future':      day['is_future'],
                         '__inpatient':      inpatient_intent,
+                        '__sda':            sda_intent,
                         '__cancelled':      cancelled,
                         '__weekday':        wd,
                         '__site_inpatient': site_cfg['inpatient'],
@@ -699,6 +711,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
                 '__or_out':         or_out,
                 '__is_future':      False,
                 '__inpatient':      False,
+                '__sda':            False,
                 '__cancelled':      False,
                 '__weekday':        wd,
                 '__site_inpatient': main_cfg['inpatient'],
@@ -882,7 +895,7 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
             continue
         key = (c['Date_SchedDate'], c['Loc_ORGrp2'], c['Case_CaseBlock'],
                c['Case_SurgeonService'])
-        a = agg.setdefault(key, {'ip': 0, 'op': 0, 'ip_min': 0.0, 'op_min': 0.0,
+        a = agg.setdefault(key, {'ip': 0, 'op': 0, 'sda': 0, 'ip_min': 0.0, 'op_min': 0.0,
                                  'room': c['Loc_ORLoc']})
         dur = (c['Sched_SchedDur'] if c['__is_future']
                else (c['Dur_ORIn_OROut'] or c['Sched_SchedDur']))
@@ -890,6 +903,8 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
         if c['__inpatient']:
             a['ip'] += 1
             a['ip_min'] += durwturn
+            if c.get('__sda'):        # same-day admit: a subset of inpatient
+                a['sda'] += 1
         else:
             a['op'] += 1
             a['op_min'] += durwturn
@@ -931,14 +946,18 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
             frac = max(0.05, min(1.0, frac))
             sched_ip,  sched_op  = a['ip'] * frac,     a['op'] * frac
             sched_ipm, sched_opm = a['ip_min'] * frac, a['op_min'] * frac
+            sched_sda = a['sda'] * frac
             rest = (1.0 - frac) * FORECAST_CAPTURE
             fc_ip,  fc_op  = a['ip'] * rest,     a['op'] * rest
             fc_ipm, fc_opm = a['ip_min'] * rest, a['op_min'] * rest
+            fc_sda = a['sda'] * rest
             act_ip = act_op = 0
         else:
             sched_ip,  sched_op  = a['ip'],     a['op']
             sched_ipm, sched_opm = a['ip_min'], a['op_min']
+            sched_sda = a['sda']
             fc_ip = fc_op = fc_ipm = fc_opm = 0.0
+            fc_sda = 0.0
             act_ip, act_op = a['ip'], a['op']
 
         rows.append({
@@ -950,10 +969,12 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
             'DaysAhead':                    meta['days_ahead'],
             'SCHEDULED_INPATIENT':          round(sched_ip, 2),
             'SCHEDULED_OUTPATIENT':         round(sched_op, 2),
+            'SCHEDULED_SDA':                round(sched_sda, 2),
             'SCHEDULED_INPATIENT_DURwTurn': round(sched_ipm, 1),
             'SCHEDULED_OUTPATIENT_DURwTurn': round(sched_opm, 1),
             'FORECAST_INPATIENT':           round(fc_ip, 2),
             'FORECAST_OUTPATIENT':          round(fc_op, 2),
+            'FORECAST_SDA':                 round(fc_sda, 2),
             'FORECAST_INPATIENT_DURwTurn':  round(fc_ipm, 1),
             'FORECAST_OUTPATIENT_DURwTurn': round(fc_opm, 1),
             'ACTUAL_INPATIENT':             act_ip,
@@ -986,9 +1007,9 @@ def generate_forecast_compile(cases, block_instances, calendar, rng):
             'Date': b['date'], 'DOW_LONG': meta['dow_long'], 'ORGRP2': b['site'],
             'Caseblock': b['block'], 'SurgeonService': b['service'],
             'DaysAhead': meta['days_ahead'],
-            'SCHEDULED_INPATIENT': 0, 'SCHEDULED_OUTPATIENT': 0,
+            'SCHEDULED_INPATIENT': 0, 'SCHEDULED_OUTPATIENT': 0, 'SCHEDULED_SDA': 0,
             'SCHEDULED_INPATIENT_DURwTurn': 0, 'SCHEDULED_OUTPATIENT_DURwTurn': 0,
-            'FORECAST_INPATIENT': 0, 'FORECAST_OUTPATIENT': 0,
+            'FORECAST_INPATIENT': 0, 'FORECAST_OUTPATIENT': 0, 'FORECAST_SDA': 0,
             'FORECAST_INPATIENT_DURwTurn': 0, 'FORECAST_OUTPATIENT_DURwTurn': 0,
             'ACTUAL_INPATIENT': 0, 'ACTUAL_OUTPATIENT': 0, 'ACTUAL': 0,
             'BUDGET_INPATIENT': 0, 'BUDGET_OUTPATIENT': 0, 'BUDGET': 0,

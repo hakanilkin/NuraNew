@@ -4,7 +4,7 @@ const D = require('../lib/demandSignal');
 const S = require('../lib/staffingShape');
 const F = require('../lib/censusFootprint');
 const R = require('../lib/recoveryDemand');
-const { getParam, resolveColumn } = require('../utils/tenantColumns');
+const { getParam, resolveColumn, getFeatures } = require('../utils/tenantColumns');
 
 // Volume Impact (VolumeImpact.md).
 //
@@ -32,6 +32,12 @@ const FORECAST_CASES = `
 + ISNULL(FORECAST_INPATIENT,0)  + ISNULL(FORECAST_OUTPATIENT,0)`;
 const SCHEDULED_CASES = 'ISNULL(SCHEDULED_INPATIENT,0) + ISNULL(SCHEDULED_OUTPATIENT,0)';
 const BUDGET_CASES = 'ISNULL(BUDGET_INPATIENT,0) + ISNULL(BUDGET_OUTPATIENT,0)';
+// Patient-type split (ServiceLineBreakdownPatientType.md), demo only. SDA is a
+// subset of inpatient, so displayed inpatient is IP − SDA and OP + SDA + IP
+// still equals the total above. These columns exist only where the flag is on.
+const OP_ALL  = 'ISNULL(SCHEDULED_OUTPATIENT,0) + ISNULL(FORECAST_OUTPATIENT,0)';
+const SDA_ALL = 'ISNULL(SCHEDULED_SDA,0) + ISNULL(FORECAST_SDA,0)';
+const IP_ALL  = 'ISNULL(SCHEDULED_INPATIENT,0) + ISNULL(FORECAST_INPATIENT,0)';
 
 module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
   const router = express.Router();
@@ -115,11 +121,18 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     r.input('to', sql.Date, to);
     const filter = siteFilter(r, sites);
     const serviceCol = resolveColumn(tenant, 'OR_SERVICE');
+    // Demo-only patient-type split. The SDA columns exist only for the flagged
+    // tenant, so the extra SELECT terms are added only then — NHS/OHS run the
+    // original query untouched.
+    const hasTypes = getFeatures(tenant)?.patient_type_split === true;
+    const typeCols = hasTypes
+      ? `, SUM(${OP_ALL}) AS Op, SUM(${SDA_ALL}) AS Sda, SUM(${IP_ALL}) AS Ip`
+      : '';
     const res = await r.query(`
       SELECT CONVERT(VARCHAR(10), CAST(Date AS DATE), 23) AS Date,
              MIN(DATEPART(WEEKDAY, Date))                 AS Wd,
              ISNULL(${serviceCol}, 'Unknown')             AS Service,
-             SUM(${FORECAST_CASES})                       AS Cases
+             SUM(${FORECAST_CASES})                       AS Cases${typeCols}
       FROM V4_FORECAST_COMPILE
       WHERE CAST(Date AS DATE) BETWEEN @from AND @to${filter}
       GROUP BY CAST(Date AS DATE), ISNULL(${serviceCol}, 'Unknown')
@@ -165,31 +178,74 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     const index = new Map(dates.map((d, i) => [d.date, i]));
 
     const byService = new Map();
+    // Window totals per service, split by type (demo only). ipFull is the whole
+    // inpatient count; displayed inpatient subtracts SDA at the end.
+    const typeByService = new Map();
+    // Per-date type totals across services, for the three bottom rows.
+    const opByDate  = new Array(dates.length).fill(0);
+    const sdaByDate = new Array(dates.length).fill(0);
+    const ipByDate  = new Array(dates.length).fill(0);
     for (const x of res.recordset) {
       const i = index.get(x.Date);
       if (i == null) continue;
       const key = x.Service;
       if (!byService.has(key)) byService.set(key, new Array(dates.length).fill(0));
       byService.get(key)[i] += num(x.Cases);
+      if (hasTypes) {
+        if (!typeByService.has(key)) typeByService.set(key, { op: 0, sda: 0, ipFull: 0 });
+        const t = typeByService.get(key);
+        t.op += num(x.Op); t.sda += num(x.Sda); t.ipFull += num(x.Ip);
+        opByDate[i]  += num(x.Op);
+        sdaByDate[i] += num(x.Sda);
+        ipByDate[i]  += num(x.Ip);
+      }
     }
 
     // Every service line, sorted by window total. A full tab has the room, so
     // there is no cap and no Other row to reconcile against.
     const services = [...byService.entries()]
-      .map(([service, byDate]) => ({
-        service,
-        byDate: byDate.map(v => Math.round(v)),
-        total: Math.round(byDate.reduce((t, v) => t + v, 0)),
-      }))
+      .map(([service, byDate]) => {
+        const row = {
+          service,
+          byDate: byDate.map(v => Math.round(v)),
+          total: Math.round(byDate.reduce((t, v) => t + v, 0)),
+        };
+        if (hasTypes) {
+          const t = typeByService.get(service) || { op: 0, sda: 0, ipFull: 0 };
+          row.byType = {
+            outpatient: Math.round(t.op),
+            sda: Math.round(t.sda),
+            inpatient: Math.round(t.ipFull - t.sda),
+          };
+        }
+        return row;
+      })
       .sort((a, b) => b.total - a.total || a.service.localeCompare(b.service));
 
     const totals = dates.map((_, i) => services.reduce((t, x) => t + x.byDate[i], 0));
-    return {
+    const out = {
       dates,
       services,
       totals: { byDate: totals, window: totals.reduce((t, v) => t + v, 0) },
       weeks: new Set(dates.map(d => d.weekOf)).size,
     };
+    if (hasTypes) {
+      // The three bottom rows: type × date. Inpatient nets out SDA so the three
+      // reconcile to the grand total, mirroring the per-service split above.
+      const netIp = ipByDate.map((v, i) => v - sdaByDate[i]);
+      const typeRow = (type, arr) => ({
+        type,
+        byDate: arr.map(v => Math.round(v)),
+        total: Math.round(arr.reduce((t, v) => t + v, 0)),
+      });
+      out.types = [
+        typeRow('outpatient', opByDate),
+        typeRow('sda', sdaByDate),
+        typeRow('inpatient', netIp),
+      ];
+      out.hasTypes = true;
+    }
+    return out;
   }
 
   async function plansBySiteDow(db) {

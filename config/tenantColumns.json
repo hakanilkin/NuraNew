@@ -123,7 +123,8 @@
       "staffing": true,
       "smoothing": true,
       "rtdc": true,
-      "rtdc_pending_items": true
+      "rtdc_pending_items": true,
+      "patient_type_split": true
     },
     "unit_category_map": {
       "column": "DEP_LASTDEPT",

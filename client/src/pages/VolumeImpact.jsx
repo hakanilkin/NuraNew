@@ -137,7 +137,14 @@ export function ServiceLineBreakdownTab({ data }) {
       </p>
     )
   }
-  const { dates, services, totals } = data
+  const { dates, services, totals, types } = data
+
+  // Patient-type split (ServiceLineBreakdownPatientType.md), demo only. When the
+  // flag is off the endpoint omits these and the tab is exactly what it was.
+  const hasTypes = !!(data.hasTypes && types?.length)
+  const RULE = '1px solid var(--color-border-secondary)'
+  const TYPE_LABEL = { outpatient: 'Outpatient', sda: 'Same-day admit', inpatient: 'Inpatient' }
+  const typeTotal = t => types?.find(x => x.type === t)?.total ?? 0
 
   // Weeks are grouped by air rather than by rules: a gap column between bands
   // instead of a vertical line, so the Thursday stripe reads down the page
@@ -152,7 +159,7 @@ export function ServiceLineBreakdownTab({ data }) {
   const peak = Math.max(1, ...services.flatMap(s => s.byDate))
   const maxTotal = Math.max(1, ...totals.byDate)
   const peakDay = totals.byDate.indexOf(maxTotal)
-  const cols = 2 + dates.length + (bands.length - 1) + 1
+  const cols = 2 + dates.length + (bands.length - 1) + 1 + (hasTypes ? 3 : 0)
 
   return (
     <div className="card" style={{ padding: '22px 26px 26px' }}>
@@ -203,6 +210,13 @@ export function ServiceLineBreakdownTab({ data }) {
               ))}
               <th style={{ ...STICKY_R, ...BAND_LABEL, textAlign: 'right',
                            paddingLeft: 20, paddingBottom: 8 }}>Total</th>
+              {hasTypes && (
+                <>
+                  <th style={{ ...BAND_LABEL, textAlign: 'right', paddingBottom: 8, paddingLeft: 18, borderLeft: RULE }}>OP</th>
+                  <th style={{ ...BAND_LABEL, textAlign: 'right', paddingBottom: 8, paddingLeft: 12 }}>SDA</th>
+                  <th style={{ ...BAND_LABEL, textAlign: 'right', paddingBottom: 8, paddingLeft: 12 }}>IP</th>
+                </>
+              )}
             </tr>
             {/* Daily totals as a bar strip. This was a row of numbers at the
                 bottom of the grid; as the shape of the month at the top it is
@@ -246,6 +260,14 @@ export function ServiceLineBreakdownTab({ data }) {
                            verticalAlign: 'bottom', paddingBottom: 22 }}>
                 {totals.window}
               </td>
+              {hasTypes && (['outpatient', 'sda', 'inpatient']).map((t, k) => (
+                <td key={t} style={{ textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
+                             fontWeight: 700, color: 'var(--color-gray-700)',
+                             paddingLeft: k === 0 ? 18 : 12, verticalAlign: 'bottom',
+                             paddingBottom: 22, borderLeft: k === 0 ? RULE : undefined }}>
+                  {typeTotal(t)}
+                </td>
+              ))}
             </tr>
             <tr><td colSpan={cols} style={{ padding: 0, height: 1,
                     borderBottom: '1px solid var(--color-border-secondary)' }} /></tr>
@@ -280,8 +302,49 @@ export function ServiceLineBreakdownTab({ data }) {
                              width: 52 }}>
                   {s.total}
                 </td>
+                {hasTypes && (['outpatient', 'sda', 'inpatient']).map((t, k) => (
+                  // No shading in the new block: the sequential scale stays on
+                  // the date cells; these read as plain magnitudes.
+                  <td key={t} style={{ textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
+                               color: 'var(--color-gray-700)', paddingLeft: k === 0 ? 18 : 12,
+                               width: 46, borderLeft: k === 0 ? RULE : undefined }}>
+                    {s.byType?.[t] ?? ''}
+                  </td>
+                ))}
               </tr>
             ))}
+            {hasTypes && types.map((t, ti) => {
+              // Type × date, indented under Total and muted so the three rows
+              // read as its decomposition. A rule above separates them from the
+              // service rows; no shading, per section 4.
+              const top = ti === 0 ? RULE : undefined
+              return (
+                <tr key={`type-${t.type}`}>
+                  <th scope="row" style={{ ...STICKY_L, textAlign: 'left', fontSize: 12.5,
+                            fontWeight: 400, color: 'var(--color-gray-500)', height: 26,
+                            whiteSpace: 'nowrap', padding: '0 14px 0 18px', borderTop: top }}>
+                    {TYPE_LABEL[t.type] || t.type}
+                  </th>
+                  <td style={{ ...GAP, borderTop: top }} />
+                  {bands.map((b, i) => (
+                    <Fragment key={b.weekOf}>
+                      {b.days.map(j => (
+                        <td key={dates[j].date} style={{ ...MTD, color: 'var(--color-gray-500)',
+                                     opacity: dates[j].holiday ? 0.42 : 1, borderTop: top }}>
+                          {t.byDate[j]}
+                        </td>
+                      ))}
+                      {i < bands.length - 1 && <td style={{ ...GAP, borderTop: top }} />}
+                    </Fragment>
+                  ))}
+                  <td style={{ ...STICKY_R, textAlign: 'right', fontFamily: MONO, fontSize: 12,
+                               color: 'var(--color-gray-600)', paddingLeft: 20, borderTop: top }}>
+                    {t.total}
+                  </td>
+                  <td colSpan={3} style={{ borderTop: top, borderLeft: RULE }} />
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -299,6 +362,13 @@ export function ServiceLineBreakdownTab({ data }) {
         <span>Bars: total cases that day</span>
         <span style={{ opacity: 0.5 }}>Muted column: holiday</span>
       </div>
+
+      {hasTypes && (
+        <p style={{ marginTop: 10, fontSize: 12, color: 'var(--color-gray-500)' }}>
+          Same-day admit arrives from home and is admitted after surgery; inpatient
+          was already admitted before it.
+        </p>
+      )}
     </div>
   )
 }
