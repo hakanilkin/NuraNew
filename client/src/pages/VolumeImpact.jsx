@@ -645,51 +645,278 @@ function FlagChip({ flag }) {
   )
 }
 
+/* ─── Tab 4 — Rooms to Target (StaffingRoomsToTarget.md) ──────────────────────
+   Utilisation is demand / staffed, so the rooms you open is the lever. Each day
+   shows demand against staffed rooms, the rooms that hit target (notch), the
+   feasibility floor (muted marker), and a half-room stepper that recomputes the
+   row and the summary live. Same outline/fill idiom as the Block Allocations
+   week shape. */
+
+const halfRoom = n => Math.round(n * 2) / 2
+const ceilHalf = n => Math.ceil(n * 2) / 2
+const fmtRoom = n => (n % 1 ? n.toFixed(1) : String(n))
+const TIGHT = '#b45309'
+
 export function StaffingTab({ data }) {
+  const [target, setTarget] = useState(0.75)
+  const [roomsOv, setRoomsOv] = useState({})   // date|site -> what-if rooms
+  const [sel, setSel] = useState(0)
+  // A new window or site is a fresh dataset: reset the what-if and selection,
+  // and adopt the tenant's configured target.
+  useEffect(() => {
+    if (data?.target) setTarget(data.target)
+    setRoomsOv({}); setSel(0)
+  }, [data])
+
   if (!data) return null
+  const days = (data.days || [])
+  if (!days.length) {
+    return <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-400)' }}>
+      No staffing plan or forecast volume in this window.
+    </p>
+  }
+
+  const keyOf = d => `${d.date}|${d.site}`
+  const roomsOf = d => roomsOv[keyOf(d)] ?? d.plannedRooms
+  const multiSite = new Set(days.map(d => d.site)).size > 1
+
+  function calc(d) {
+    const shift = d.shiftHours
+    const r = roomsOf(d)
+    const util = r > 0 ? d.demandRoomHours / (r * shift) : 0
+    const need = halfRoom(d.demandRoomHours / (target * shift))   // roomsForTarget at chosen target
+    const floorBinds = need < d.floorRooms - 1e-9
+    const rec = floorBinds ? d.floorRooms : need
+    const delta = +(rec - r).toFixed(1)
+    const atTarget = rec > 0 ? d.demandRoomHours / (rec * shift) : 0
+    return { shift, r, util, need, rec, floorBinds, delta, atTarget,
+             demandRooms: shift > 0 ? d.demandRoomHours / shift : 0 }
+  }
+
+  function step(d, s) {
+    setRoomsOv(o => ({ ...o, [keyOf(d)]: Math.max(1, Math.min(20, roomsOf(d) + s)) }))
+  }
+
+  // Summary: utilisation now, at the recommended plan, and the net room-day move.
+  let dem = 0, capNow = 0, capRec = 0, net = 0
+  const byDow = {}
+  days.forEach(d => {
+    const c = calc(d)
+    dem += d.demandRoomHours; capNow += c.r * c.shift; capRec += c.rec * c.shift
+    net += c.rec - d.plannedRooms
+    byDow[d.label] = (byDow[d.label] || 0) + (c.rec - d.plannedRooms)
+  })
+  const projUtil = capNow > 0 ? dem / capNow : 0
+  const recUtil = capRec > 0 ? dem / capRec : 0
+  // Lead with redistribution, not reduction: name the day giving up the most and
+  // the day needing the most.
+  const dows = Object.entries(byDow)
+  const giver = dows.filter(([, v]) => v < -0.5).sort((a, b) => a[1] - b[1])[0]
+  const needer = dows.filter(([, v]) => v > 0.5).sort((a, b) => b[1] - a[1])[0]
+  let insight
+  if (giver && needer) {
+    insight = <>{giver[0]}s give up <strong>{fmtRoom(-giver[1])}</strong> room-days over this window
+      while {needer[0]}s need <strong>{fmtRoom(needer[1])}</strong> more — a case for moving capacity
+      across the week, not cutting it.</>
+  } else if (giver) {
+    insight = <>The window frees <strong>{fmtRoom(-net)}</strong> room-days, concentrated on {giver[0]}s.
+      Redeploy before reducing.</>
+  } else if (needer) {
+    insight = <>The window needs <strong>{fmtRoom(net)}</strong> more room-days, concentrated on {needer[0]}s.</>
+  } else {
+    insight = <>Staffing holds at target across the window; no material redistribution.</>
+  }
+
+  const stat = (k, v, n) => (
+    <div style={{ minWidth: 150 }}>
+      <div style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-gray-500)', fontWeight: 600 }}>{k}</div>
+      <div style={{ fontSize: 24, fontWeight: 700, marginTop: 2 }}>{v}</div>
+      {n && <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 1 }}>{n}</div>}
+    </div>
+  )
+
   return (
-    <div className="card">
-      <div className="card-header">
-        <div>
-          <div className="card-title">Rooms needed against rooms staffed</div>
-          <div className="card-subtitle">
-            A room short costs late finishes and overtime; a room over costs idle salary.
-            They are not the same size of problem, and the thresholds reflect that.
-          </div>
+    <div>
+      {/* Summary strip */}
+      <div className="card" style={{ padding: '18px 20px', marginBottom: 14 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px 40px', alignItems: 'flex-start' }}>
+          {stat('Projected utilisation', `${Math.round(projUtil * 100)}%`,
+                `${Math.round(dem)} of ${Math.round(capNow)} staffed room-hours`)}
+          {stat('At the recommended plan', `${Math.round(recUtil * 100)}%`,
+                `target ${Math.round(target * 100)}%`)}
+          {stat('Net change', <>{net > 0 ? '+' : ''}{fmtRoom(net)} <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-gray-500)' }}>room-days</span></>,
+                `across ${days.length} operating days`)}
+        </div>
+        <p style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--surface-border)',
+                    fontSize: 13, color: 'var(--color-gray-600)', maxWidth: '80ch' }}>{insight}</p>
+      </div>
+
+      {/* Target control */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: 'var(--color-gray-600)', fontWeight: 600 }}>Target prime-time utilisation</span>
+        <div style={{ display: 'inline-flex', border: '1px solid var(--surface-border)', borderRadius: 7, overflow: 'hidden' }}>
+          {[0.70, 0.75, 0.80].map(t => {
+            const on = Math.abs(target - t) < 1e-9
+            return (
+              <button key={t} type="button" onClick={() => setTarget(t)}
+                      style={{ border: 'none', borderRight: '1px solid var(--surface-border)', padding: '5px 13px',
+                               fontSize: 12.5, cursor: 'pointer', font: 'inherit',
+                               background: on ? 'var(--color-blue)' : '#fff',
+                               color: on ? '#fff' : 'var(--color-gray-600)', fontWeight: on ? 700 : 500 }}>
+                {Math.round(t * 100)}%
+              </button>
+            )
+          })}
+        </div>
+        <span style={{ fontSize: 12, color: 'var(--color-gray-400)' }}>Rooms shown to the half-day. Per-room type (robot, hybrid) not modelled.</span>
+      </div>
+
+      {/* Day list */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '128px minmax(160px,1fr) 130px 190px 92px',
+                      gap: 14, padding: '9px 18px', fontSize: 11, letterSpacing: '0.05em',
+                      textTransform: 'uppercase', color: 'var(--color-gray-500)', fontWeight: 600,
+                      borderBottom: '2px solid var(--surface-border)', background: '#f8f9fb' }}>
+          <div>Day</div><div>Demand against staffed rooms</div><div>Utilisation</div>
+          <div>To reach target</div><div style={{ textAlign: 'right' }}>Rooms</div>
+        </div>
+        {days.map((d, i) => {
+          const c = calc(d)
+          const max = Math.max(c.r, c.need, c.demandRooms, d.floorRooms) * 1.06 || 1
+          const pct = v => `${(v / max) * 100}%`
+          const over = c.demandRooms > c.r
+          const active = i === sel
+          let act, col
+          if (c.floorBinds)            { act = `Floor is ${fmtRoom(d.floorRooms)} rooms (peak demand)`; col = 'var(--color-gray-500)' }
+          else if (Math.abs(c.delta) < 0.5) { act = 'Holds at target'; col = 'var(--color-gray-400)' }
+          else if (c.delta > 0)        { act = `Needs ${fmtRoom(c.delta)} more rooms`; col = TIGHT }
+          else                         { act = `Close ${fmtRoom(-c.delta)} rooms`; col = 'var(--color-gray-600)' }
+          return (
+            <div key={keyOf(d)} onClick={() => setSel(i)}
+                 style={{ display: 'grid', gridTemplateColumns: '128px minmax(160px,1fr) 130px 190px 92px',
+                          gap: 14, padding: '10px 18px', alignItems: 'center', cursor: 'pointer',
+                          borderBottom: i < days.length - 1 ? '1px solid #f0f1f3' : 'none',
+                          background: active ? 'rgba(59,130,246,0.06)' : 'transparent',
+                          boxShadow: active ? 'inset 3px 0 0 var(--color-blue)' : 'none' }}>
+              <div style={{ fontWeight: 600, fontSize: 13 }}>
+                {d.label.slice(0, 3)} <span style={{ fontWeight: 400, color: 'var(--color-gray-400)' }}>{d.date}</span>
+                {multiSite && <span style={{ display: 'block', fontWeight: 400, fontSize: 11, color: 'var(--color-gray-400)' }}>{d.site}</span>}
+              </div>
+              {/* Ladder: track = staffed, fill = demand, overflow = tight, notch = target, floor = muted */}
+              <div style={{ position: 'relative', height: 24 }}>
+                <div style={{ position: 'absolute', top: 5, bottom: 5, left: 0, right: pct(max - c.r),
+                              background: 'var(--color-gray-100)', border: '1px solid var(--surface-border)', borderRadius: 4 }} />
+                <div style={{ position: 'absolute', top: 5, bottom: 5, left: 0, width: pct(Math.min(c.demandRooms, c.r)),
+                              background: 'var(--color-blue)', borderRadius: '4px 2px 2px 4px' }} />
+                {over && <div style={{ position: 'absolute', top: 5, bottom: 5, left: pct(c.r), width: pct(c.demandRooms - c.r),
+                              background: TIGHT, borderRadius: '2px 4px 4px 2px', borderLeft: '2px solid #fff' }} />}
+                <div title="Feasibility floor" style={{ position: 'absolute', top: 2, bottom: 2, left: pct(d.floorRooms),
+                              width: 0, borderLeft: '2px dashed var(--color-gray-400)' }} />
+                <div title="Rooms that hit target" style={{ position: 'absolute', top: 1, bottom: 1, left: pct(c.need),
+                              width: 2, background: 'var(--color-gray-900)', borderRadius: 1 }} />
+              </div>
+              <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                <strong>{Math.round(c.util * 100)}%</strong>
+                <span style={{ color: 'var(--color-gray-500)' }}> → {Math.round(c.atTarget * 100)}%</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: col, fontWeight: col === TIGHT ? 600 : 400 }}>{act}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}
+                   onClick={e => e.stopPropagation()}>
+                <button type="button" onClick={() => step(d, -0.5)} aria-label="Close half a room"
+                        style={stepBtn}>−</button>
+                <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: 13, fontWeight: 600, minWidth: 28, textAlign: 'center' }}>{fmtRoom(c.r)}</span>
+                <button type="button" onClick={() => step(d, 0.5)} aria-label="Open half a room"
+                        style={stepBtn}>+</button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <StaffingDetail day={days[sel]} calc={calc(days[sel])} />
+
+      <p style={{ marginTop: 18, fontSize: 12, color: 'var(--color-gray-400)' }}>
+        The stepper is a what-if; it does not write back to the staffing plan. Figures are demo data.
+      </p>
+    </div>
+  )
+}
+
+const stepBtn = {
+  width: 24, height: 24, border: '1px solid var(--surface-border)', background: '#fff',
+  color: 'var(--color-gray-600)', borderRadius: 5, font: 'inherit', fontSize: 14, lineHeight: 1,
+  cursor: 'pointer', padding: 0,
+}
+
+/* Detail: rooms-in-use by hour (bars), the flat staffed plan (dashed), and the
+   two-block stepped plan (solid). One sentence states the finding. When the hour
+   shape is unavailable the stepped plan is suppressed and the flat plan stands. */
+function StaffingDetail({ day, calc }) {
+  if (!day) return null
+  const shape = day.hourShape || []
+  const start = day.shiftStartHour ?? 7
+  const r = calc.r
+  const splitIdx = Math.max(0, Math.min(shape.length, 13 - start))   // 13:00
+  const morning = shape.slice(0, splitIdx)
+  const afternoon = shape.slice(splitIdx)
+  const half1 = ceilHalf(Math.max(0, ...morning))
+  const half2 = ceilHalf(Math.max(0, ...afternoon))
+  const steppedCap = half1 * morning.length + half2 * afternoon.length
+  const stepUtil = steppedCap > 0 ? Math.round(day.demandRoomHours / steppedCap * 100) : null
+  const peakIdx = shape.indexOf(Math.max(...shape))
+  const peakHour = String(start + (peakIdx < 0 ? 0 : peakIdx)).padStart(2, '0')
+
+  // SVG geometry
+  const W = 640, H = 210, PL = 40, PR = 14, PT = 16, PB = 30
+  const iw = W - PL - PR, ih = H - PT - PB
+  const maxR = Math.max(r, day.floorRooms, ...shape, 1) + 1
+  const n = shape.length || 1
+  const bw = iw / n
+  const xs = h => PL + h * bw
+  const ys = v => PT + ih - (v / maxR) * ih
+
+  const bars = shape.map((v, h) =>
+    `<rect x="${xs(h) + 1.5}" y="${ys(v)}" width="${Math.max(0, bw - 3)}" height="${ih - (ys(v) - PT)}" rx="3" fill="var(--color-blue)" opacity="0.9"/>`).join('')
+  const grid = []
+  const gstep = maxR > 10 ? 3 : 2
+  for (let g = 0; g <= maxR; g += gstep) {
+    grid.push(`<line x1="${PL}" x2="${W - PR}" y1="${ys(g)}" y2="${ys(g)}" stroke="var(--surface-border)"/>`
+      + `<text x="${PL - 7}" y="${ys(g) + 4}" text-anchor="end" font-size="10" fill="var(--color-gray-400)">${g}</text>`)
+  }
+  const ticks = shape.map((_, h) =>
+    `<text x="${xs(h) + bw / 2}" y="${H - 12}" text-anchor="middle" font-size="10" fill="var(--color-gray-400)">${String(start + h).padStart(2, '0')}</text>`).join('')
+  const flat = `<line x1="${PL}" x2="${W - PR}" y1="${ys(r)}" y2="${ys(r)}" stroke="var(--color-gray-400)" stroke-width="2" stroke-dasharray="5 4"/>`
+    + `<text x="${W - PR}" y="${ys(r) - 6}" text-anchor="end" font-size="10" font-weight="600" fill="var(--color-gray-500)">${fmtRoom(r)} staffed</text>`
+  const stepped = day.hasShape
+    ? `<path d="M${xs(0)} ${ys(half1)} H${xs(splitIdx)} V${ys(half2)} H${xs(n)}" fill="none" stroke="${TIGHT}" stroke-width="2.5" stroke-linejoin="round"/>`
+    : ''
+
+  const finding = day.hasShape
+    ? `A flat plan of ${fmtRoom(r)} rooms runs at ${Math.round(calc.util * 100)}%. Peak demand is `
+      + `${fmtRoom(day.peakRooms)} rooms, so utilisation cannot be fixed by a smaller `
+      + `rectangle — the floor is set by the busiest hour. Staffing ${fmtRoom(half1)} rooms to 13:00 and `
+      + `${fmtRoom(half2)} after reaches ${stepUtil}% without moving a case.`
+    : `Hour-level shape is unavailable for this day, so only the flat recommendation is shown: `
+      + `${fmtRoom(calc.rec)} rooms reaches ${Math.round(calc.atTarget * 100)}%.`
+
+  return (
+    <div className="card" style={{ marginTop: 18, padding: '16px 20px 18px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
+        <div className="card-title" style={{ fontSize: 15 }}>{day.label.slice(0, 3)} {day.date} — demand by hour</div>
+        <div style={{ fontSize: 12.5, color: 'var(--color-gray-500)', fontVariantNumeric: 'tabular-nums' }}>
+          {fmt1(day.demandRoomHours)} room-hours · peak {fmtRoom(day.peakRooms)} rooms at {peakHour}:00
         </div>
       </div>
+      <p style={{ fontSize: 13, color: 'var(--color-gray-600)', margin: '4px 0 12px', maxWidth: '78ch' }}>{finding}</p>
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>
-            <th style={TH}>Date</th><th style={TH}>Site</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Needed</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Staffed</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Past shift end</th>
-            <th style={TH}>Flag</th><th style={TH}>Implication</th>
-          </tr></thead>
-          <tbody>
-            {data.days.map(d => (
-              <tr key={`${d.date}|${d.site}`}
-                  style={{ background: d.flag ? 'rgba(59,130,246,0.04)' : 'transparent' }}>
-                <td style={{ ...TD, whiteSpace: 'nowrap' }}>{d.label.slice(0, 3)} {d.date}</td>
-                <td style={TD}>{d.site}</td>
-                <td style={{ ...TD, textAlign: 'right', fontWeight: 700 }}>{d.impliedRooms}</td>
-                <td style={{ ...TD, textAlign: 'right' }}>{d.staffedRooms}</td>
-                <td style={{ ...TD, textAlign: 'right' }}>{fmt1(d.lateDayHours)}h</td>
-                <td style={TD}><FlagChip flag={d.flag} /></td>
-                <td style={{ ...TD, fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-600)', maxWidth: 420 }}>
-                  {d.implication}
-                  {d.link && (
-                    <> <Link to={d.link.href} style={{ color: 'var(--color-blue)', fontWeight: 600,
-                                                       display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                      {d.link.label} <ArrowRight size={11} />
-                    </Link></>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ minWidth: 520 }} dangerouslySetInnerHTML={{ __html:
+          `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Rooms in use by hour" style="display:block;width:100%;height:auto">`
+          + grid.join('') + bars + flat + stepped + ticks + `</svg>` }} />
+      </div>
+      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 10, fontSize: 12, color: 'var(--color-gray-500)' }}>
+        <span><i style={{ display: 'inline-block', width: 16, height: 9, background: 'var(--color-blue)', borderRadius: 2, marginRight: 6, verticalAlign: 'middle' }} />Rooms in use</span>
+        <span><i style={{ display: 'inline-block', width: 16, height: 0, borderTop: '2px dashed var(--color-gray-400)', marginRight: 6, verticalAlign: 'middle' }} />Staffed now (flat)</span>
+        {day.hasShape && <span><i style={{ display: 'inline-block', width: 16, height: 0, borderTop: `2px solid ${TIGHT}`, marginRight: 6, verticalAlign: 'middle' }} />Stepped plan</span>}
       </div>
     </div>
   )

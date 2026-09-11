@@ -123,6 +123,21 @@ def main():
     flag = call_lib('staffingShape.js', 'flexFlag', 9, fri_implied)
     check('ST-3 Friday flex flag', flag, flag == 'FLEX_DOWN', 'FLEX_DOWN')
 
+    # ── Rooms to Target: the window recommends both closing and opening rooms
+    #    (StaffingRoomsToTarget.md §7) — not all-flex-down. Reuses the forward
+    #    demand above; 9 rooms over the 07:00–15:30 (8.5h) plan, at the demo target.
+    target = json.load(open(os.path.join(ROOT, 'config', 'tenantColumns.json'))
+                       )['Demo']['params']['prime_util_target'] / 100.0
+    close_days = open_days = 0
+    for _d, mins in fwd_by_day.items():
+        delta = (round(mins / 60.0 / (target * 8.5) * 2) / 2) - 9
+        if delta <= -0.5:
+            close_days += 1
+        elif delta >= 0.5:
+            open_days += 1
+    check('Rooms to Target: window has both directions', f'{close_days} close / {open_days} open',
+          close_days >= 1 and open_days >= 1, '>=1 each')
+
     # ── ST-2, through lib/censusFootprint.js ────────────────────────────────
     print('\n  ── Census attribution (lib/censusFootprint.js) ──')
     beds = {u: b for u, _loc, b, _c in C.UNITS}

@@ -8,7 +8,8 @@
     },
     "params": {
       "hospital_filter": null,
-      "case_posted_value": "Posted"
+      "case_posted_value": "Posted",
+      "prime_util_target": 75
     },
     "features": {},
     "unit_category_map": {
@@ -68,6 +69,7 @@
       "hospital_filter": null,
       "case_posted_value": "Posted",
       "block_fill_target": 75,
+      "prime_util_target": 75,
       "block_pattern_thresholds": {
         "over_allocated_lt_pct": 58,
         "under_allocated_gt_pct": 74,
