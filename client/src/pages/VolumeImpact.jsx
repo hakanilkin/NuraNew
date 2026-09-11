@@ -224,14 +224,20 @@ const MODES = [
   { id: 'budget', label: 'vs Budget' },
 ]
 
-function caseMix(s) {
-  const b = s.byType
-  if (!b) return null
-  const tot = b.outpatient + b.sda + b.inpatient
-  if (!tot) return { text: '—', title: '' }
-  const p = n => Math.round(n / tot * 100)
-  return { text: `${p(b.outpatient)}% OP · ${p(b.sda)}% SDA · ${p(b.inpatient)}% IP`,
-           title: `Outpatient ${b.outpatient} · Same-day admit ${b.sda} · Inpatient ${b.inpatient}` }
+// Case mix reads per DAY (a column), not per service line: each date's split
+// across outpatient / same-day admit / inpatient, as a stacked mini-bar.
+const MIX_SEG = [
+  { key: 'outpatient', label: 'OP',  color: 'rgba(62,83,227,0.42)' },
+  { key: 'sda',        label: 'SDA', color: 'rgba(180,83,9,0.55)' },
+  { key: 'inpatient',  label: 'IP',  color: 'rgba(71,85,105,0.60)' },
+]
+function dayMix(byType, i) {
+  const parts = MIX_SEG.map(seg => ({ ...seg, n: byType[seg.key]?.byDate?.[i] ?? 0 }))
+  const tot = parts.reduce((s, p) => s + p.n, 0)
+  if (!tot) return null
+  const withPct = parts.map(p => ({ ...p, pct: Math.round(p.n / tot * 100) }))
+  return { parts: withPct, tot,
+           title: withPct.map(p => `${p.label} ${p.n} (${p.pct}%)`).join(' · ') }
 }
 
 export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
@@ -243,7 +249,9 @@ export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
   }
   const { dates, services, totals } = data
   const hasContext = !!data.hasContext
-  const hasMix = services.some(s => s.byType)
+  // Per-day case mix comes from the type rows the endpoint already returns.
+  const byType = Object.fromEntries((data.types || []).map(t => [t.type, t]))
+  const hasMix = (data.types || []).length > 0
   const activeMode = hasContext ? mode : 'volume'
 
   const bands = []
@@ -254,7 +262,7 @@ export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
   }
   const typ = typicalArr(data)
   const maxTotal = Math.max(1, ...totals.byDate)
-  const cols = 1 + dates.length + (bands.length - 1) + 1 + 1 + (hasMix ? 1 : 0)
+  const cols = 1 + dates.length + (bands.length - 1) + 1 + 1
 
   const MUTED = 'var(--color-gray-600)'
   const PRIMARY = 'var(--color-gray-900)'
@@ -350,7 +358,6 @@ export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
               ))}
               <th style={GUTTER} />
               <th style={totHead}>Total</th>
-              {hasMix && <th style={{ ...totHead, textAlign: 'left', paddingLeft: 16, width: 150 }}>Case mix</th>}
             </tr>
             <tr>
               <th />
@@ -368,7 +375,7 @@ export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
                 )
               })}
               <th style={GUTTER} />
-              <th />{hasMix && <th />}
+              <th />
             </tr>
             {/* Daily volume — prominence for the busiest-day read (point 3) */}
             <tr>
@@ -398,13 +405,35 @@ export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
               <td style={GUTTER} />
               <td style={{ textAlign: 'right', fontFamily: MONO, fontSize: 18, fontWeight: 700, color: PRIMARY,
                            verticalAlign: 'bottom', padding: '0 0 8px 10px' }}>{totals.window}</td>
-              {hasMix && <td />}
             </tr>
+            {/* Case mix per day (column-level): a stacked OP/SDA/IP bar per date. */}
+            {hasMix && (
+              <tr>
+                <th scope="row" style={{ ...BAND_LABEL, textAlign: 'left', color: 'var(--color-gray-400)',
+                          verticalAlign: 'middle', padding: '2px 0 8px' }}>Case mix</th>
+                {renderDays(j => {
+                  const m = dayMix(byType, j)
+                  return (
+                    <td key={dates[j].date} title={m ? `${longDate(dates[j].date, dates[j].dow)}: ${m.title}` : undefined}
+                        style={{ padding: '2px 4px 8px', verticalAlign: 'middle' }}>
+                      {m && (
+                        <div style={{ display: 'flex', height: 9, width: '100%', borderRadius: 2, overflow: 'hidden' }}>
+                          {m.parts.filter(p => p.n > 0).map(p => (
+                            <div key={p.key} style={{ flexGrow: p.n, background: p.color }} />
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  )
+                })}
+                <td style={GUTTER} />
+                <td />
+              </tr>
+            )}
             <tr><td colSpan={cols} style={{ padding: 0, height: 1, borderBottom: '1px solid var(--surface-border)' }} /></tr>
           </thead>
           <tbody>
             {services.map(s => {
-              const mix = hasMix ? caseMix(s) : null
               return (
                 <tr key={s.service}>
                   <th scope="row" style={{ textAlign: 'left', fontSize: 13, fontWeight: 400, color: 'var(--color-gray-800)',
@@ -425,10 +454,6 @@ export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
                   })}
                   <td style={GUTTER} />
                   <td style={{ textAlign: 'right', fontFamily: MONO, fontSize: 13, fontWeight: 640, color: PRIMARY, paddingLeft: 10, width: 52 }}>{s.total}</td>
-                  {hasMix && (
-                    <td title={mix?.title} style={{ textAlign: 'left', fontSize: 11.5, color: 'var(--color-gray-500)',
-                                 paddingLeft: 16, whiteSpace: 'nowrap' }}>{mix?.text}</td>
-                  )}
                 </tr>
               )
             })}
@@ -448,6 +473,16 @@ export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><i style={{ width: 15, height: 13, background: 'rgba(180,83,9,0.3)', display: 'inline-block' }} /> Above {activeMode === 'typical' ? 'typical' : 'budget'} ↑</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><i style={{ width: 15, height: 13, background: 'rgba(37,99,235,0.3)', display: 'inline-block' }} /> Below ↓</span>
             </>}
+        {hasMix && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: 'var(--color-gray-400)' }}>Case mix / day:</span>
+            {MIX_SEG.map(seg => (
+              <span key={seg.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <i style={{ width: 11, height: 11, borderRadius: 2, background: seg.color, display: 'inline-block' }} />{seg.label}
+              </span>
+            ))}
+          </span>
+        )}
         <span>Click a day or an insight to highlight it. Hover a cell for booked, expected, typical and budget.</span>
       </div>
     </div>
