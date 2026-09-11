@@ -132,11 +132,43 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
       SELECT CONVERT(VARCHAR(10), CAST(Date AS DATE), 23) AS Date,
              MIN(DATEPART(WEEKDAY, Date))                 AS Wd,
              ISNULL(${serviceCol}, 'Unknown')             AS Service,
-             SUM(${FORECAST_CASES})                       AS Cases${typeCols}
+             SUM(${FORECAST_CASES})                       AS Cases,
+             SUM(${SCHEDULED_CASES})                      AS Booked,
+             SUM(${BUDGET_CASES})                         AS Budget${typeCols}
       FROM V4_FORECAST_COMPILE
       WHERE CAST(Date AS DATE) BETWEEN @from AND @to${filter}
       GROUP BY CAST(Date AS DATE), ISNULL(${serviceCol}, 'Unknown')
     `);
+
+    // "Typical" for a named day is the trailing actual for that service on that
+    // weekday — the baseline "15% above typical" is measured against. One query
+    // over the quarter before the window; a tenant without history simply loses
+    // the vs-Typical mode (hasContext gates it), never the matrix.
+    let typicalByServiceDow = new Map();
+    try {
+      const tq = db.request();
+      tq.input('from', sql.Date, from);
+      const tf = siteFilter(tq, sites);
+      const tOut = await tq.query(`
+        SELECT Service, Dow, AVG(CAST(Cases AS FLOAT)) AS Typical
+        FROM (
+          SELECT ISNULL(${serviceCol}, 'Unknown')                 AS Service,
+                 (DATEPART(WEEKDAY, Date) + 5) % 7                 AS Dow,
+                 CAST(Date AS DATE)                                AS D,
+                 SUM(ISNULL(ACTUAL_INPATIENT,0) + ISNULL(ACTUAL_OUTPATIENT,0)) AS Cases
+          FROM V4_FORECAST_COMPILE
+          WHERE CAST(Date AS DATE) >= DATEADD(day, -91, @from)
+            AND CAST(Date AS DATE) <  @from${tf}
+          GROUP BY ISNULL(${serviceCol}, 'Unknown'), (DATEPART(WEEKDAY, Date) + 5) % 7, CAST(Date AS DATE)
+        ) x
+        GROUP BY Service, Dow
+      `);
+      for (const y of tOut.recordset) typicalByServiceDow.set(`${y.Service}|${num(y.Dow)}`, num(y.Typical));
+    } catch (err) {
+      console.error('/api/impact breakdown typical unavailable:', err.message);
+      typicalByServiceDow = new Map();
+    }
+    const hasContext = typicalByServiceDow.size > 0;
 
     // Holidays are muted rather than dropped: a quiet column that turns out to
     // be Thanksgiving is a support ticket. The flag lives on the case rows, so
@@ -178,6 +210,8 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     const index = new Map(dates.map((d, i) => [d.date, i]));
 
     const byService = new Map();
+    const bookedByService = new Map();
+    const budgetByService = new Map();
     // Window totals per service, split by type (demo only). ipFull is the whole
     // inpatient count; displayed inpatient subtracts SDA at the end.
     const typeByService = new Map();
@@ -185,12 +219,15 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     const opByDate  = new Array(dates.length).fill(0);
     const sdaByDate = new Array(dates.length).fill(0);
     const ipByDate  = new Array(dates.length).fill(0);
+    const blank = () => new Array(dates.length).fill(0);
     for (const x of res.recordset) {
       const i = index.get(x.Date);
       if (i == null) continue;
       const key = x.Service;
-      if (!byService.has(key)) byService.set(key, new Array(dates.length).fill(0));
+      if (!byService.has(key)) { byService.set(key, blank()); bookedByService.set(key, blank()); budgetByService.set(key, blank()); }
       byService.get(key)[i] += num(x.Cases);
+      bookedByService.get(key)[i] += num(x.Booked);
+      budgetByService.get(key)[i] += num(x.Budget);
       if (hasTypes) {
         if (!typeByService.has(key)) typeByService.set(key, { op: 0, sda: 0, ipFull: 0 });
         const t = typeByService.get(key);
@@ -210,6 +247,13 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
           byDate: byDate.map(v => Math.round(v)),
           total: Math.round(byDate.reduce((t, v) => t + v, 0)),
         };
+        if (hasContext) {
+          row.booked = bookedByService.get(service).map(v => Math.round(v));
+          row.budget = budgetByService.get(service).map(v => Math.round(v));
+          // Typical rides the weekday baseline, so a named date reads against
+          // how that service's weekday usually runs.
+          row.typical = dates.map(d => Math.round(typicalByServiceDow.get(`${service}|${d.dow}`) || 0));
+        }
         if (hasTypes) {
           const t = typeByService.get(service) || { op: 0, sda: 0, ipFull: 0 };
           row.byType = {
@@ -223,12 +267,19 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
       .sort((a, b) => b.total - a.total || a.service.localeCompare(b.service));
 
     const totals = dates.map((_, i) => services.reduce((t, x) => t + x.byDate[i], 0));
+    const sumCol = k => dates.map((_, i) => services.reduce((t, x) => t + (x[k]?.[i] ?? 0), 0));
     const out = {
       dates,
       services,
       totals: { byDate: totals, window: totals.reduce((t, v) => t + v, 0) },
       weeks: new Set(dates.map(d => d.weekOf)).size,
+      hasContext,
     };
+    if (hasContext) {
+      out.totals.booked = sumCol('booked');
+      out.totals.budget = sumCol('budget');
+      out.totals.typical = sumCol('typical');
+    }
     if (hasTypes) {
       // The three bottom rows: type × date. Inpatient nets out SDA so the three
       // reconcile to the grand total, mirroring the per-service split above.

@@ -87,19 +87,6 @@ const dayNum = iso => dateParts(iso).d
 const shortDate = iso => { const p = dateParts(iso); return `${p.month} ${p.d}` }
 const longDate = (iso, dow) => `${['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][dow] ?? ''} ${shortDate(iso)}`
 
-/* Magnitude is a faint tint behind the cell, not the weight of the numeral
-   (ServiceLineBreakdownQuieterGrid.md §2). Every number renders at one weight
-   and one colour; three tint steps, scaled within each service row, carry the
-   ordering quietly and leave the numbers calm. Tints are the accent ramp at very
-   low intensity, defined for light and dark. */
-function rowTier(value, rowMax) {
-  if (!value) return { cls: '', top: false }   // a zero gets no tint and no ink
-  const r = value / (rowMax || 1)
-  if (r >= 0.66) return { cls: 't3', top: true }
-  if (r >= 0.33) return { cls: 't2', top: false }
-  return { cls: 't1', top: false }
-}
-
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 const MTH = { padding: '0 0 8px', fontSize: 11, fontWeight: 500, textAlign: 'center',
               fontFamily: MONO, color: 'var(--color-gray-500)', whiteSpace: 'nowrap',
@@ -111,208 +98,361 @@ const BAND_LABEL = { fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpac
                      textAlign: 'left', padding: '0 0 5px 4px' }
 const GAP = { width: 14 }
 
-export function ServiceLineBreakdownTab({ data }) {
+const ACCENT = '62,83,227'   // subtle tints; saturated blue is reserved for focus + emphasis
+
+/* Typical = the trailing weekday baseline from the endpoint; when a tenant has
+   no history we fall back to the window's own weekday mean so the "unusual day"
+   read still works. */
+function typicalArr(data) {
+  const { totals, dates } = data
+  if (totals.typical && totals.typical.some(v => v > 0)) return totals.typical
+  const byDow = {}
+  dates.forEach((d, i) => { (byDow[d.dow] ||= []).push(totals.byDate[i]) })
+  return dates.map(d => { const a = byDow[d.dow]; return a.reduce((s, v) => s + v, 0) / a.length })
+}
+function svcTypicalArr(s, data) {
+  if (s.typical && s.typical.some(v => v > 0)) return s.typical
+  const { dates } = data
+  const byDow = {}
+  dates.forEach((d, i) => { (byDow[d.dow] ||= []).push(s.byDate[i]) })
+  return dates.map(d => { const a = byDow[d.dow]; return a.reduce((x, v) => x + v, 0) / a.length })
+}
+const dayLevel = (v, typ) => {
+  if (!typ) return 'normal'
+  const r = v / typ
+  return r >= 1.10 ? 'heavy' : r <= 0.90 ? 'light' : 'normal'
+}
+
+/* Two or three operational insights an OR director can act on: which day is
+   unusual, what is driving it, what to do. Each carries the day + driver
+   services so a click can highlight them in the matrix. */
+function buildInsights(data) {
+  if (!data?.dates?.length) return []
+  const typ = typicalArr(data)
+  const svcTyp = data.services.map(s => svcTypicalArr(s, data))
+  const items = data.dates.map((d, i) => {
+    const cases = data.totals.byDate[i]
+    const t = typ[i] || 0
+    const pct = t > 0 ? Math.round((cases / t - 1) * 100) : 0
+    const drivers = data.services
+      .map((s, si) => ({ service: s.service, dev: s.byDate[i] - (svcTyp[si][i] || 0) }))
+      .filter(x => x.dev > 0.5).sort((a, b) => b.dev - a.dev).slice(0, 2)
+    return { date: d.date, dow: d.dow, cases, t, pct, drivers }
+  })
+  const heavy = items.filter(x => x.pct >= 12 && x.t > 0).sort((a, b) => b.pct - a.pct)
+  const light = items.filter(x => x.pct <= -18 && x.t > 0).sort((a, b) => a.pct - b.pct)
+  const chosen = heavy.slice(0, 2)
+  if (light.length && chosen.length < 3) chosen.push(light[0])
+  return chosen.slice(0, 3).map(x => {
+    const dl = `${['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][x.dow]} ${shortDate(x.date)}`
+    const names = x.drivers.map(d => d.service)
+    if (x.pct >= 12) {
+      const drv = names.length ? `${names.join(' and ')} drive the increase — ` : ''
+      return { date: x.date, services: names, tone: 'heavy',
+        headline: `${dl}: ${x.cases} cases, ${x.pct}% above typical`,
+        detail: `${drv}review staffing and PACU capacity.` }
+    }
+    return { date: x.date, services: [], tone: 'light',
+      headline: `${dl}: ${x.cases} cases, ${Math.abs(x.pct)}% below typical`,
+      detail: 'A light day — consolidate rooms or offer the open time out.' }
+  })
+}
+
+/* ── Executive KPI strip (point 1) ─────────────────────────────────────────── */
+export function KpiCards({ summary }) {
+  if (!summary) return null
+  const { forecast: f, booked: b, expectedAdds: e, budget, variancePct } = summary
+  const bookedPct = f ? Math.round(b / f * 100) : null
+  const remPct = f ? Math.round(e / f * 100) : null
+  const over = variancePct > 0
+  const cards = [
+    { k: 'Forecast cases', v: fmt0(f), sub: `${fmt0(b)} booked · ~${fmt0(e)} to book` },
+    { k: 'Booked', v: fmt0(b), sub: bookedPct != null ? `${bookedPct}% of forecast` : '' },
+    { k: 'Expected to book', v: `~${fmt0(e)}`, sub: remPct != null ? `${remPct}% still to come` : '' },
+    { k: 'Variance vs budget', v: signedPct(variancePct),
+      sub: `${fmt0(f)} vs ${fmt0(budget)} budget`, accent: variancePct == null ? null : (over ? '#b45309' : '#15803d') },
+  ]
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 14 }}>
+      {cards.map(c => (
+        <div key={c.k} className="card" style={{ padding: '13px 16px' }}>
+          <div style={{ fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--color-gray-500)', fontWeight: 600 }}>{c.k}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, marginTop: 4, color: c.accent || 'var(--color-gray-900)' }}>{c.v}</div>
+          <div style={{ fontSize: 12, color: 'var(--color-gray-500)', marginTop: 3 }}>{c.sub}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Attention / recommended actions (point 2) ─────────────────────────────── */
+export function AttentionPanel({ insights, focus, onFocus }) {
+  if (!insights?.length) return null
+  return (
+    <div className="card" style={{ padding: '14px 16px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+        <AlertTriangle size={15} style={{ color: '#b45309' }} />
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--color-gray-600)' }}>
+          Attention · recommended actions
+        </span>
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {insights.map((it, k) => {
+          const on = focus?.date === it.date
+          return (
+            <button key={k} type="button" onClick={() => onFocus(on ? null : { date: it.date, services: it.services })}
+              style={{ textAlign: 'left', font: 'inherit', cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'baseline',
+                       border: `1px solid ${on ? 'var(--color-blue)' : 'var(--surface-border)'}`, borderRadius: 'var(--radius-lg)',
+                       background: on ? 'rgba(59,130,246,0.06)' : '#fff', padding: '10px 12px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 5,
+                             background: it.tone === 'heavy' ? '#b45309' : 'var(--color-gray-400)' }} />
+              <span style={{ fontSize: 13 }}>
+                <strong style={{ color: 'var(--color-gray-900)' }}>{it.headline}.</strong>{' '}
+                <span style={{ color: 'var(--color-gray-600)' }}>{it.detail}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const MODES = [
+  { id: 'volume', label: 'Volume' },
+  { id: 'typical', label: 'vs Typical' },
+  { id: 'budget', label: 'vs Budget' },
+]
+
+function caseMix(s) {
+  const b = s.byType
+  if (!b) return null
+  const tot = b.outpatient + b.sda + b.inpatient
+  if (!tot) return { text: '—', title: '' }
+  const p = n => Math.round(n / tot * 100)
+  return { text: `${p(b.outpatient)}% OP · ${p(b.sda)}% SDA · ${p(b.inpatient)}% IP`,
+           title: `Outpatient ${b.outpatient} · Same-day admit ${b.sda} · Inpatient ${b.inpatient}` }
+}
+
+export function ServiceLineBreakdownTab({ data, focus, onFocus }) {
+  const [mode, setMode] = useState('volume')
+  useEffect(() => { setMode('volume') }, [data])
   if (!data) return null
   if (!data.dates?.length) {
-    return (
-      <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-400)' }}>
-        No forecast volume in this window.
-      </p>
-    )
+    return <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-400)' }}>No forecast volume in this window.</p>
   }
-  const { dates, services, totals, types } = data
+  const { dates, services, totals } = data
+  const hasContext = !!data.hasContext
+  const hasMix = services.some(s => s.byType)
+  const activeMode = hasContext ? mode : 'volume'
 
-  // Patient-type split (ServiceLineBreakdownPatientType.md), demo only.
-  const hasTypes = !!(data.hasTypes && types?.length)
-  const TYPE_LABEL = { outpatient: 'Outpatient', sda: 'Same-day admit', inpatient: 'Inpatient' }
-  const typeTotal = t => types?.find(x => x.type === t)?.total ?? 0
-
-  // Week bands separate with a gap column, never a rule.
   const bands = []
   for (const [i, d] of dates.entries()) {
     const last = bands[bands.length - 1]
     if (last && last.weekOf === d.weekOf) last.days.push(i)
     else bands.push({ weekOf: d.weekOf, days: [i] })
   }
-
+  const typ = typicalArr(data)
   const maxTotal = Math.max(1, ...totals.byDate)
-  const cols = 1 + dates.length + (bands.length - 1) + 1 + 1 + (hasTypes ? 3 : 0)
+  const cols = 1 + dates.length + (bands.length - 1) + 1 + 1 + (hasMix ? 1 : 0)
 
   const MUTED = 'var(--color-gray-600)'
   const PRIMARY = 'var(--color-gray-900)'
-  const GUTTER = { width: 26 }
-  const cellBase = { height: 34, textAlign: 'center', fontFamily: MONO, fontSize: 13,
-                     fontVariantNumeric: 'tabular-nums', color: MUTED }
-  const svcLabel = { textAlign: 'left', fontSize: 13.5, fontWeight: 400, color: 'var(--color-gray-800)',
-                     whiteSpace: 'nowrap', paddingRight: 16, height: 34 }
-  const totHead = { ...BAND_LABEL, textAlign: 'right', padding: '0 0 10px 10px', color: 'var(--color-gray-500)' }
-  const mixHead = { ...BAND_LABEL, textAlign: 'right', padding: '0 0 10px 8px', color: 'var(--color-gray-400)' }
-  const totCell = { textAlign: 'right', fontFamily: MONO, fontSize: 13, fontWeight: 640, color: PRIMARY,
-                    paddingLeft: 10, width: 52 }
-  const mixCell = { textAlign: 'right', fontFamily: MONO, fontSize: 12, color: 'var(--color-gray-500)',
-                    paddingLeft: 8, width: 44 }
+  const GUTTER = { width: 24 }
 
-  // Cells within a band, given a per-value styler.
-  const bandCells = (renderCell) => bands.map((b, i) => (
+  const renderDays = fn => bands.map((b, bi) => (
     <Fragment key={b.weekOf}>
-      {b.days.map(renderCell)}
-      {i < bands.length - 1 && <td style={GAP} />}
+      {b.days.map(fn)}
+      {bi < bands.length - 1 && <td className="wkdiv" />}
     </Fragment>
   ))
 
+  // Cell background + optional variance mark for the active mode.
+  function cellFx(s, i) {
+    const v = s.byDate[i]
+    if (activeMode === 'volume') {
+      if (!v) return { bg: '#fff' }
+      const rowMax = Math.max(1, ...s.byDate)
+      const a = 0.05 + 0.32 * Math.min(1, v / rowMax)
+      return { bg: `rgba(${ACCENT},${a.toFixed(3)})`, color: MUTED }
+    }
+    const base = activeMode === 'typical' ? (s.typical?.[i] ?? 0) : (s.budget?.[i] ?? 0)
+    if (!v && !base) return { bg: '#fff' }
+    const rel = base ? (v - base) / base : 0
+    if (Math.abs(rel) < 0.08) return { bg: '#fff', color: MUTED }
+    const a = (0.08 + 0.32 * Math.min(1, Math.abs(rel) / 0.5)).toFixed(3)
+    return rel > 0
+      ? { bg: `rgba(180,83,9,${a})`, color: '#7c3a0a', arrow: '↑' }
+      : { bg: `rgba(37,99,235,${a})`, color: '#1e40af', arrow: '↓' }
+  }
+  const cellTitle = (s, i) => {
+    const f = s.byDate[i]
+    const L = [`${s.service} · ${longDate(dates[i].date, dates[i].dow)}`, `Forecast ${f} cases`]
+    if (s.booked) L.push(`Booked ${s.booked[i]} · +${f - s.booked[i]} expected`)
+    if (s.typical) L.push(`Typical ${s.typical[i]}`)
+    if (s.budget) L.push(`Budget ${s.budget[i]} (${signedPct(s.budget[i] ? (f / s.budget[i] - 1) * 100 : 0)})`)
+    return L.join('\n')
+  }
+
+  const cellBase = { height: 33, textAlign: 'center', fontFamily: MONO, fontSize: 13,
+                     fontVariantNumeric: 'tabular-nums' }
+  const dayHdr = { padding: '0 0 8px', fontSize: 11, textAlign: 'center', width: 44, lineHeight: 1.25 }
+  const totHead = { ...BAND_LABEL, textAlign: 'right', padding: '0 0 8px 10px', color: 'var(--color-gray-500)' }
+
   return (
-    <div className="card" style={{ padding: '20px 22px 16px' }}>
+    <div className="card" style={{ padding: '18px 20px 16px' }}>
       <style>{`
-        .slb { border-collapse: separate; border-spacing: 0; }
-        .slb td.c { border-radius: 5px; }
-        .slb .t1 { background: #EEF0FE; } .slb .t2 { background: #DDE1FC; } .slb .t3 { background: #C5CBFA; }
-        .slb tr.band td { background: #F6F7FD; }
-        .slb tr.band.first td:first-child { border-radius: 7px 0 0 0; }
-        .slb tr.band.last  td:first-child { border-radius: 0 0 0 7px; }
-        .slb .bar { background: #C5CBFA; border-radius: 3px 3px 0 0; margin: 0 auto; width: 16px; }
-        @media (prefers-color-scheme: dark) {
-          .slb .t1 { background: #1E2040; } .slb .t2 { background: #272A55; } .slb .t3 { background: #343A73; }
-          .slb tr.band td { background: #1A1B33; }
-          .slb .bar { background: #343A73; }
-        }
+        .slb2 { border-collapse: separate; border-spacing: 0; }
+        .slb2 td.wkdiv, .slb2 th.wkdiv { width: 13px; border-right: 1px solid var(--surface-border); }
+        .slb2 td.cell { transition: box-shadow .1s; }
+        .slb2 td.colfocus { box-shadow: inset 0 0 0 9999px rgba(59,130,246,0.06); }
+        .slb2 td.cellfocus { outline: 2px solid var(--color-blue); outline-offset: -2px; border-radius: 3px; }
       `}</style>
+
+      {/* Mode control + clear (point 5) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+        {hasContext && (
+          <div style={{ display: 'inline-flex', border: '1px solid var(--surface-border)', borderRadius: 7, overflow: 'hidden' }}>
+            {MODES.map(m => {
+              const on = activeMode === m.id
+              return (
+                <button key={m.id} type="button" onClick={() => setMode(m.id)}
+                  style={{ border: 'none', borderRight: '1px solid var(--surface-border)', padding: '5px 12px',
+                           fontSize: 12.5, cursor: 'pointer', font: 'inherit',
+                           background: on ? 'var(--color-blue)' : '#fff', color: on ? '#fff' : 'var(--color-gray-600)',
+                           fontWeight: on ? 700 : 500 }}>{m.label}</button>
+              )
+            })}
+          </div>
+        )}
+        <span style={{ fontSize: 12, color: 'var(--color-gray-400)' }}>
+          {activeMode === 'volume' ? 'Forecast cases; darker = busier for that service line.'
+            : activeMode === 'typical' ? 'Shaded where the day runs above (↑) or below (↓) the trailing weekday typical.'
+            : 'Shaded where the day runs above (↑) or below (↓) budget.'}
+        </span>
+        {focus && (
+          <button type="button" onClick={() => onFocus(null)}
+            style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer',
+                     fontSize: 12, color: 'var(--color-blue)', fontWeight: 600 }}>Clear highlight</button>
+        )}
+      </div>
+
       <div style={{ overflowX: 'auto' }}>
-        <table className="slb" style={{ width: '100%', fontVariantNumeric: 'tabular-nums' }}>
+        <table className="slb2" style={{ width: '100%', fontVariantNumeric: 'tabular-nums' }}>
           <thead>
-            {/* Week bands */}
             <tr>
               <th />
               {bands.map((b, i) => (
                 <Fragment key={b.weekOf}>
                   <th colSpan={b.days.length} style={BAND_LABEL}>{shortDate(b.weekOf)}</th>
-                  {i < bands.length - 1 && <th style={GAP} />}
+                  {i < bands.length - 1 && <th className="wkdiv" />}
                 </Fragment>
               ))}
               <th style={GUTTER} />
-              <th colSpan={1 + (hasTypes ? 3 : 0)} />
+              <th style={totHead}>Total</th>
+              {hasMix && <th style={{ ...totHead, textAlign: 'left', paddingLeft: 16, width: 150 }}>Case mix</th>}
             </tr>
-            {/* Dates + the totals-block headers */}
             <tr>
               <th />
-              {bandCells(j => {
+              {renderDays(j => {
                 const d = dates[j]
                 return (
-                  <th key={d.date} scope="col"
-                      title={d.holiday ? `${longDate(d.date, d.dow)} — reduced-volume day (holiday)` : longDate(d.date, d.dow)}
-                      style={{ padding: '0 0 10px', fontSize: 11, textAlign: 'center', width: 42, lineHeight: 1.25,
+                  <th key={d.date} scope="col" onClick={() => onFocus(focus?.date === d.date ? null : { date: d.date, services: [] })}
+                      title={d.holiday ? `${longDate(d.date, d.dow)} — holiday` : longDate(d.date, d.dow)}
+                      style={{ ...dayHdr, cursor: 'pointer',
                                color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-500)' }}>
                     {DOW_INITIAL[d.dow]}
                     <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600,
-                                   color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-600)' }}>
-                      {dayNum(d.date)}
-                    </span>
+                                   color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-600)' }}>{dayNum(d.date)}</span>
                   </th>
                 )
               })}
               <th style={GUTTER} />
-              <th style={totHead}>Total</th>
-              {hasTypes && <><th style={mixHead}>OP</th><th style={mixHead}>SDA</th><th style={mixHead}>IP</th></>}
+              <th />{hasMix && <th />}
             </tr>
-            {/* Sparkline strip: shape only, the values live in the Total row below. */}
+            {/* Daily volume — prominence for the busiest-day read (point 3) */}
             <tr>
               <th scope="row" style={{ ...BAND_LABEL, textAlign: 'left', color: 'var(--color-gray-400)',
-                        verticalAlign: 'bottom', padding: '0 0 6px' }}>Cases / day</th>
-              {bandCells(j => (
-                <td key={dates[j].date} title={`${longDate(dates[j].date, dates[j].dow)}: ${totals.byDate[j]} cases`}
-                    style={{ verticalAlign: 'bottom', height: 34, paddingBottom: 5 }}>
-                  <div className="bar" style={{ height: Math.round((totals.byDate[j] / maxTotal) * 24) + 2,
-                        background: dates[j].holiday ? 'var(--color-gray-300)' : undefined }} />
-                </td>
-              ))}
+                        verticalAlign: 'bottom', padding: '0 0 8px' }}>Forecast / day</th>
+              {renderDays(j => {
+                const v = totals.byDate[j]
+                const lvl = dayLevel(v, typ[j])
+                const col = lvl === 'heavy' ? '#b45309' : lvl === 'light' ? 'var(--color-gray-400)' : 'var(--color-gray-800)'
+                const foc = focus?.date === dates[j].date
+                return (
+                  <td key={dates[j].date}
+                      title={`${longDate(dates[j].date, dates[j].dow)}: ${v} cases · typical ${Math.round(typ[j])} (${lvl})`}
+                      style={{ textAlign: 'center', verticalAlign: 'bottom', padding: '0 0 8px' }}>
+                    <div style={{ fontFamily: MONO, fontSize: 18, fontWeight: lvl === 'heavy' ? 700 : 600,
+                                  color: foc ? 'var(--color-blue)' : col, lineHeight: 1 }}>{v}</div>
+                    <div style={{ margin: '4px auto 0', width: 18, height: 3, borderRadius: 2,
+                                  background: lvl === 'heavy' ? '#b45309' : lvl === 'light' ? 'var(--color-gray-200)' : 'var(--color-gray-300)',
+                                  opacity: 0.5 + 0.5 * (v / maxTotal) }} />
+                    <div style={{ fontSize: 9.5, letterSpacing: '.04em', textTransform: 'uppercase', marginTop: 3,
+                                  color: lvl === 'heavy' ? '#b45309' : 'transparent', fontWeight: 600 }}>
+                      {lvl === 'heavy' ? 'Heavy' : lvl === 'light' ? 'Light' : '·'}
+                    </div>
+                  </td>
+                )
+              })}
               <td style={GUTTER} />
-              <td style={{ ...totCell, verticalAlign: 'bottom', paddingBottom: 6 }}>{totals.window}</td>
-              {hasTypes && <><td /><td /><td /></>}
+              <td style={{ textAlign: 'right', fontFamily: MONO, fontSize: 18, fontWeight: 700, color: PRIMARY,
+                           verticalAlign: 'bottom', padding: '0 0 8px 10px' }}>{totals.window}</td>
+              {hasMix && <td />}
             </tr>
-            {/* Rule 1 of 2: under the sparkline strip. */}
             <tr><td colSpan={cols} style={{ padding: 0, height: 1, borderBottom: '1px solid var(--surface-border)' }} /></tr>
           </thead>
           <tbody>
             {services.map(s => {
-              const rowMax = Math.max(1, ...s.byDate)
+              const mix = hasMix ? caseMix(s) : null
               return (
                 <tr key={s.service}>
-                  <th scope="row" style={svcLabel}>{s.service}</th>
-                  {bandCells(j => {
+                  <th scope="row" style={{ textAlign: 'left', fontSize: 13, fontWeight: 400, color: 'var(--color-gray-800)',
+                            whiteSpace: 'nowrap', paddingRight: 14, height: 33 }}>{s.service}</th>
+                  {renderDays(j => {
                     const v = s.byDate[j]
-                    const tier = rowTier(v, rowMax)
+                    const fx = cellFx(s, j)
+                    const colFoc = focus?.date === dates[j].date
+                    const cellFoc = colFoc && focus?.services?.includes(s.service)
                     return (
-                      <td key={dates[j].date} className={'c' + (tier.cls ? ' ' + tier.cls : '')}
-                          title={`${s.service} · ${longDate(dates[j].date, dates[j].dow)}: ${v} cases`}
-                          style={{ ...cellBase, color: tier.top ? PRIMARY : MUTED }}>
-                        {v || ''}
+                      <td key={dates[j].date} title={cellTitle(s, j)}
+                          className={'cell' + (colFoc ? ' colfocus' : '') + (cellFoc ? ' cellfocus' : '')}
+                          style={{ ...cellBase, background: fx.bg,
+                                   color: v ? (fx.color || MUTED) : 'transparent' }}>
+                        {v ? <>{v}{fx.arrow && <span style={{ fontSize: 10, opacity: 0.7 }}> {fx.arrow}</span>}</> : ''}
                       </td>
                     )
                   })}
                   <td style={GUTTER} />
-                  <td style={totCell}>{s.total}</td>
-                  {hasTypes && (['outpatient', 'sda', 'inpatient']).map(t => (
-                    <td key={t} style={mixCell}>{s.byType?.[t] ?? ''}</td>
-                  ))}
+                  <td style={{ textAlign: 'right', fontFamily: MONO, fontSize: 13, fontWeight: 640, color: PRIMARY, paddingLeft: 10, width: 52 }}>{s.total}</td>
+                  {hasMix && (
+                    <td title={mix?.title} style={{ textAlign: 'left', fontSize: 11.5, color: 'var(--color-gray-500)',
+                                 paddingLeft: 16, whiteSpace: 'nowrap' }}>{mix?.text}</td>
+                  )}
                 </tr>
               )
             })}
-            {/* Rule 2 of 2: above the Total row. */}
-            <tr><td colSpan={cols} style={{ padding: 0, height: 1, borderTop: '1px solid var(--surface-border)' }} /></tr>
-            {/* Total row: the daily figures as numbers (the strip shows their shape). */}
-            <tr>
-              <th scope="row" style={{ ...svcLabel, fontWeight: 640, color: PRIMARY, paddingTop: 8 }}>Total</th>
-              {bandCells(j => (
-                <td key={dates[j].date} style={{ ...cellBase, color: PRIMARY, fontWeight: 640, paddingTop: 8 }}>
-                  {totals.byDate[j]}
-                </td>
-              ))}
-              <td style={GUTTER} />
-              <td style={{ ...totCell, paddingTop: 8 }}>{totals.window}</td>
-              {hasTypes && (['outpatient', 'sda', 'inpatient']).map(t => (
-                <td key={t} style={{ ...totCell, fontWeight: 560, paddingTop: 8, width: 44, paddingLeft: 8 }}>{typeTotal(t)}</td>
-              ))}
-            </tr>
-            {/* Type rows on a tinted band — a summary of the table, not more service lines. */}
-            {hasTypes && types.map((t, ti) => (
-              <tr key={`type-${t.type}`} className={'band' + (ti === 0 ? ' first' : '') + (ti === types.length - 1 ? ' last' : '')}>
-                <th scope="row" style={{ ...svcLabel, height: 31, fontSize: 12.5, color: 'var(--color-gray-600)', paddingLeft: 18 }}>
-                  {TYPE_LABEL[t.type] || t.type}
-                </th>
-                {bandCells(j => (
-                  <td key={dates[j].date} style={{ ...cellBase, height: 31, fontSize: 12.5, color: 'var(--color-gray-600)' }}>
-                    {t.byDate[j] || ''}
-                  </td>
-                ))}
-                <td style={GUTTER} />
-                <td style={{ ...totCell, fontWeight: 560, fontSize: 12.5, color: 'var(--color-gray-600)' }}>{t.total}</td>
-                {hasTypes && <><td /><td /><td /></>}
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>
 
-      <div style={{ marginTop: 14, display: 'flex', gap: 22, alignItems: 'center',
-                    flexWrap: 'wrap', fontSize: 12, color: 'var(--color-gray-500)' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="slb"><i className="c t1" style={swatch} /><i className="c t2" style={swatch} /><i className="c t3" style={swatch} /></span>
-          Busier day for that service
-        </span>
-        <span>Bars: total cases that day</span>
-        <span style={{ opacity: 0.6 }}>Muted column: holiday</span>
+      <div style={{ marginTop: 14, display: 'flex', gap: 22, alignItems: 'center', flexWrap: 'wrap',
+                    fontSize: 12, color: 'var(--color-gray-500)' }}>
+        {activeMode === 'volume'
+          ? <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ display: 'inline-flex', border: '1px solid var(--surface-border)' }}>
+                {[0.1, 0.3, 0.55, 0.85].map(a => <i key={a} style={{ width: 15, height: 13, background: `rgba(${ACCENT},${a})` }} />)}
+              </span> Busier day for that service
+            </span>
+          : <>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><i style={{ width: 15, height: 13, background: 'rgba(180,83,9,0.3)', display: 'inline-block' }} /> Above {activeMode === 'typical' ? 'typical' : 'budget'} ↑</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><i style={{ width: 15, height: 13, background: 'rgba(37,99,235,0.3)', display: 'inline-block' }} /> Below ↓</span>
+            </>}
+        <span>Click a day or an insight to highlight it. Hover a cell for booked, expected, typical and budget.</span>
       </div>
-
-      {hasTypes && (
-        <p style={{ marginTop: 10, fontSize: 12, color: 'var(--color-gray-500)' }}>
-          Same-day admit arrives from home and is admitted after surgery; inpatient
-          was already admitted before it.
-        </p>
-      )}
     </div>
   )
 }
-
-const swatch = { display: 'inline-block', width: 15, height: 13, borderRadius: 3, marginRight: 3, verticalAlign: 'middle' }
 
 /* The two-component split is never collapsed: four weeks out an elective
    schedule is only partly filled, and a tool reading the booked schedule alone
@@ -341,27 +481,6 @@ export function ContextHeader({ summary, sites, site, onSite, weeks, onWeeks }) 
           </select>
         </div>
       </div>
-      {summary && (
-        <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 10,
-                      flexWrap: 'wrap', fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-gray-500)' }}>
-          <span style={{ color: 'var(--color-gray-800)' }}>
-            <strong style={{ fontSize: 'var(--font-size-lg)' }}>{fmt0(summary.forecast)} cases</strong>
-            {' '}forecast
-          </span>
-          <span>·</span>
-          <span>{fmt0(summary.booked)} booked + ~{fmt0(summary.expectedAdds)} expected to book</span>
-          {summary.variancePct != null && (
-            <>
-              <span>·</span>
-              <span style={{ fontWeight: 700,
-                             color: summary.variancePct > 0 ? '#b91c1c' : '#1d4ed8' }}>
-                {signedPct(summary.variancePct)} vs budget
-              </span>
-            </>
-          )}
-        </div>
-      )}
     </div>
   )
 }
@@ -945,9 +1064,13 @@ export default function VolumeImpact() {
   const [mix, setMix] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [focus, setFocus] = useState(null)   // { date, services } highlighted in the matrix
 
   const shown = TABS.filter(t => !available || available[t.key])
   const active = shown.some(t => t.id === tabParam) ? tabParam : (shown[0]?.id ?? 'budget')
+
+  // An insight (or a day header) highlights the matrix; jump to it if elsewhere.
+  const goFocus = f => { setFocus(f); if (f && active !== 'breakdown') navigate('/impact/breakdown') }
 
   useEffect(() => {
     fetch('/api/impact/tabs').then(readJson).then(setAvailable).catch(() => setAvailable(null))
@@ -965,7 +1088,7 @@ export default function VolumeImpact() {
   // One selection, four consequences: the tabs never disagree about which
   // forecast they are describing.
   useEffect(() => {
-    setLoading(true); setError(null)
+    setLoading(true); setError(null); setFocus(null)
     const q = range()
     Promise.all([
       fetch(`/api/impact/summary?${q}`).then(readJson),
@@ -997,15 +1120,22 @@ export default function VolumeImpact() {
         weeks={weeks} onWeeks={setWeeks}
       />
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '2px solid var(--surface-border)' }}>
+      {/* Executive summary + attention: the five-second read (points 1, 2). */}
+      {!error && summary && <KpiCards summary={summary} />}
+      {!error && breakdown && (
+        <AttentionPanel insights={buildInsights(breakdown)} focus={focus} onFocus={goFocus} />
+      )}
+
+      {/* Lighter tab bar (point 8): a single hairline, quiet inactive labels. */}
+      <div style={{ display: 'flex', gap: 2, marginBottom: 18, borderBottom: '1px solid var(--surface-border)' }}>
         {shown.map(t => {
           const isActive = active === t.id
           return (
             <button key={t.id} type="button" onClick={() => navigate(`/impact/${t.id}`)}
-              style={{ padding: '9px 16px', cursor: 'pointer', border: 'none', background: 'none',
+              style={{ padding: '8px 14px', cursor: 'pointer', border: 'none', background: 'none',
                        borderBottom: `2px solid ${isActive ? 'var(--color-blue)' : 'transparent'}`,
-                       marginBottom: -2, fontWeight: isActive ? 700 : 500,
-                       color: isActive ? 'var(--color-blue)' : 'var(--color-gray-500)',
+                       marginBottom: -1, fontWeight: isActive ? 600 : 500,
+                       color: isActive ? 'var(--color-blue)' : 'var(--color-gray-400)',
                        fontSize: 'var(--font-size-sm)' }}>
               {t.label}
             </button>
@@ -1024,7 +1154,7 @@ export default function VolumeImpact() {
 
       {!error && !loading && (
         <>
-          {active === 'breakdown' && <ServiceLineBreakdownTab data={breakdown} />}
+          {active === 'breakdown' && <ServiceLineBreakdownTab data={breakdown} focus={focus} onFocus={goFocus} />}
           {active === 'budget'    && <BudgetTab data={budget} mix={mix} onExpand={loadMix} />}
           {active === 'inpatient' && <InpatientTab data={inpatient} />}
           {active === 'staffing'  && <StaffingTab data={staffing} />}
