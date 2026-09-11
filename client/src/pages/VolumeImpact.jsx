@@ -87,32 +87,17 @@ const dayNum = iso => dateParts(iso).d
 const shortDate = iso => { const p = dateParts(iso); return `${p.month} ${p.d}` }
 const longDate = (iso, dow) => `${['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][dow] ?? ''} ${shortDate(iso)}`
 
-/* Sequential single-hue, deliberately neutral. The Budget tab's grid is a
-   diverging forecast-vs-budget scale, and two grids on one page reading as the
-   same thing would be worse than no matrix at all — so this one carries no
-   good/bad valence, and the value is always printed so it survives greyscale. */
-/* Magnitude rides the numeral, not a fill behind it. Two hundred shaded boxes
-   competing with two hundred numbers is a grid you decode rather than read; five
-   steps of ink depth carry the same ordering quietly, and leave the cells free.
-
-   Thresholds are fractions of the window's peak rather than absolutes, so the
-   ramp spans whatever scale a tenant's data happens to have. The fractions are
-   the mock's own (3/6/10/15 against a peak of 22). */
-const INK_STEPS = [
-  { at: 0.14, color: 'var(--color-gray-400)', weight: 400 },
-  { at: 0.27, color: 'var(--color-gray-500)', weight: 400 },
-  { at: 0.45, color: 'var(--color-gray-700)', weight: 500 },
-  { at: 0.68, color: 'var(--color-gray-900)', weight: 600 },
-  { at: Infinity, color: 'var(--color-gray-900)', weight: 700 },
-]
-
-/* A zero is not information worth ink. Kept in the DOM so the column keeps its
-   width and a screen reader still reads the cell, but invisible, so the
-   occupied cells are what form the pattern. */
-function inkStep(value, peak) {
-  if (!value) return { color: 'transparent', fontWeight: 400 }
-  const s = INK_STEPS.find(x => value <= x.at * peak) ?? INK_STEPS[INK_STEPS.length - 1]
-  return { color: s.color, fontWeight: s.weight }
+/* Magnitude is a faint tint behind the cell, not the weight of the numeral
+   (ServiceLineBreakdownQuieterGrid.md §2). Every number renders at one weight
+   and one colour; three tint steps, scaled within each service row, carry the
+   ordering quietly and leave the numbers calm. Tints are the accent ramp at very
+   low intensity, defined for light and dark. */
+function rowTier(value, rowMax) {
+  if (!value) return { cls: '', top: false }   // a zero gets no tint and no ink
+  const r = value / (rowMax || 1)
+  if (r >= 0.66) return { cls: 't3', top: true }
+  if (r >= 0.33) return { cls: 't2', top: false }
+  return { cls: 't1', top: false }
 }
 
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
@@ -121,8 +106,6 @@ const MTH = { padding: '0 0 8px', fontSize: 11, fontWeight: 500, textAlign: 'cen
               lineHeight: 1.25 }
 const MTD = { padding: 0, height: 29, textAlign: 'center', fontFamily: MONO,
               fontSize: 12.5, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
-const STICKY_L = { position: 'sticky', left: 0, zIndex: 2, background: 'var(--surface-card)' }
-const STICKY_R = { position: 'sticky', right: 0, zIndex: 2, background: 'var(--surface-card)' }
 const BAND_LABEL = { fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: '.11em',
                      textTransform: 'uppercase', color: 'var(--color-gray-400)',
                      textAlign: 'left', padding: '0 0 5px 4px' }
@@ -139,16 +122,12 @@ export function ServiceLineBreakdownTab({ data }) {
   }
   const { dates, services, totals, types } = data
 
-  // Patient-type split (ServiceLineBreakdownPatientType.md), demo only. When the
-  // flag is off the endpoint omits these and the tab is exactly what it was.
+  // Patient-type split (ServiceLineBreakdownPatientType.md), demo only.
   const hasTypes = !!(data.hasTypes && types?.length)
-  const RULE = '1px solid var(--color-border-secondary)'
   const TYPE_LABEL = { outpatient: 'Outpatient', sda: 'Same-day admit', inpatient: 'Inpatient' }
   const typeTotal = t => types?.find(x => x.type === t)?.total ?? 0
 
-  // Weeks are grouped by air rather than by rules: a gap column between bands
-  // instead of a vertical line, so the Thursday stripe reads down the page
-  // without four more marks competing with it.
+  // Week bands separate with a gap column, never a rule.
   const bands = []
   for (const [i, d] of dates.entries()) {
     const last = bands[bands.length - 1]
@@ -156,211 +135,171 @@ export function ServiceLineBreakdownTab({ data }) {
     else bands.push({ weekOf: d.weekOf, days: [i] })
   }
 
-  const peak = Math.max(1, ...services.flatMap(s => s.byDate))
   const maxTotal = Math.max(1, ...totals.byDate)
-  const peakDay = totals.byDate.indexOf(maxTotal)
-  const cols = 2 + dates.length + (bands.length - 1) + 1 + (hasTypes ? 3 : 0)
+  const cols = 1 + dates.length + (bands.length - 1) + 1 + 1 + (hasTypes ? 3 : 0)
+
+  const MUTED = 'var(--color-gray-600)'
+  const PRIMARY = 'var(--color-gray-900)'
+  const GUTTER = { width: 26 }
+  const cellBase = { height: 34, textAlign: 'center', fontFamily: MONO, fontSize: 13,
+                     fontVariantNumeric: 'tabular-nums', color: MUTED }
+  const svcLabel = { textAlign: 'left', fontSize: 13.5, fontWeight: 400, color: 'var(--color-gray-800)',
+                     whiteSpace: 'nowrap', paddingRight: 16, height: 34 }
+  const totHead = { ...BAND_LABEL, textAlign: 'right', padding: '0 0 10px 10px', color: 'var(--color-gray-500)' }
+  const mixHead = { ...BAND_LABEL, textAlign: 'right', padding: '0 0 10px 8px', color: 'var(--color-gray-400)' }
+  const totCell = { textAlign: 'right', fontFamily: MONO, fontSize: 13, fontWeight: 640, color: PRIMARY,
+                    paddingLeft: 10, width: 52 }
+  const mixCell = { textAlign: 'right', fontFamily: MONO, fontSize: 12, color: 'var(--color-gray-500)',
+                    paddingLeft: 8, width: 44 }
+
+  // Cells within a band, given a per-value styler.
+  const bandCells = (renderCell) => bands.map((b, i) => (
+    <Fragment key={b.weekOf}>
+      {b.days.map(renderCell)}
+      {i < bands.length - 1 && <td style={GAP} />}
+    </Fragment>
+  ))
 
   return (
-    <div className="card" style={{ padding: '22px 26px 26px' }}>
-      <style>{`.slb tbody tr:hover td, .slb tbody tr:hover th {
-        background: var(--color-gray-100, #f1f5f9);
-      }`}</style>
+    <div className="card" style={{ padding: '20px 22px 16px' }}>
+      <style>{`
+        .slb { border-collapse: separate; border-spacing: 0; }
+        .slb td.c { border-radius: 5px; }
+        .slb .t1 { background: #EEF0FE; } .slb .t2 { background: #DDE1FC; } .slb .t3 { background: #C5CBFA; }
+        .slb tr.band td { background: #F6F7FD; }
+        .slb tr.band.first td:first-child { border-radius: 7px 0 0 0; }
+        .slb tr.band.last  td:first-child { border-radius: 0 0 0 7px; }
+        .slb .bar { background: #C5CBFA; border-radius: 3px 3px 0 0; margin: 0 auto; width: 16px; }
+        @media (prefers-color-scheme: dark) {
+          .slb .t1 { background: #1E2040; } .slb .t2 { background: #272A55; } .slb .t3 { background: #343A73; }
+          .slb tr.band td { background: #1A1B33; }
+          .slb .bar { background: #343A73; }
+        }
+      `}</style>
       <div style={{ overflowX: 'auto' }}>
-        <table className="slb" style={{ borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
+        <table className="slb" style={{ width: '100%', fontVariantNumeric: 'tabular-nums' }}>
           <thead>
             {/* Week bands */}
             <tr>
-              <th style={{ ...STICKY_L, padding: 0 }} />
-              <th style={GAP} />
+              <th />
               {bands.map((b, i) => (
                 <Fragment key={b.weekOf}>
                   <th colSpan={b.days.length} style={BAND_LABEL}>{shortDate(b.weekOf)}</th>
                   {i < bands.length - 1 && <th style={GAP} />}
                 </Fragment>
               ))}
-              <th style={{ ...STICKY_R, padding: 0 }} />
+              <th style={GUTTER} />
+              <th colSpan={1 + (hasTypes ? 3 : 0)} />
             </tr>
-            {/* Dates */}
+            {/* Dates + the totals-block headers */}
             <tr>
-              <th style={{ ...STICKY_L, padding: 0 }} />
-              <th style={GAP} />
-              {bands.map((b, i) => (
-                <Fragment key={b.weekOf}>
-                  {b.days.map(j => {
-                    const d = dates[j]
-                    return (
-                      <th key={d.date} scope="col"
-                          title={d.holiday
-                            ? `${longDate(d.date, d.dow)} — reduced-volume day (holiday)`
-                            : longDate(d.date, d.dow)}
-                          style={{ ...MTH, width: 40,
-                                   color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-500)' }}>
-                        {DOW_INITIAL[d.dow]}
-                        <span style={{ display: 'block', fontSize: 12.5,
-                                       fontWeight: d.holiday ? 500 : 600,
-                                       color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-700)' }}>
-                          {dayNum(d.date)}
-                        </span>
-                      </th>
-                    )
-                  })}
-                  {i < bands.length - 1 && <th style={GAP} />}
-                </Fragment>
+              <th />
+              {bandCells(j => {
+                const d = dates[j]
+                return (
+                  <th key={d.date} scope="col"
+                      title={d.holiday ? `${longDate(d.date, d.dow)} — reduced-volume day (holiday)` : longDate(d.date, d.dow)}
+                      style={{ padding: '0 0 10px', fontSize: 11, textAlign: 'center', width: 42, lineHeight: 1.25,
+                               color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-500)' }}>
+                    {DOW_INITIAL[d.dow]}
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600,
+                                   color: d.holiday ? 'var(--color-gray-400)' : 'var(--color-gray-600)' }}>
+                      {dayNum(d.date)}
+                    </span>
+                  </th>
+                )
+              })}
+              <th style={GUTTER} />
+              <th style={totHead}>Total</th>
+              {hasTypes && <><th style={mixHead}>OP</th><th style={mixHead}>SDA</th><th style={mixHead}>IP</th></>}
+            </tr>
+            {/* Sparkline strip: shape only, the values live in the Total row below. */}
+            <tr>
+              <th scope="row" style={{ ...BAND_LABEL, textAlign: 'left', color: 'var(--color-gray-400)',
+                        verticalAlign: 'bottom', padding: '0 0 6px' }}>Cases / day</th>
+              {bandCells(j => (
+                <td key={dates[j].date} title={`${longDate(dates[j].date, dates[j].dow)}: ${totals.byDate[j]} cases`}
+                    style={{ verticalAlign: 'bottom', height: 34, paddingBottom: 5 }}>
+                  <div className="bar" style={{ height: Math.round((totals.byDate[j] / maxTotal) * 24) + 2,
+                        background: dates[j].holiday ? 'var(--color-gray-300)' : undefined }} />
+                </td>
               ))}
-              <th style={{ ...STICKY_R, ...BAND_LABEL, textAlign: 'right',
-                           paddingLeft: 20, paddingBottom: 8 }}>Total</th>
-              {hasTypes && (
-                <>
-                  <th style={{ ...BAND_LABEL, textAlign: 'right', paddingBottom: 8, paddingLeft: 18, borderLeft: RULE }}>OP</th>
-                  <th style={{ ...BAND_LABEL, textAlign: 'right', paddingBottom: 8, paddingLeft: 12 }}>SDA</th>
-                  <th style={{ ...BAND_LABEL, textAlign: 'right', paddingBottom: 8, paddingLeft: 12 }}>IP</th>
-                </>
-              )}
+              <td style={GUTTER} />
+              <td style={{ ...totCell, verticalAlign: 'bottom', paddingBottom: 6 }}>{totals.window}</td>
+              {hasTypes && <><td /><td /><td /></>}
             </tr>
-            {/* Daily totals as a bar strip. This was a row of numbers at the
-                bottom of the grid; as the shape of the month at the top it is
-                read first, which is what "most important line" should mean. */}
-            <tr>
-              <th scope="row" style={{ ...STICKY_L, ...BAND_LABEL, textAlign: 'right',
-                        color: 'var(--color-gray-500)', verticalAlign: 'bottom',
-                        padding: '0 14px 22px 0', whiteSpace: 'nowrap' }}>
-                Cases<br />per day
-              </th>
-              <td style={GAP} />
-              {bands.map((b, i) => (
-                <Fragment key={b.weekOf}>
-                  {b.days.map(j => {
-                    const v = totals.byDate[j]
-                    const hol = dates[j].holiday
-                    const hi = j === peakDay
+            {/* Rule 1 of 2: under the sparkline strip. */}
+            <tr><td colSpan={cols} style={{ padding: 0, height: 1, borderBottom: '1px solid var(--surface-border)' }} /></tr>
+          </thead>
+          <tbody>
+            {services.map(s => {
+              const rowMax = Math.max(1, ...s.byDate)
+              return (
+                <tr key={s.service}>
+                  <th scope="row" style={svcLabel}>{s.service}</th>
+                  {bandCells(j => {
+                    const v = s.byDate[j]
+                    const tier = rowTier(v, rowMax)
                     return (
-                      <td key={dates[j].date}
-                          title={`${longDate(dates[j].date, dates[j].dow)}: ${v} cases`}
-                          style={{ verticalAlign: 'bottom', height: 56, paddingBottom: 3 }}>
-                        <div style={{ margin: '0 auto', width: 17, borderRadius: '3px 3px 0 0',
-                                      height: Math.round((v / maxTotal) * 44),
-                                      background: hol ? 'var(--color-gray-300)' : 'var(--color-blue)',
-                                      opacity: hol ? 1 : (hi ? 1 : 0.55) }} />
-                        <span style={{ display: 'block', textAlign: 'center', fontFamily: MONO,
-                                       fontSize: 11.5, paddingTop: 4,
-                                       fontWeight: hol ? 400 : 600,
-                                       color: hol ? 'var(--color-gray-400)'
-                                         : hi ? 'var(--color-blue)' : 'var(--color-gray-700)' }}>
-                          {v}
-                        </span>
+                      <td key={dates[j].date} className={'c' + (tier.cls ? ' ' + tier.cls : '')}
+                          title={`${s.service} · ${longDate(dates[j].date, dates[j].dow)}: ${v} cases`}
+                          style={{ ...cellBase, color: tier.top ? PRIMARY : MUTED }}>
+                        {v || ''}
                       </td>
                     )
                   })}
-                  {i < bands.length - 1 && <td style={GAP} />}
-                </Fragment>
-              ))}
-              <td style={{ ...STICKY_R, textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
-                           fontWeight: 700, color: 'var(--color-gray-900)', paddingLeft: 20,
-                           verticalAlign: 'bottom', paddingBottom: 22 }}>
-                {totals.window}
-              </td>
-              {hasTypes && (['outpatient', 'sda', 'inpatient']).map((t, k) => (
-                <td key={t} style={{ textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
-                             fontWeight: 700, color: 'var(--color-gray-700)',
-                             paddingLeft: k === 0 ? 18 : 12, verticalAlign: 'bottom',
-                             paddingBottom: 22, borderLeft: k === 0 ? RULE : undefined }}>
-                  {typeTotal(t)}
-                </td>
-              ))}
-            </tr>
-            <tr><td colSpan={cols} style={{ padding: 0, height: 1,
-                    borderBottom: '1px solid var(--color-border-secondary)' }} /></tr>
-          </thead>
-          <tbody>
-            {services.map(s => (
-              <tr key={s.service}>
-                <th scope="row" style={{ ...STICKY_L, textAlign: 'left', fontSize: 13.5,
-                          fontWeight: 500, color: 'var(--color-gray-700)', height: 29,
-                          whiteSpace: 'nowrap', padding: '0 14px 0 0' }}>
-                  {s.service}
-                </th>
-                <td style={GAP} />
-                {bands.map((b, i) => (
-                  <Fragment key={b.weekOf}>
-                    {b.days.map(j => {
-                      const v = s.byDate[j]
-                      return (
-                        <td key={dates[j].date}
-                            title={`${s.service} · ${longDate(dates[j].date, dates[j].dow)}: ${v} cases`}
-                            style={{ ...MTD, opacity: dates[j].holiday ? 0.42 : 1,
-                                     ...inkStep(v, peak) }}>
-                          {v}
-                        </td>
-                      )
-                    })}
-                    {i < bands.length - 1 && <td style={GAP} />}
-                  </Fragment>
-                ))}
-                <td style={{ ...STICKY_R, textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
-                             fontWeight: 600, color: 'var(--color-gray-900)', paddingLeft: 20,
-                             width: 52 }}>
-                  {s.total}
-                </td>
-                {hasTypes && (['outpatient', 'sda', 'inpatient']).map((t, k) => (
-                  // No shading in the new block: the sequential scale stays on
-                  // the date cells; these read as plain magnitudes.
-                  <td key={t} style={{ textAlign: 'right', fontFamily: MONO, fontSize: 12.5,
-                               color: 'var(--color-gray-700)', paddingLeft: k === 0 ? 18 : 12,
-                               width: 46, borderLeft: k === 0 ? RULE : undefined }}>
-                    {s.byType?.[t] ?? ''}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            {hasTypes && types.map((t, ti) => {
-              // Type × date, indented under Total and muted so the three rows
-              // read as its decomposition. A rule above separates them from the
-              // service rows; no shading, per section 4.
-              const top = ti === 0 ? RULE : undefined
-              return (
-                <tr key={`type-${t.type}`}>
-                  <th scope="row" style={{ ...STICKY_L, textAlign: 'left', fontSize: 12.5,
-                            fontWeight: 400, color: 'var(--color-gray-500)', height: 26,
-                            whiteSpace: 'nowrap', padding: '0 14px 0 18px', borderTop: top }}>
-                    {TYPE_LABEL[t.type] || t.type}
-                  </th>
-                  <td style={{ ...GAP, borderTop: top }} />
-                  {bands.map((b, i) => (
-                    <Fragment key={b.weekOf}>
-                      {b.days.map(j => (
-                        <td key={dates[j].date} style={{ ...MTD, color: 'var(--color-gray-500)',
-                                     opacity: dates[j].holiday ? 0.42 : 1, borderTop: top }}>
-                          {t.byDate[j]}
-                        </td>
-                      ))}
-                      {i < bands.length - 1 && <td style={{ ...GAP, borderTop: top }} />}
-                    </Fragment>
+                  <td style={GUTTER} />
+                  <td style={totCell}>{s.total}</td>
+                  {hasTypes && (['outpatient', 'sda', 'inpatient']).map(t => (
+                    <td key={t} style={mixCell}>{s.byType?.[t] ?? ''}</td>
                   ))}
-                  <td style={{ ...STICKY_R, textAlign: 'right', fontFamily: MONO, fontSize: 12,
-                               color: 'var(--color-gray-600)', paddingLeft: 20, borderTop: top }}>
-                    {t.total}
-                  </td>
-                  <td colSpan={3} style={{ borderTop: top, borderLeft: RULE }} />
                 </tr>
               )
             })}
+            {/* Rule 2 of 2: above the Total row. */}
+            <tr><td colSpan={cols} style={{ padding: 0, height: 1, borderTop: '1px solid var(--surface-border)' }} /></tr>
+            {/* Total row: the daily figures as numbers (the strip shows their shape). */}
+            <tr>
+              <th scope="row" style={{ ...svcLabel, fontWeight: 640, color: PRIMARY, paddingTop: 8 }}>Total</th>
+              {bandCells(j => (
+                <td key={dates[j].date} style={{ ...cellBase, color: PRIMARY, fontWeight: 640, paddingTop: 8 }}>
+                  {totals.byDate[j]}
+                </td>
+              ))}
+              <td style={GUTTER} />
+              <td style={{ ...totCell, paddingTop: 8 }}>{totals.window}</td>
+              {hasTypes && (['outpatient', 'sda', 'inpatient']).map(t => (
+                <td key={t} style={{ ...totCell, fontWeight: 560, paddingTop: 8, width: 44, paddingLeft: 8 }}>{typeTotal(t)}</td>
+              ))}
+            </tr>
+            {/* Type rows on a tinted band — a summary of the table, not more service lines. */}
+            {hasTypes && types.map((t, ti) => (
+              <tr key={`type-${t.type}`} className={'band' + (ti === 0 ? ' first' : '') + (ti === types.length - 1 ? ' last' : '')}>
+                <th scope="row" style={{ ...svcLabel, height: 31, fontSize: 12.5, color: 'var(--color-gray-600)', paddingLeft: 18 }}>
+                  {TYPE_LABEL[t.type] || t.type}
+                </th>
+                {bandCells(j => (
+                  <td key={dates[j].date} style={{ ...cellBase, height: 31, fontSize: 12.5, color: 'var(--color-gray-600)' }}>
+                    {t.byDate[j] || ''}
+                  </td>
+                ))}
+                <td style={GUTTER} />
+                <td style={{ ...totCell, fontWeight: 560, fontSize: 12.5, color: 'var(--color-gray-600)' }}>{t.total}</td>
+                {hasTypes && <><td /><td /><td /></>}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      <div style={{ marginTop: 16, display: 'flex', gap: 20, alignItems: 'center',
+      <div style={{ marginTop: 14, display: 'flex', gap: 22, alignItems: 'center',
                     flexWrap: 'wrap', fontSize: 12, color: 'var(--color-gray-500)' }}>
-        <span style={{ display: 'flex', alignItems: 'baseline', gap: 6, fontFamily: MONO }}>
-          Fewer
-          {INK_STEPS.map((s, i) => {
-            const v = Math.max(1, Math.round((i === INK_STEPS.length - 1 ? 1 : s.at) * peak))
-            return <span key={s.at} style={{ fontSize: 12, ...inkStep(v, peak) }}>{v}</span>
-          })}
-          More cases
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span className="slb"><i className="c t1" style={swatch} /><i className="c t2" style={swatch} /><i className="c t3" style={swatch} /></span>
+          Busier day for that service
         </span>
         <span>Bars: total cases that day</span>
-        <span style={{ opacity: 0.5 }}>Muted column: holiday</span>
+        <span style={{ opacity: 0.6 }}>Muted column: holiday</span>
       </div>
 
       {hasTypes && (
@@ -372,6 +311,8 @@ export function ServiceLineBreakdownTab({ data }) {
     </div>
   )
 }
+
+const swatch = { display: 'inline-block', width: 15, height: 13, borderRadius: 3, marginRight: 3, verticalAlign: 'middle' }
 
 /* The two-component split is never collapsed: four weeks out an elective
    schedule is only partly filled, and a tool reading the booked schedule alone
@@ -994,7 +935,7 @@ export default function VolumeImpact() {
   const [available, setAvailable] = useState(null)
   const [sites, setSites] = useState([])
   const [site, setSite] = useState('')
-  const [weeks, setWeeks] = useState(4)
+  const [weeks, setWeeks] = useState(2)   // ServiceLineBreakdownQuieterGrid.md §3: default 2 weeks; control still reaches 4
   const [summary, setSummary] = useState(null)
   const [breakdown, setBreakdown] = useState(null)
   const [budget, setBudget] = useState(null)
