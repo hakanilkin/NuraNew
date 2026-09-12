@@ -16,23 +16,38 @@ const fmt1 = v => (v == null ? '—' : Number(v).toFixed(1))
 
 /* Pattern carries a glyph as well as a colour — projector rule — and the label
    names the fix, not the symptom. */
-function patternConfig(p) {
-  switch (p) {
-    case 'WRONG_DAY':       return { label: 'Wrong day',       glyph: '⇄', color: '#7c3aed', bg: 'rgba(124,58,237,0.13)' }
-    case 'WRONG_SHAPE':     return { label: 'Wrong shape',     glyph: '⊏', color: '#b45309', bg: 'rgba(234,179,8,0.15)' }
-    case 'ABANDONED':       return { label: 'Abandoned',       glyph: '✕', color: '#b91c1c', bg: 'rgba(239,68,68,0.13)' }
-    case 'FRAGMENTED':      return { label: 'Fragmented',      glyph: '⋯', color: '#0e7490', bg: 'rgba(14,116,144,0.13)' }
-    case 'OVER_ALLOCATED':  return { label: 'Over-allocated',  glyph: '▼', color: '#dc2626', bg: 'rgba(239,68,68,0.11)' }
-    case 'UNDER_ALLOCATED': return { label: 'Under-allocated', glyph: '▲', color: '#2563eb', bg: 'rgba(59,130,246,0.12)' }
-    case 'NON_PRIME_TIME':  return { label: 'Non-prime time',  glyph: '☾', color: '#0891b2', bg: 'rgba(8,145,178,0.12)' }
-    case 'MISPLACED':       return { label: 'Misplaced',       glyph: '◇', color: '#9333ea', bg: 'rgba(147,51,234,0.12)' }
-    case 'RIGHT_SIZED':     return { label: 'Right-sized',     glyph: '■', color: '#15803d', bg: 'rgba(34,197,94,0.12)' }
+/* Group by the decision, not the symptom (BlockAllocationsFiveVerdicts.md). The
+   nine internal patterns from block_patterns.py map onto five verdicts for
+   display only — the classifier, the recommendation sentence and the drawer are
+   untouched, so the specific diagnosis still reads next to the chip. */
+const VERDICT = {
+  RIGHT_SIZED:     'RIGHT_SIZED',
+  OVER_ALLOCATED:  'TOO_MUCH',    ABANDONED:   'TOO_MUCH',
+  UNDER_ALLOCATED: 'TOO_LITTLE',
+  WRONG_DAY:       'PLACEMENT',   WRONG_SHAPE: 'PLACEMENT',
+  MISPLACED:       'PLACEMENT',   FRAGMENTED:  'PLACEMENT',
+  NON_PRIME_TIME:  'NON_PRIME_TIME',
+}
+// Order the verdict chips appear in the summary row.
+const VERDICT_ORDER = ['PLACEMENT', 'TOO_MUCH', 'TOO_LITTLE', 'NON_PRIME_TIME', 'RIGHT_SIZED', 'UNCLASSIFIED']
+
+function verdictConfig(v) {
+  switch (v) {
+    case 'RIGHT_SIZED':    return { label: 'Right-sized',     glyph: '■', color: '#15803d', bg: 'rgba(34,197,94,0.12)' }
+    case 'TOO_MUCH':       return { label: 'Too much time',   glyph: '▼', color: '#dc2626', bg: 'rgba(239,68,68,0.11)' }
+    case 'TOO_LITTLE':     return { label: 'Too little time', glyph: '▲', color: '#2563eb', bg: 'rgba(59,130,246,0.12)' }
+    case 'PLACEMENT':      return { label: 'Wrong placement', glyph: '⇄', color: '#7c3aed', bg: 'rgba(124,58,237,0.13)' }
+    case 'NON_PRIME_TIME': return { label: 'Non-prime time',  glyph: '☾', color: '#0891b2', bg: 'rgba(8,145,178,0.12)' }
     // Never an endorsement. A silent fallback that reads as "fine" is the thing
     // a sceptical director catches on a projector.
-    default:                return { label: 'No clear pattern', glyph: '?', color: 'var(--color-gray-500)', bg: 'rgba(100,116,139,0.10)' }
+    default:               return { label: 'No clear pattern', glyph: '?', color: 'var(--color-gray-500)', bg: 'rgba(100,116,139,0.10)' }
   }
 }
+// The chip for a block: its internal pattern resolved to a verdict.
+const patternChip = p => verdictConfig(VERDICT[p] ?? 'UNCLASSIFIED')
 
+// Findings count is keyed on the RAW pattern, so it never moves with the display
+// mapping — an UNCLASSIFIED or RIGHT_SIZED block is inert whatever chip it shows.
 const INERT = new Set(['RIGHT_SIZED', 'UNCLASSIFIED'])
 
 /* Pipeline: label plus number, so the cell reads without interpretation. The
@@ -294,7 +309,7 @@ export function DetailDrawer({ owner, open, focus, onClose }) {
   }, [open, focus, detail])
 
   if (!owner) return null
-  const pc = patternConfig(owner.pattern)
+  const pc = patternChip(owner.pattern)
 
   return (
     <>
@@ -397,7 +412,7 @@ export function OwnerTable({ owners, onDetails }) {
         </tr></thead>
         <tbody>
           {owners.map(o => {
-            const pc = patternConfig(o.pattern)
+            const pc = patternChip(o.pattern)
             const expanded = open === o.owner
             return (
               <Fragment key={o.owner}>
@@ -524,6 +539,12 @@ export default function BlockAllocations() {
   }, [])
 
   const counts = data?.counts ?? {}
+  // Roll the raw pattern counts up to the five verdicts for the summary row.
+  const verdictCounts = {}
+  for (const [p, n] of Object.entries(counts)) {
+    const v = VERDICT[p] ?? 'UNCLASSIFIED'
+    verdictCounts[v] = (verdictCounts[v] || 0) + n
+  }
   const findings = (data?.owners ?? []).filter(o => !INERT.has(o.pattern))
 
   return (
@@ -555,18 +576,17 @@ export default function BlockAllocations() {
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
                         marginBottom: 'var(--space-4)' }}>
-            {['WRONG_DAY', 'WRONG_SHAPE', 'MISPLACED', 'NON_PRIME_TIME', 'ABANDONED', 'FRAGMENTED',
-              'OVER_ALLOCATED', 'UNDER_ALLOCATED', 'RIGHT_SIZED', 'UNCLASSIFIED']
-              .filter(p => counts[p])
-              .map(p => {
-                const pc = patternConfig(p)
+            {VERDICT_ORDER
+              .filter(v => verdictCounts[v])
+              .map(v => {
+                const pc = verdictConfig(v)
                 return (
-                  <span key={p} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 13px',
+                  <span key={v} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 13px',
                                          borderRadius: 'var(--radius-full)', background: pc.bg,
                                          border: `1px solid ${pc.color}33`, color: pc.color,
                                          fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
                     <span aria-hidden="true">{pc.glyph}</span>{pc.label}
-                    <strong style={{ fontSize: 'var(--font-size-base)' }}>{counts[p]}</strong>
+                    <strong style={{ fontSize: 'var(--font-size-base)' }}>{verdictCounts[v]}</strong>
                   </span>
                 )
               })}
