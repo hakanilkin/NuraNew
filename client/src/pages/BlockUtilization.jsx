@@ -194,7 +194,7 @@ function CellTooltip({ tip }) {
       position: 'fixed', top: tip.y, left: tip.x, zIndex: 500,
       background: 'var(--color-white)', border: '1px solid var(--surface-border)',
       borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)',
-      padding: 'var(--space-4)', minWidth: 220, pointerEvents: 'none',
+      padding: 'var(--space-4)', minWidth: 300, pointerEvents: 'none',
     }}>
       <p style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)',
         color: 'var(--color-gray-500)', letterSpacing: 'var(--letter-spacing-wide)',
@@ -205,9 +205,9 @@ function CellTooltip({ tip }) {
         color: 'var(--color-gray-900)', marginBottom: 'var(--space-3)', lineHeight: 1.3 }}>
         {tip.label}
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: '2.5rem 1fr 1fr',
+      <div style={{ display: 'grid', gridTemplateColumns: '2.2rem 1fr 1fr 1fr 1fr',
         columnGap: 8, rowGap: 4, fontSize: 'var(--font-size-xs)' }}>
-        {['Mo.','Cases','PT%'].map(h => (
+        {['Mo.','Cases','PT%','IB%','NP%'].map(h => (
           <span key={h} style={{ color: 'var(--color-gray-400)',
             fontWeight: 'var(--font-weight-semibold)',
             textAlign: h !== 'Mo.' ? 'right' : 'left',
@@ -217,6 +217,10 @@ function CellTooltip({ tip }) {
         ))}
         {tip.rows.map(r => {
           const pt     = r.SumBlockTime > 0 ? (r.SumPrimeTime / r.SumBlockTime) * 100 : null
+          const ib     = r.SumBlockTime > 0 && r.SumInBlock != null
+                         ? (r.SumInBlock / r.SumBlockTime) * 100 : null
+          const np     = r.SumTotalTime > 0 && r.SumNonPrimeTime != null
+                         ? (r.SumNonPrimeTime / r.SumTotalTime) * 100 : null
           const colors = ptColors(pt)
           return [
             <span key={`m${r.Month}`} style={{ color: 'var(--color-gray-700)' }}>
@@ -231,9 +235,23 @@ function CellTooltip({ tip }) {
               color: colors?.text ?? 'var(--color-gray-400)' }}>
               {pt != null ? `${pt.toFixed(0)}%` : '—'}
             </span>,
+            <span key={`i${r.Month}`} style={{ textAlign: 'right',
+              color: ib != null ? 'var(--color-gray-900)' : 'var(--color-gray-400)',
+              fontWeight: 'var(--font-weight-medium)' }}>
+              {ib != null ? `${ib.toFixed(0)}%` : '—'}
+            </span>,
+            <span key={`n${r.Month}`} style={{ textAlign: 'right',
+              color: np != null ? 'var(--color-gray-900)' : 'var(--color-gray-400)',
+              fontWeight: 'var(--font-weight-medium)' }}>
+              {np != null ? `${np.toFixed(0)}%` : '—'}
+            </span>,
           ]
         })}
       </div>
+      <p style={{ fontSize: 10, color: 'var(--color-gray-400)', marginTop: 'var(--space-2)',
+        lineHeight: 1.4 }}>
+        PT/IB: % of block time (prime / in-block) · NP: % of total time outside prime hours
+      </p>
     </div>
   )
 }
@@ -530,7 +548,7 @@ export default function BlockUtilization() {
   /* ── Cell tooltip handlers ── */
   function handleCellEnter(e, label, rows) {
     const rect = e.currentTarget.getBoundingClientRect()
-    const TW   = 230
+    const TW   = 310
     const x    = rect.right + 10 + TW > window.innerWidth ? rect.left - TW - 10 : rect.right + 10
     const y    = Math.max(8, Math.min(rect.top, window.innerHeight - 280))
     setTip({ x, y, label, rows })

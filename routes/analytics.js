@@ -311,6 +311,7 @@ module.exports = function analyticsRoutes(getTenantPool, sql, requireTenant) {
           MONTH(BlockDate)                         AS Month,
           COUNT(DISTINCT CaseID)                   AS CaseCount,
           SUM(ISNULL(Total_Prime_Time, 0))         AS SumPrimeTime,
+          SUM(ISNULL(InBlock, 0))                  AS SumInBlock,
           SUM(ISNULL(blockTime, 0))                AS SumBlockTime,
           SUM(ISNULL(Total_Non_Prime_time, 0))     AS SumNonPrimeTime,
           SUM(ISNULL(totalTime, 0))                AS SumTotalTime,
