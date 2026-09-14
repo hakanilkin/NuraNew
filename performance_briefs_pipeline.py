@@ -417,20 +417,22 @@ WHERE BlockDate BETWEEN '{curr_start}' AND '{curr_end}'
 GROUP BY CaseBlock, Group_Service, LocationGroup, (DATEPART(WEEKDAY, BlockDate) + 5) % 7
 """
 
-# Volume a block's own service books on a day that block does not hold.
-_OUTSIDE_QUERY = f"""
-SELECT ISNULL(c.Case_SurgeonService, 'Unknown')          AS Service,
-       ISNULL(c.Loc_ORGrp2, 'Unknown')                   AS Site,
-       (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7     AS Dow,
-       SUM(ISNULL(c.Dur_ORIn_OROut, 0)) / 60.0           AS OutsideHours,
-       COUNT(*)                                          AS OutsideCases,
-       COUNT(DISTINCT CAST(c.Date_SchedDate AS DATE))    AS Days
+# In-block case OR-in / OR-out minute of day, per site and weekday. The prime
+# window — the operating (block) day — is derived from these: in-block hours are
+# prime by definition (BlockAllocationsPrimeTime.md section 2), so the earliest
+# starts and latest ends of in-block work, guarded by a 10th/90th percentile,
+# are its envelope. Nothing is hardcoded.
+_INBLOCK_TIMES_QUERY = f"""
+SELECT ISNULL(c.Loc_ORGrp2, 'Unknown')                        AS Site,
+       (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7          AS Dow,
+       DATEPART(HOUR, c.Time_ORin)  * 60 + DATEPART(MINUTE, c.Time_ORin)  AS InMin,
+       DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut) AS OutMin
 FROM DS_CASES c
 WHERE c.Date_SchedDate BETWEEN '{curr_start}' AND '{curr_end}'
   AND c.Case_CanCode IS NULL
-  AND ISNULL(c.Case_CaseBlock, 'Open') = 'Open'
+  AND ISNULL(c.Case_CaseBlock, 'Open') <> 'Open'
+  AND c.Time_ORin IS NOT NULL AND c.Time_OROut IS NOT NULL
   AND DATEPART(WEEKDAY, c.Date_SchedDate) BETWEEN 2 AND 6
-GROUP BY c.Case_SurgeonService, c.Loc_ORGrp2, (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7
 """
 
 # How far into its block the day actually runs, for the wrong-shape test.
@@ -453,21 +455,192 @@ GROUP BY CaseBlock
 
 _conn2 = pyodbc.connect(conn_str, timeout=30)
 df_alloc = pd.read_sql(_ALLOC_QUERY, _conn2)
-df_outside = pd.read_sql(_OUTSIDE_QUERY, _conn2)
 df_tail = pd.read_sql(_TAIL_QUERY, _conn2)
+df_inblock = pd.read_sql(_INBLOCK_TIMES_QUERY, _conn2)
+
+
+# ── Prime window per site × dow (BlockAllocationsPrimeTime.md section 2) ──────
+# Optional per-site override wins; otherwise derive from the in-block envelope.
+# When neither is available the split is suppressed and the page falls back to a
+# single outside number, so NHS/OHS keep working (section 9).
+
+def _hhmm_to_min(s):
+    h, m = str(s).split(':')
+    return int(h) * 60 + int(m)
+
+
+_prime_override = (
+    _tenant_columns().get(cfg.get('tenant_config_key') or '', {})
+    .get('params', {}).get('prime_time_window') or {})
+
+_prime_windows = {}   # (site, dow) -> (start_min, end_min)
+_site_env = {}        # site -> (start_min, end_min): the fallback for a thin/absent dow
+
+# In-block cases are daytime, but normalise defensively so a case that crosses
+# midnight (OutMin < InMin) does not corrupt the envelope quantiles.
+if len(df_inblock):
+    df_inblock.loc[df_inblock['OutMin'] < df_inblock['InMin'], 'OutMin'] += 1440
+
+try:
+    # Derived envelope, guarded so one late outlier does not stretch it.
+    if len(df_inblock):
+        g = df_inblock.groupby(['Site', 'Dow'])
+        derived = {(s, int(d)): (float(grp['InMin'].quantile(0.10)),
+                                 float(grp['OutMin'].quantile(0.90)))
+                   for (s, d), grp in g}
+        # Per-site fallback across weekdays for a (site, dow) with thin data.
+        _site_env = {s: (float(grp['InMin'].quantile(0.10)),
+                         float(grp['OutMin'].quantile(0.90)))
+                     for s, grp in df_inblock.groupby('Site')}
+        counts = g.size().to_dict()
+        for (s, d), w in derived.items():
+            _prime_windows[(s, d)] = w if counts.get((s, d), 0) >= 20 else _site_env.get(s, w)
+    # Override is authoritative and applies to every weekday at that site, and is
+    # its own site-level fallback too.
+    for site, win in _prime_override.items():
+        try:
+            ws, we = _hhmm_to_min(win[0]), _hhmm_to_min(win[1])
+            for d in range(5):
+                _prime_windows[(site, d)] = (ws, we)
+            _site_env[site] = (ws, we)
+        except (ValueError, IndexError, TypeError):
+            print(f"  Warning: bad prime_time_window for {site!r}; ignoring.")
+except Exception as e:  # derivation must never take the pipeline down
+    print(f"  Warning: prime window derivation failed ({e}); split suppressed.")
+    _prime_windows, _site_env = {}, {}
+
+_split = bool(_prime_windows)
+print(f"  Prime windows resolved for {len(_prime_windows)} site×dow "
+      f"({'override + derived' if _prime_override else 'derived'})"
+      if _split else "  Prime window unavailable — outside split suppressed.")
+
+# Assertion (section 2): in-block hours are prime by definition. Log, do not
+# swallow, any site×dow whose in-block work materially falls outside its window.
+if _split and len(df_inblock):
+    for (s, d), grp in df_inblock.groupby(['Site', 'Dow']):
+        w = _prime_windows.get((s, int(d)))
+        if not w:
+            continue
+        ws, we = w
+        inside = ((grp[['OutMin']].clip(upper=we).values
+                   - grp[['InMin']].clip(lower=ws).values).clip(min=0)).sum()
+        total = (grp['OutMin'] - grp['InMin']).clip(lower=0).sum()
+        if total > 0 and inside / total < 0.95:
+            print(f"  Warning: in-block hours fall outside the derived prime "
+                  f"window at {s} dow {d} ({inside/total:.0%} inside) — window may be wrong.")
+
+# Out-of-block hours and cases per service, site and weekday, split into the
+# prime (operating-day) window and after it. The overlap is a standard CASE; the
+# per-(site,dow) window bounds are injected below. Cases are counted whole into
+# whichever bucket holds the majority of their minutes.
+if _split:
+    # Exact (site, dow) rows, plus a site-level fallback row per site with a
+    # sentinel Dow of -1. A (site, dow) with no window of its own falls back to
+    # the site envelope rather than being counted as fully prime — which would
+    # suppress NON_PRIME_TIME exactly where in-block data is thinnest.
+    def _q(s):
+        return s.replace(chr(39), chr(39) * 2)
+    _vals = ', '.join(
+        [f"('{_q(s)}', {d}, {int(ws)}, {int(we)})"
+         for (s, d), (ws, we) in _prime_windows.items()]
+        + [f"('{_q(s)}', -1, {int(ws)}, {int(we)})"
+           for s, (ws, we) in _site_env.items()])
+    _OUTSIDE_QUERY = f"""
+WITH oc AS (
+  SELECT ISNULL(c.Case_SurgeonService, 'Unknown')          AS Service,
+         ISNULL(c.Loc_ORGrp2, 'Unknown')                   AS Site,
+         (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7     AS Dow,
+         CAST(c.Date_SchedDate AS DATE)                    AS D,
+         ISNULL(c.Dur_ORIn_OROut, 0)                       AS DurMin,
+         DATEPART(HOUR, c.Time_ORin)  * 60 + DATEPART(MINUTE, c.Time_ORin)  AS InMin,
+         -- Minutes from midnight; a case crossing midnight has OutMin < InMin,
+         -- so carry it into the next day before any overlap is measured.
+         CASE WHEN (DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut))
+                 < (DATEPART(HOUR, c.Time_ORin)  * 60 + DATEPART(MINUTE, c.Time_ORin))
+              THEN (DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut)) + 1440
+              ELSE (DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut))
+         END                                               AS OutMin
+  FROM DS_CASES c
+  WHERE c.Date_SchedDate BETWEEN '{curr_start}' AND '{curr_end}'
+    AND c.Case_CanCode IS NULL
+    AND ISNULL(c.Case_CaseBlock, 'Open') = 'Open'
+    AND c.Time_ORin IS NOT NULL AND c.Time_OROut IS NOT NULL
+    AND DATEPART(WEEKDAY, c.Date_SchedDate) BETWEEN 2 AND 6
+),
+w (Site, Dow, Ws, We) AS (
+  SELECT * FROM (VALUES {_vals}) AS v (Site, Dow, Ws, We)
+),
+split AS (
+  SELECT oc.Service, oc.Site, oc.Dow, oc.D, oc.DurMin,
+    CASE
+      WHEN wm.Ws IS NULL THEN oc.DurMin
+      WHEN (CASE WHEN oc.OutMin < wm.We THEN oc.OutMin ELSE wm.We END)
+         - (CASE WHEN oc.InMin  > wm.Ws THEN oc.InMin  ELSE wm.Ws END) > 0
+      THEN (CASE WHEN oc.OutMin < wm.We THEN oc.OutMin ELSE wm.We END)
+         - (CASE WHEN oc.InMin  > wm.Ws THEN oc.InMin  ELSE wm.Ws END)
+      ELSE 0
+    END AS PrimeMin
+  FROM oc
+  -- Prefer the exact (site, dow) window; fall back to the site envelope (-1).
+  OUTER APPLY (
+    SELECT TOP 1 wv.Ws, wv.We
+    FROM w wv
+    WHERE wv.Site = oc.Site AND (wv.Dow = oc.Dow OR wv.Dow = -1)
+    ORDER BY CASE WHEN wv.Dow = oc.Dow THEN 0 ELSE 1 END
+  ) wm
+)
+SELECT Service, Site, Dow,
+       SUM(DurMin) / 60.0                 AS OutsideHours,
+       SUM(PrimeMin) / 60.0              AS OutsidePrimeHours,
+       SUM(DurMin - PrimeMin) / 60.0     AS OutsideNonPrimeHours,
+       COUNT(*)                          AS OutsideCases,
+       SUM(CASE WHEN PrimeMin >= DurMin - PrimeMin THEN 1 ELSE 0 END) AS OutsidePrimeCases,
+       SUM(CASE WHEN PrimeMin <  DurMin - PrimeMin THEN 1 ELSE 0 END) AS OutsideNonPrimeCases,
+       COUNT(DISTINCT D)                 AS Days
+FROM split
+GROUP BY Service, Site, Dow
+"""
+else:
+    _OUTSIDE_QUERY = f"""
+SELECT ISNULL(c.Case_SurgeonService, 'Unknown')          AS Service,
+       ISNULL(c.Loc_ORGrp2, 'Unknown')                   AS Site,
+       (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7     AS Dow,
+       SUM(ISNULL(c.Dur_ORIn_OROut, 0)) / 60.0           AS OutsideHours,
+       COUNT(*)                                          AS OutsideCases,
+       COUNT(DISTINCT CAST(c.Date_SchedDate AS DATE))    AS Days
+FROM DS_CASES c
+WHERE c.Date_SchedDate BETWEEN '{curr_start}' AND '{curr_end}'
+  AND c.Case_CanCode IS NULL
+  AND ISNULL(c.Case_CaseBlock, 'Open') = 'Open'
+  AND DATEPART(WEEKDAY, c.Date_SchedDate) BETWEEN 2 AND 6
+GROUP BY c.Case_SurgeonService, c.Loc_ORGrp2, (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7
+"""
+
+df_outside = pd.read_sql(_OUTSIDE_QUERY, _conn2)
 _conn2.close()
 
 _weeks = max(1.0, (curr_end - curr_start).days / 7.0)
 _tail = {r.CaseBlock: r.LastOutHours for r in df_tail.itertuples()}
 
 # Out-of-block hours and cases per service, site and weekday, per week. Cases
-# because a committee argues about cases more readily than about hours.
+# because a committee argues about cases more readily than about hours. When the
+# prime split is available it carries the four columns; `outside` stays their sum
+# so nothing downstream breaks before it is updated.
 _outside = {}
 _outside_cases = {}
+_outside_prime = {}
+_outside_nonprime = {}
+_outside_prime_cases = {}
+_outside_nonprime_cases = {}
 for r in df_outside.itertuples():
     k = (r.Service, r.Site, int(r.Dow))
     _outside[k] = float(r.OutsideHours or 0) / _weeks
     _outside_cases[k] = float(getattr(r, 'OutsideCases', 0) or 0) / _weeks
+    if _split:
+        _outside_prime[k] = float(getattr(r, 'OutsidePrimeHours', 0) or 0) / _weeks
+        _outside_nonprime[k] = float(getattr(r, 'OutsideNonPrimeHours', 0) or 0) / _weeks
+        _outside_prime_cases[k] = float(getattr(r, 'OutsidePrimeCases', 0) or 0) / _weeks
+        _outside_nonprime_cases[k] = float(getattr(r, 'OutsideNonPrimeCases', 0) or 0) / _weeks
 
 _service_alloc = (df_alloc[df_alloc['CaseBlock'] != 'Open']
                   .groupby(['Service', 'Site'])['AllocHours'].sum().to_dict())
@@ -482,6 +655,8 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
     by_dow, release_events, instances = [], 0, 0
     released_by_dow = {}
     outside_cases_by_dow = {}
+    outside_prime_cases_by_dow = {}
+    outside_nonprime_cases_by_dow = {}
     for d in range(5):
         row = grp[grp['Dow'] == d]
         alloc = float(row['AllocHours'].sum()) / _weeks
@@ -492,11 +667,20 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
         # Out-of-block volume belongs to this service's blocks in proportion to
         # what each holds; crediting all of it to every block makes three ortho
         # blocks each look like they are losing the same hours.
-        by_dow.append({'dow': d, 'alloc': alloc, 'used': used,
-                       'outside': _outside.get((service, site, d), 0.0) * share})
+        k = (service, site, d)
+        entry = {'dow': d, 'alloc': alloc, 'used': used,
+                 'outside': _outside.get(k, 0.0) * share}
+        if _split:
+            # The split rides the same apportioning share, so prime + non-prime
+            # reconcile to `outside` on every day.
+            entry['outsidePrime'] = _outside_prime.get(k, 0.0) * share
+            entry['outsideNonPrime'] = _outside_nonprime.get(k, 0.0) * share
+        by_dow.append(entry)
         # Apportioned on the same share as the hours, so the caption's cases and
         # its hours describe the same volume.
-        outside_cases_by_dow[d] = _outside_cases.get((service, site, d), 0.0) * share
+        outside_cases_by_dow[d] = _outside_cases.get(k, 0.0) * share
+        outside_prime_cases_by_dow[d] = _outside_prime_cases.get(k, 0.0) * share
+        outside_nonprime_cases_by_dow[d] = _outside_nonprime_cases.get(k, 0.0) * share
     brief = next((g for g in groups if g['caseblock'] == block), None)
     fwd = (brief or {}).get('context', {}).get('pipeline', {}) if brief else {}
     trend, trend_pct = BP.classify_trend(fwd.get('forecasted'), fwd.get('scheduled'))
@@ -510,7 +694,10 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
     # it. The drawer's day table has to reconcile to the week shape beside it.
     found['byDow'] = [{**d,
                        'released': round(released_by_dow.get(d['dow'], 0.0), 2),
-                       'outsideCases': round(outside_cases_by_dow.get(d['dow'], 0.0), 2)}
+                       'outsideCases': round(outside_cases_by_dow.get(d['dow'], 0.0), 2),
+                       **({'outsidePrimeCases': round(outside_prime_cases_by_dow.get(d['dow'], 0.0), 2),
+                           'outsideNonPrimeCases': round(outside_nonprime_cases_by_dow.get(d['dow'], 0.0), 2)}
+                          if _split else {})}
                       for d in found['byDow']]
     allocations.append({
         'owner': block, 'service': service, 'site': site,
@@ -522,7 +709,7 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
 allocations.sort(key=lambda a: -(a['mismatchHours'] or 0))
 print(f"  Owners classified: {len(allocations)}")
 for pat in (BP.ABANDONED, BP.WRONG_DAY, BP.WRONG_SHAPE, BP.FRAGMENTED,
-            BP.MISPLACED, BP.UNDER_ALLOCATED, BP.OVER_ALLOCATED,
+            BP.MISPLACED, BP.UNDER_ALLOCATED, BP.NON_PRIME_TIME, BP.OVER_ALLOCATED,
             BP.RIGHT_SIZED, BP.UNCLASSIFIED):
     n = sum(1 for a in allocations if a['pattern'] == pat)
     if n:

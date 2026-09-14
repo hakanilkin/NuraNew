@@ -8,7 +8,8 @@
     },
     "params": {
       "hospital_filter": null,
-      "case_posted_value": "Posted"
+      "case_posted_value": "Posted",
+      "prime_util_target": 75
     },
     "features": {},
     "unit_category_map": {
@@ -68,12 +69,20 @@
       "hospital_filter": null,
       "case_posted_value": "Posted",
       "block_fill_target": 75,
+      "prime_util_target": 75,
       "block_pattern_thresholds": {
         "over_allocated_lt_pct": 58,
         "under_allocated_gt_pct": 74,
         "right_sized_min_pct": 58,
         "right_sized_max_pct": 92,
-        "material_outside_hours": 3.5
+        "material_outside_hours": 3.5,
+        "prime_share_high_pct": 60,
+        "prime_share_low_pct": 40,
+        "low_outside_hours": 1.0
+      },
+      "prime_time_window": {
+        "Bright Memorial Hospital": ["07:00", "16:00"],
+        "Bright Surgery Center": ["07:00", "15:30"]
       },
       "crunch_occupancy_pct": 92,
       "impact_on_plan_pct": 5,
@@ -116,7 +125,8 @@
       "staffing": true,
       "smoothing": true,
       "rtdc": true,
-      "rtdc_pending_items": true
+      "rtdc_pending_items": true,
+      "patient_type_split": true
     },
     "unit_category_map": {
       "column": "DEP_LASTDEPT",

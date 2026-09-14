@@ -247,3 +247,14 @@ test('a shift onto a day with room is clean', () => {
   assert.equal(r.pillars.capacity.status, E.NEUTRAL);
   assert.equal(r.pillars.staffing.status, E.NEUTRAL);
 });
+
+test('roomsForTarget divides demand by the target rectangle, to the half room', () => {
+  assert.equal(S.roomsForTarget(45, 10, 0.75), 6);
+  // Round-trip: staffing that many rooms lands utilisation on target, within
+  // the half-room rounding it is deliberately snapped to.
+  for (const [d, h, t] of [[45, 10, 0.75], [50, 10, 0.75], [62, 10, 0.70], [78.8, 10, 0.80]]) {
+    const rooms = S.roomsForTarget(d, h, t);
+    assert.equal(rooms % 0.5, 0, 'rooms is a half-room multiple');
+    assert.ok(Math.abs(rooms - d / (t * h)) <= 0.25, `${d}/${t}/${h} lands within a half room of target`);
+  }
+});

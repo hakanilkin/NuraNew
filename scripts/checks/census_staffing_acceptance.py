@@ -100,8 +100,12 @@ def main():
     # reads DS_RR. A room occupied for five minutes of a fifteen-minute slot
     # counts as the whole slot, so the ledger reads a few hours higher. Both are
     # correct for what they measure; the band allows for the difference.
+    # Upper bound widened from 20: ST-8's after-hours ENT emergent list
+    # (NON_PRIME_TIME) is real overtime the demo did not carry before. The
+    # slot-based ledger reads a few hours above verify.py's room-minute figure,
+    # so its ceiling sits above ST-3's own (see demo_config st3).
     check('ST-3 overtime room-hours per week (DS_RR slots)', total_ot,
-          10.0 <= total_ot <= 20.0, '10–20', 'h')
+          10.0 <= total_ot <= 28.0, '10–28', 'h')
     check('ST-3 Friday idle staffed room-hours', fri_idle, fri_idle >= 25, '>= 25', 'h')
     mean_cliff = st.mean(cliff)
     check('ST-3 rooms running at 15:30 (Tue–Thu)', mean_cliff, 2.6 <= mean_cliff <= 4.2, '2.6–4.2', 'rooms')
@@ -118,6 +122,21 @@ def main():
     check('ST-3 Friday implied rooms (forward)', fri_implied, 3 <= fri_implied <= 7, '3–7', 'rooms')
     flag = call_lib('staffingShape.js', 'flexFlag', 9, fri_implied)
     check('ST-3 Friday flex flag', flag, flag == 'FLEX_DOWN', 'FLEX_DOWN')
+
+    # ── Rooms to Target: the window recommends both closing and opening rooms
+    #    (StaffingRoomsToTarget.md §7) — not all-flex-down. Reuses the forward
+    #    demand above; 9 rooms over the 07:00–15:30 (8.5h) plan, at the demo target.
+    target = json.load(open(os.path.join(ROOT, 'config', 'tenantColumns.json'))
+                       )['Demo']['params']['prime_util_target'] / 100.0
+    close_days = open_days = 0
+    for _d, mins in fwd_by_day.items():
+        delta = (round(mins / 60.0 / (target * 8.5) * 2) / 2) - 9
+        if delta <= -0.5:
+            close_days += 1
+        elif delta >= 0.5:
+            open_days += 1
+    check('Rooms to Target: window has both directions', f'{close_days} close / {open_days} open',
+          close_days >= 1 and open_days >= 1, '>=1 each')
 
     # ── ST-2, through lib/censusFootprint.js ────────────────────────────────
     print('\n  ── Census attribution (lib/censusFootprint.js) ──')

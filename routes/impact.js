@@ -4,7 +4,7 @@ const D = require('../lib/demandSignal');
 const S = require('../lib/staffingShape');
 const F = require('../lib/censusFootprint');
 const R = require('../lib/recoveryDemand');
-const { getParam, resolveColumn } = require('../utils/tenantColumns');
+const { getParam, resolveColumn, getFeatures } = require('../utils/tenantColumns');
 
 // Volume Impact (VolumeImpact.md).
 //
@@ -32,6 +32,12 @@ const FORECAST_CASES = `
 + ISNULL(FORECAST_INPATIENT,0)  + ISNULL(FORECAST_OUTPATIENT,0)`;
 const SCHEDULED_CASES = 'ISNULL(SCHEDULED_INPATIENT,0) + ISNULL(SCHEDULED_OUTPATIENT,0)';
 const BUDGET_CASES = 'ISNULL(BUDGET_INPATIENT,0) + ISNULL(BUDGET_OUTPATIENT,0)';
+// Patient-type split (ServiceLineBreakdownPatientType.md), demo only. SDA is a
+// subset of inpatient, so displayed inpatient is IP − SDA and OP + SDA + IP
+// still equals the total above. These columns exist only where the flag is on.
+const OP_ALL  = 'ISNULL(SCHEDULED_OUTPATIENT,0) + ISNULL(FORECAST_OUTPATIENT,0)';
+const SDA_ALL = 'ISNULL(SCHEDULED_SDA,0) + ISNULL(FORECAST_SDA,0)';
+const IP_ALL  = 'ISNULL(SCHEDULED_INPATIENT,0) + ISNULL(FORECAST_INPATIENT,0)';
 
 module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
   const router = express.Router();
@@ -115,15 +121,54 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     r.input('to', sql.Date, to);
     const filter = siteFilter(r, sites);
     const serviceCol = resolveColumn(tenant, 'OR_SERVICE');
+    // Demo-only patient-type split. The SDA columns exist only for the flagged
+    // tenant, so the extra SELECT terms are added only then — NHS/OHS run the
+    // original query untouched.
+    const hasTypes = getFeatures(tenant)?.patient_type_split === true;
+    const typeCols = hasTypes
+      ? `, SUM(${OP_ALL}) AS Op, SUM(${SDA_ALL}) AS Sda, SUM(${IP_ALL}) AS Ip`
+      : '';
     const res = await r.query(`
       SELECT CONVERT(VARCHAR(10), CAST(Date AS DATE), 23) AS Date,
              MIN(DATEPART(WEEKDAY, Date))                 AS Wd,
              ISNULL(${serviceCol}, 'Unknown')             AS Service,
-             SUM(${FORECAST_CASES})                       AS Cases
+             SUM(${FORECAST_CASES})                       AS Cases,
+             SUM(${SCHEDULED_CASES})                      AS Booked,
+             SUM(${BUDGET_CASES})                         AS Budget${typeCols}
       FROM V4_FORECAST_COMPILE
       WHERE CAST(Date AS DATE) BETWEEN @from AND @to${filter}
       GROUP BY CAST(Date AS DATE), ISNULL(${serviceCol}, 'Unknown')
     `);
+
+    // "Typical" for a named day is the trailing actual for that service on that
+    // weekday — the baseline "15% above typical" is measured against. One query
+    // over the quarter before the window; a tenant without history simply loses
+    // the vs-Typical mode (hasContext gates it), never the matrix.
+    let typicalByServiceDow = new Map();
+    try {
+      const tq = db.request();
+      tq.input('from', sql.Date, from);
+      const tf = siteFilter(tq, sites);
+      const tOut = await tq.query(`
+        SELECT Service, Dow, AVG(CAST(Cases AS FLOAT)) AS Typical
+        FROM (
+          SELECT ISNULL(${serviceCol}, 'Unknown')                 AS Service,
+                 (DATEPART(WEEKDAY, Date) + 5) % 7                 AS Dow,
+                 CAST(Date AS DATE)                                AS D,
+                 SUM(ISNULL(ACTUAL_INPATIENT,0) + ISNULL(ACTUAL_OUTPATIENT,0)) AS Cases
+          FROM V4_FORECAST_COMPILE
+          WHERE CAST(Date AS DATE) >= DATEADD(day, -91, @from)
+            AND CAST(Date AS DATE) <  @from${tf}
+          GROUP BY ISNULL(${serviceCol}, 'Unknown'), (DATEPART(WEEKDAY, Date) + 5) % 7, CAST(Date AS DATE)
+        ) x
+        GROUP BY Service, Dow
+      `);
+      for (const y of tOut.recordset) typicalByServiceDow.set(`${y.Service}|${num(y.Dow)}`, num(y.Typical));
+    } catch (err) {
+      console.error('/api/impact breakdown typical unavailable:', err.message);
+      typicalByServiceDow = new Map();
+    }
+    const hasContext = typicalByServiceDow.size > 0;
 
     // Holidays are muted rather than dropped: a quiet column that turns out to
     // be Thanksgiving is a support ticket. The flag lives on the case rows, so
@@ -165,31 +210,93 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     const index = new Map(dates.map((d, i) => [d.date, i]));
 
     const byService = new Map();
+    const bookedByService = new Map();
+    const budgetByService = new Map();
+    // Window totals per service, split by type (demo only). ipFull is the whole
+    // inpatient count; displayed inpatient subtracts SDA at the end.
+    const typeByService = new Map();
+    // Per-date type totals across services, for the three bottom rows.
+    const opByDate  = new Array(dates.length).fill(0);
+    const sdaByDate = new Array(dates.length).fill(0);
+    const ipByDate  = new Array(dates.length).fill(0);
+    const blank = () => new Array(dates.length).fill(0);
     for (const x of res.recordset) {
       const i = index.get(x.Date);
       if (i == null) continue;
       const key = x.Service;
-      if (!byService.has(key)) byService.set(key, new Array(dates.length).fill(0));
+      if (!byService.has(key)) { byService.set(key, blank()); bookedByService.set(key, blank()); budgetByService.set(key, blank()); }
       byService.get(key)[i] += num(x.Cases);
+      bookedByService.get(key)[i] += num(x.Booked);
+      budgetByService.get(key)[i] += num(x.Budget);
+      if (hasTypes) {
+        if (!typeByService.has(key)) typeByService.set(key, { op: 0, sda: 0, ipFull: 0 });
+        const t = typeByService.get(key);
+        t.op += num(x.Op); t.sda += num(x.Sda); t.ipFull += num(x.Ip);
+        opByDate[i]  += num(x.Op);
+        sdaByDate[i] += num(x.Sda);
+        ipByDate[i]  += num(x.Ip);
+      }
     }
 
     // Every service line, sorted by window total. A full tab has the room, so
     // there is no cap and no Other row to reconcile against.
     const services = [...byService.entries()]
-      .map(([service, byDate]) => ({
-        service,
-        byDate: byDate.map(v => Math.round(v)),
-        total: Math.round(byDate.reduce((t, v) => t + v, 0)),
-      }))
+      .map(([service, byDate]) => {
+        const row = {
+          service,
+          byDate: byDate.map(v => Math.round(v)),
+          total: Math.round(byDate.reduce((t, v) => t + v, 0)),
+        };
+        if (hasContext) {
+          row.booked = bookedByService.get(service).map(v => Math.round(v));
+          row.budget = budgetByService.get(service).map(v => Math.round(v));
+          // Typical rides the weekday baseline, so a named date reads against
+          // how that service's weekday usually runs.
+          row.typical = dates.map(d => Math.round(typicalByServiceDow.get(`${service}|${d.dow}`) || 0));
+        }
+        if (hasTypes) {
+          const t = typeByService.get(service) || { op: 0, sda: 0, ipFull: 0 };
+          row.byType = {
+            outpatient: Math.round(t.op),
+            sda: Math.round(t.sda),
+            inpatient: Math.round(t.ipFull - t.sda),
+          };
+        }
+        return row;
+      })
       .sort((a, b) => b.total - a.total || a.service.localeCompare(b.service));
 
     const totals = dates.map((_, i) => services.reduce((t, x) => t + x.byDate[i], 0));
-    return {
+    const sumCol = k => dates.map((_, i) => services.reduce((t, x) => t + (x[k]?.[i] ?? 0), 0));
+    const out = {
       dates,
       services,
       totals: { byDate: totals, window: totals.reduce((t, v) => t + v, 0) },
       weeks: new Set(dates.map(d => d.weekOf)).size,
+      hasContext,
     };
+    if (hasContext) {
+      out.totals.booked = sumCol('booked');
+      out.totals.budget = sumCol('budget');
+      out.totals.typical = sumCol('typical');
+    }
+    if (hasTypes) {
+      // The three bottom rows: type × date. Inpatient nets out SDA so the three
+      // reconcile to the grand total, mirroring the per-service split above.
+      const netIp = ipByDate.map((v, i) => v - sdaByDate[i]);
+      const typeRow = (type, arr) => ({
+        type,
+        byDate: arr.map(v => Math.round(v)),
+        total: Math.round(arr.reduce((t, v) => t + v, 0)),
+      });
+      out.types = [
+        typeRow('outpatient', opByDate),
+        typeRow('sda', sdaByDate),
+        typeRow('inpatient', netIp),
+      ];
+      out.hasTypes = true;
+    }
+    return out;
   }
 
   async function plansBySiteDow(db) {
@@ -209,6 +316,48 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
     } catch (err) {
       // A tenant without a staffing plan loses this tab, not the page.
       console.error('/api/impact staffing plan unavailable:', err.message);
+      return new Map();
+    }
+  }
+
+  // Average rooms in use by hour, per site x day-of-week, over the trailing
+  // quarter (StaffingRoomsToTarget.md §3). This is the *shape* only; the stepped
+  // plan takes its magnitude from the forecast. One query for the whole window.
+  // Missing → empty map → callers fall back to a flat shape.
+  async function hourShapeBySiteDow(db, { before }) {
+    try {
+      const r = db.request();
+      r.input('before', sql.Date, before);
+      const out = await r.query(`
+        SELECT Site, Dow, Hour, AVG(CAST(Cnt AS FLOAT)) AS AvgRooms
+        FROM (
+          SELECT ISNULL(c.Loc_ORGrp2, 'Unknown')                 AS Site,
+                 (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7    AS Dow,
+                 CAST(c.Date_SchedDate AS DATE)                   AS D,
+                 h.H                                              AS Hour,
+                 COUNT(*)                                         AS Cnt
+          FROM DS_CASES c
+          CROSS JOIN (VALUES (5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20)) h(H)
+          WHERE c.Date_SchedDate >= DATEADD(day, -90, @before)
+            AND c.Date_SchedDate <  @before
+            AND c.Time_ORin IS NOT NULL AND c.Time_OROut IS NOT NULL
+            AND c.Case_CanCode IS NULL
+            AND DATEPART(HOUR, c.Time_ORin) <= h.H
+            AND (DATEPART(HOUR, c.Time_OROut) * 60 + DATEPART(MINUTE, c.Time_OROut)) > h.H * 60
+          GROUP BY c.Loc_ORGrp2, (DATEPART(WEEKDAY, c.Date_SchedDate) + 5) % 7,
+                   CAST(c.Date_SchedDate AS DATE), h.H
+        ) x
+        GROUP BY Site, Dow, Hour
+      `);
+      const map = new Map();
+      for (const x of out.recordset) {
+        const k = `${x.Site}|${num(x.Dow)}`;
+        if (!map.has(k)) map.set(k, {});
+        map.get(k)[num(x.Hour)] = num(x.AvgRooms);
+      }
+      return map;
+    } catch (err) {
+      console.error('/api/impact staffing hour shape unavailable:', err.message);
       return new Map();
     }
   }
@@ -477,92 +626,55 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
   router.get('/staffing', async (req, res) => {
     try {
       const tenant = req.tenantName || 'default';
-      const t = thresholds(tenant);
-      const target = num(getParam(tenant, 'block_fill_target')) || 75;
+      // Prime-time room utilisation, NOT block fill — different metrics that
+      // drift apart (StaffingRoomsToTarget.md §4).
+      const targetPct = (num(getParam(tenant, 'prime_util_target')) || 75) / 100;
+      const packingCeiling = num(getParam(tenant, 'isscm')?.packingCeiling) || 0.8;
       const db = await getTenantPool(req.session.tenantId);
       const { from, to } = windowOf(req.query);
 
-      const [rows, plans, releasable] = await Promise.all([
+      const [rows, plans, shapeMap] = await Promise.all([
         dailyTotals(db, { from, to, sites: req.query.sites, bySite: true }),
         plansBySiteDow(db),
-        // Blocks on a given day that are booked below target — the time that
-        // could be sold rather than given up.
-        (async () => {
-          const r = db.request();
-          r.input('from', sql.Date, from);
-          r.input('to', sql.Date, to);
-          const filter = siteFilter(r, req.query.sites);
-          const out = await r.query(`
-            SELECT CONVERT(VARCHAR(10), CAST(Date AS DATE), 23) AS Date,
-                   ISNULL(ORGRP2, 'Unknown')                    AS Site,
-                   ISNULL(Caseblock, 'Unknown')                 AS CaseBlock,
-                   SUM(ISNULL(BLOCKTIME, 0))                    AS BlockMins,
-                   SUM(${SCHED_MINS})                           AS BookedMins
-            FROM V4_FORECAST_COMPILE
-            WHERE CAST(Date AS DATE) BETWEEN @from AND @to
-              AND ISNULL(Caseblock, 'Unknown') <> 'Open'${filter}
-            GROUP BY Date, ORGRP2, Caseblock
-            HAVING SUM(ISNULL(BLOCKTIME, 0)) > 0
-          `);
-          const map = new Map();
-          for (const x of out.recordset) {
-            const fill = num(x.BlockMins) > 0 ? (num(x.BookedMins) / num(x.BlockMins)) * 100 : null;
-            if (fill == null || fill >= target) continue;
-            const k = `${x.Date}|${x.Site}`;
-            if (!map.has(k)) map.set(k, []);
-            map.get(k).push({ caseBlock: x.CaseBlock, fillPct: round1(fill),
-                              hours: round1(num(x.BlockMins) / 60) });
-          }
-          return map;
-        })(),
+        hourShapeBySiteDow(db, { before: from }),
       ]);
 
       const days = rows.filter(x => x.dow < 5).map(row => {
         const plan = plans.get(`${row.site}|${row.dow}`);
         if (!plan) return null;
-        const implied = S.impliedRooms(row.forecastMins, plan);
-        const shiftMins = S.hhmmToMinutes(plan.shiftEnd) - S.hhmmToMinutes(plan.shiftStart);
-        const cover = S.coverageImpact(
-          { staffedRooms: plan.staffedRooms, shiftHours: shiftMins / 60,
-            requiredRoomHours: row.forecastMins / 60, coverageRatio: plan.coverageRatio },
-          0, num(getParam(tenant, 'isscm')?.packingCeiling) || 0.85);
+        const startH = Math.floor(S.hhmmToMinutes(plan.shiftStart) / 60);
+        const endH = Math.ceil(S.hhmmToMinutes(plan.shiftEnd) / 60);
+        const shiftHours = Math.max(1, endH - startH);
+        const demandRoomHours = round1(row.forecastMins / 60);
 
-        const slack = plan.staffedRooms - implied;
-        // Under and over are not symmetric: a room short costs late finishes,
-        // overtime and possibly a cancellation; a room over costs idle salary.
-        const flag = slack <= -t.underWeight ? 'UNDER'
-          : slack >= 2 / t.overWeight ? 'OVER' : null;
+        // Shape from history, magnitude from the forecast: rooms in use per hour
+        // is the normalised concurrency shape scaled to the day's demand.
+        const hist = shapeMap.get(`${row.site}|${row.dow}`) || {};
+        const raw = [];
+        for (let h = startH; h < endH; h++) raw.push(num(hist[h]));
+        const rawSum = raw.reduce((a, b) => a + b, 0);
+        const hasShape = rawSum > 0;
+        const hourShape = hasShape
+          ? raw.map(v => round1((v / rawSum) * demandRoomHours))
+          : raw.map(() => round1(demandRoomHours / shiftHours));
+        const peakRooms = round1(hourShape.reduce((m, v) => Math.max(m, v), 0));
 
-        const spare = releasable.get(`${row.date}|${row.site}`) || [];
-        let implication, link = null;
-        if (flag === 'UNDER') {
-          implication = `Booked volume implies ${implied} rooms against ${plan.staffedRooms} `
-                      + `staffed; about ${round1(cover.overtimeAfter)} room-hours would run past shift end.`;
-        } else if (flag === 'OVER' && spare.length) {
-          // Fill before flex. Flex-down language belongs only where the time
-          // genuinely cannot be sold, and nurse leaders hear it as a cut.
-          implication = `${spare.length} block${spare.length === 1 ? '' : 's'} `
-                      + `(${round1(spare.reduce((s, x) => s + x.hours, 0))}h) are booked under `
-                      + `${target}% — consider releasing and re-offering before reducing rooms.`;
-          link = { label: 'Open Release Time Mgmt', href: '/open-time/radar' };
-        } else if (flag === 'OVER') {
-          implication = `Booked volume implies ${implied} rooms against ${plan.staffedRooms} `
-                      + `staffed, and no block on this day has sellable time left.`;
-        } else {
-          implication = `Booked volume implies ${implied} rooms against ${plan.staffedRooms} staffed.`;
-        }
+        const roomsForTarget = S.roomsForTarget(demandRoomHours, shiftHours, targetPct);
+        // Feasibility floor (§6): the busier of the peak hour and the packing
+        // ceiling, to the half room. No recommendation should sit below it.
+        const packFloor = demandRoomHours / (packingCeiling * shiftHours);
+        const floorRooms = Math.ceil(Math.max(peakRooms, packFloor) * 2) / 2;
 
         return {
           date: row.date, dow: row.dow, label: DOW_LABEL[row.dow], site: row.site,
-          impliedRooms: implied, staffedRooms: plan.staffedRooms,
-          bookedRoomHours: round1(row.forecastMins / 60),
-          lateDayHours: round1(cover.overtimeAfter),
-          flag, implication, link,
-          releasable: spare,
+          demandRoomHours, plannedRooms: num(plan.staffedRooms),
+          shiftHours, shiftStartHour: startH,
+          roomsForTarget, peakRooms, floorRooms,
+          hourShape, hasShape,
         };
       }).filter(Boolean);
 
-      res.json({ from, to, blockFillTarget: target, days });
+      res.json({ from, to, target: targetPct, packingCeiling, days });
     } catch (err) {
       console.error('/api/impact/staffing error:', err.message);
       res.status(500).json({ error: 'Internal server error' });

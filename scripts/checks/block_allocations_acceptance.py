@@ -73,7 +73,14 @@ def classify(tables, ctx, anchor=ANCHOR, weeks=WEEKS):
             a.setdefault('released_days', set()).add(d)
 
     # ── Volume booked outside any block, by service and weekday ─────────────
+    # Split by where the hours land: prime is the operating-day window (the
+    # generator's own per-case __prime_min, so this mirrors the pipeline's SQL
+    # overlap exactly), non-prime is what runs after it. Hours split by overlap;
+    # cases counted whole into whichever bucket holds the majority of their
+    # minutes (BlockAllocationsPrimeTime.md section 3).
     outside = {}
+    outside_prime = {}
+    outside_nonprime = {}
     for c in ctx['cases']:
         if c['__is_future'] or c['__cancelled'] or c['Case_CaseBlock'] != 'Open':
             continue
@@ -81,7 +88,15 @@ def classify(tables, ctx, anchor=ANCHOR, weeks=WEEKS):
         if not (since <= d < anchor) or d.weekday() > 4:
             continue
         k = (c['Case_SurgeonService'], c['Loc_ORGrp2'], d.weekday())
-        outside[k] = outside.get(k, 0.0) + (c['Dur_ORIn_OROut'] or 0) / 60.0
+        pm = c.get('__prime_min')
+        if pm is None:                                   # no split available
+            prime_h, nonprime_h = (c['Dur_ORIn_OROut'] or 0) / 60.0, 0.0
+        else:
+            prime_h = pm / 60.0
+            nonprime_h = (c.get('__nonprime_min') or 0) / 60.0
+        outside[k] = outside.get(k, 0.0) + prime_h + nonprime_h
+        outside_prime[k] = outside_prime.get(k, 0.0) + prime_h
+        outside_nonprime[k] = outside_nonprime.get(k, 0.0) + nonprime_h
 
     # Out-of-block volume belongs to the blocks of that service in proportion
     # to what they hold. Crediting the whole service's spill to every one of its
@@ -115,11 +130,14 @@ def classify(tables, ctx, anchor=ANCHOR, weeks=WEEKS):
         share = (mine / pool) if pool > 0 else 0.0
         for d in range(5):
             e = a['dow'].get(d, {'alloc': 0.0, 'used': 0.0})
+            k = (a['service'], a['site'], d)
             by_dow.append({
                 'dow': d,
                 'alloc': e['alloc'] / weeks,
                 'used': e['used'] / weeks,
-                'outside': outside.get((a['service'], a['site'], d), 0.0) * share / weeks,
+                'outside': outside.get(k, 0.0) * share / weeks,
+                'outsidePrime': outside_prime.get(k, 0.0) * share / weeks,
+                'outsideNonPrime': outside_nonprime.get(k, 0.0) * share / weeks,
             })
         instances = len(a['instances'])
         release_events = len(a.get('released_days', ()))
