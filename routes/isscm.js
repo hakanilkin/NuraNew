@@ -57,7 +57,7 @@ module.exports = function isscmRoutes(getTenantPool, sql, requireTenant) {
   router.use(requireTenant);
 
   // ── Pillar 1 inputs ───────────────────────────────────────────────────────
-  // Block utilisation is in-window; true utilisation credits everything that
+  // Block utilization is in-window; true utilization credits everything that
   // ran in the block's own rooms on its own days, which is where the argument
   // against slot-occupancy thinking lives.
   async function blockBaseline(db, block, weekday, weeks) {
@@ -431,7 +431,7 @@ module.exports = function isscmRoutes(getTenantPool, sql, requireTenant) {
         const altBaseline = await buildBaseline(db, tenant, {
           block: entry.block, service: receiving, weekday: day, weeks, horizonDays,
         });
-        // The block's own utilisation does not change with the receiving day.
+        // The block's own utilization does not change with the receiving day.
         altBaseline.surgeon = baseline.surgeon;
         const alt = evaluate(altBaseline, { ...decision, dayOfWeek: day,
           dayOfWeekLabel: DOW_LABEL[day], scenarioId: `${entry.scenarioId}|alt${day}` }, cfg);

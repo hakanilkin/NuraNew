@@ -62,12 +62,12 @@ def _background(tables, ctx):
 
     prime = sum(r['Total_Prime_Time'] for r in br)
     blk   = sum(r['blockTime'] for r in br)
-    _band('Prime-time utilisation', 100.0 * prime / blk if blk else None,
+    _band('Prime-time utilization', 100.0 * prime / blk if blk else None,
           *C.BACKGROUND['primetime_util_pct'], unit='%')
 
     inblock = sum(r['InBlock'] for r in br if r['CaseBlock'] != 'Open')
     blk_only = sum(r['blockTime'] for r in br if r['CaseBlock'] != 'Open')
-    _band('In-block utilisation', 100.0 * inblock / blk_only if blk_only else None,
+    _band('In-block utilization', 100.0 * inblock / blk_only if blk_only else None,
           *C.BACKGROUND['inblock_util_pct'], unit='%')
 
     firsts = [c for c in cases if c['Turnover_Orderofcaseinroom'] == 1
@@ -100,16 +100,16 @@ def _st1(tables, ctx):
             and r['BlockDate'] >= since and r['BlockDate'].weekday() == s['weekday']]
     prime = sum(r['Total_Prime_Time'] for r in rows)
     blk   = sum(r['blockTime'] for r in rows)
-    _near(f'ST-1 {s["block"]} Thu block utilisation (trailing 8wk)',
+    _near(f'ST-1 {s["block"]} Thu block utilization (trailing 8wk)',
           100.0 * prime / blk if blk else None,
           s['trailing_block_util_pct'], s['tolerance_pct'] * 100 / s['trailing_block_util_pct'],
           unit='%', note=f'{len({r["BlockDate"] for r in rows})} instances')
 
-    # True utilisation: same rooms, same days, all cases including out-of-block.
+    # True utilization: same rooms, same days, all cases including out-of-block.
     room_days = {(r['BlockDate'], r['ORLoc']) for r in rows}
     all_prime = sum(r['Total_Prime_Time'] for r in br
                     if (r['BlockDate'], r['ORLoc']) in room_days)
-    _near('ST-1 true utilisation (incl. out-of-block)',
+    _near('ST-1 true utilization (incl. out-of-block)',
           100.0 * all_prime / blk if blk else None,
           s['trailing_true_util_pct'], s['tolerance_pct'] * 100 / s['trailing_true_util_pct'],
           unit='%')
@@ -416,7 +416,7 @@ def _st8(tables, ctx):
            PASS if (nps is not None and nps <= _th['prime_share_low_pct']) else FAIL, '%')
 
     # The prime-dominant UNDER_ALLOCATED requirement is "one such block exists",
-    # not "this named one" — which block clears the utilisation bar drifts with
+    # not "this named one" — which block clears the utilization bar drifts with
     # the anchor, so pinning it to Spine is fragile. Assert the finding, not the
     # owner: some UNDER_ALLOCATED block whose spill is daytime.
     prime_unders = [(f, _prime_share(f)) for f in findings
@@ -538,7 +538,7 @@ def _st7(tables, ctx):
 
     # The gradient exists in the data but cannot reach the radar's High badge,
     # and that is a property of the scorer rather than of this seed. Risk is a
-    # weighted mean of three features; trailing utilisation and prior-release
+    # weighted mean of three features; trailing utilization and prior-release
     # share both sit near zero for any block that runs at all, so the score is
     # in practice about half the forward-fill shortfall and tops out near 50.
     # Reported rather than left to look like an empty band.

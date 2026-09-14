@@ -7,7 +7,7 @@ const { getParam } = require('../utils/tenantColumns');
 // Block Allocations (BlockAllocations.md).
 //
 // The decision this serves is a quarterly block committee review, and the
-// question is not "which blocks have low utilisation" — it is "where does the
+// question is not "which blocks have low utilization" — it is "where does the
 // allocated grid disagree with how surgeons actually practise, and what should
 // we change". The action is reallocation, not release.
 //
@@ -164,7 +164,7 @@ module.exports = function blockRoutes(getTenantPool, sql, requireTenant, store) 
             },
           };
         })
-        // Magnitude, not utilisation: a committee has agenda time for the four
+        // Magnitude, not utilization: a committee has agenda time for the four
         // findings that move the most hours.
         .sort((x, y) => num(y.mismatchHours) - num(x.mismatchHours));
 

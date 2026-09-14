@@ -146,7 +146,7 @@ SERVICES = [
     'ENT', 'Plastics', 'Vascular', 'Colorectal', 'Robotics-General',
 ]
 
-# Relative share of total case volume per service. Normalised at load.
+# Relative share of total case volume per service. Normalized at load.
 SERVICE_VOLUME_WEIGHT = {
     'Orthopedics':      0.19,
     'General Surgery':  0.17,
@@ -394,7 +394,7 @@ STORYLINES = {
     # book at different paces, and a practice that books late looks like a
     # release candidate long before it looks like a problem — so the gradient
     # comes from booking pace on forward dates, which leaves every historical
-    # utilisation figure ST-0 depends on untouched.
+    # utilization figure ST-0 depends on untouched.
     'st7': {
         # The radar's own badge thresholds (client/src/pages/OpenTimeRadar.jsx).
         'badge_high': 67,
@@ -416,7 +416,7 @@ STORYLINES = {
         # than at it.
         'top_ranked_within': 3,
         # lib/releaseRisk.js scores risk as a weighted mean of three features.
-        # Two of them — trailing utilisation against a 75% target, and share of
+        # Two of them — trailing utilization against a 75% target, and share of
         # block time previously released — sit near zero for any block that runs
         # at all, so risk is in practice about half the forward-fill shortfall
         # and tops out near 50. Reaching the badge's High threshold would need a

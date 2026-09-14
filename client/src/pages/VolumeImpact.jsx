@@ -741,7 +741,7 @@ function FlagChip({ flag }) {
 }
 
 /* ─── Tab 4 — Rooms to Target (StaffingRoomsToTarget.md) ──────────────────────
-   Utilisation is demand / staffed, so the rooms you open is the lever. Each day
+   Utilization is demand / staffed, so the rooms you open is the lever. Each day
    shows demand against staffed rooms, the rooms that hit target (notch), the
    feasibility floor (muted marker), and a half-room stepper that recomputes the
    row and the summary live. Same outline/fill idiom as the Block Allocations
@@ -792,7 +792,7 @@ export function StaffingTab({ data }) {
     setRoomsOv(o => ({ ...o, [keyOf(d)]: Math.max(1, Math.min(20, roomsOf(d) + s)) }))
   }
 
-  // Summary: utilisation now, at the recommended plan, and the net room-day move.
+  // Summary: utilization now, at the recommended plan, and the net room-day move.
   let dem = 0, capNow = 0, capRec = 0, net = 0
   const byDow = {}
   days.forEach(d => {
@@ -835,7 +835,7 @@ export function StaffingTab({ data }) {
       {/* Summary strip */}
       <div className="card" style={{ padding: '18px 20px', marginBottom: 14 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px 40px', alignItems: 'flex-start' }}>
-          {stat('Projected utilisation', `${Math.round(projUtil * 100)}%`,
+          {stat('Projected utilization', `${Math.round(projUtil * 100)}%`,
                 `${Math.round(dem)} of ${Math.round(capNow)} staffed room-hours`)}
           {stat('At the recommended plan', `${Math.round(recUtil * 100)}%`,
                 `target ${Math.round(target * 100)}%`)}
@@ -848,7 +848,7 @@ export function StaffingTab({ data }) {
 
       {/* Target control */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: 'var(--color-gray-600)', fontWeight: 600 }}>Target prime-time utilisation</span>
+        <span style={{ fontSize: 12, color: 'var(--color-gray-600)', fontWeight: 600 }}>Target prime-time utilization</span>
         <div style={{ display: 'inline-flex', border: '1px solid var(--surface-border)', borderRadius: 7, overflow: 'hidden' }}>
           {[0.70, 0.75, 0.80].map(t => {
             const on = Math.abs(target - t) < 1e-9
@@ -872,7 +872,7 @@ export function StaffingTab({ data }) {
                       gap: 14, padding: '9px 18px', fontSize: 11, letterSpacing: '0.05em',
                       textTransform: 'uppercase', color: 'var(--color-gray-500)', fontWeight: 600,
                       borderBottom: '2px solid var(--surface-border)', background: '#f8f9fb' }}>
-          <div>Day</div><div>Demand against staffed rooms</div><div>Utilisation</div>
+          <div>Day</div><div>Demand against staffed rooms</div><div>Utilization</div>
           <div>To reach target</div><div style={{ textAlign: 'right' }}>Rooms</div>
         </div>
         {days.map((d, i) => {
@@ -988,7 +988,7 @@ function StaffingDetail({ day, calc }) {
 
   const finding = day.hasShape
     ? `A flat plan of ${fmtRoom(r)} rooms runs at ${Math.round(calc.util * 100)}%. Peak demand is `
-      + `${fmtRoom(day.peakRooms)} rooms, so utilisation cannot be fixed by a smaller `
+      + `${fmtRoom(day.peakRooms)} rooms, so utilization cannot be fixed by a smaller `
       + `rectangle — the floor is set by the busiest hour. Staffing ${fmtRoom(half1)} rooms to 13:00 and `
       + `${fmtRoom(half2)} after reaches ${stepUtil}% without moving a case.`
     : `Hour-level shape is unavailable for this day, so only the flat recommendation is shown: `

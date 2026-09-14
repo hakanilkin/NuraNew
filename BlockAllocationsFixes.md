@@ -23,9 +23,9 @@ right-sized. **13 of 20 blocks fall into this gap.**
 
 **Cause — a genuine hole in `BlockAllocations.md` §2, my error:**
 
-- `OVER_ALLOCATED` requires low utilisation **and** low outside volume.
-- `UNDER_ALLOCATED` requires high utilisation **and** material outside volume.
-- **Low utilisation + material outside volume matches neither**, and falls
+- `OVER_ALLOCATED` requires low utilization **and** low outside volume.
+- `UNDER_ALLOCATED` requires high utilization **and** material outside volume.
+- **Low utilization + material outside volume matches neither**, and falls
   through to `RIGHT_SIZED`.
 - Separately, `right_sized_min_pct` / `right_sized_max_pct` exist in config and
   are **never read by `block_patterns.py`**. `RIGHT_SIZED` currently means "no
@@ -78,7 +78,7 @@ between them should always match something.
 `demo_config.py` names Vascular as the wrong-day case (held Tuesday, volume
 Thursday) and Ortho A as abandoned. Neither is in the data:
 
-- **Vascular** is held **Wednesday** at 77% utilisation, with 1.7h on Thursday.
+- **Vascular** is held **Wednesday** at 77% utilization, with 1.7h on Thursday.
   `WRONG_DAY` needs an unheld day ≥ 2.5h and a held day < 45% — neither holds.
 - **Ortho A** shows 4 releases of 13 instances (31%); `ABANDONED` needs ≥ 50%.
 
@@ -119,7 +119,7 @@ host only, and `ISSCMIntegrationView.md` §8's host table updates accordingly.)
 **"See details"** opens a right-hand slide-over — same drawer primitive already
 in use — containing exactly two things:
 
-### 3a. The evidence behind the utilisation number
+### 3a. The evidence behind the utilization number
 
 - The **week shape** at full size (allocated outline, in-block fill,
   out-of-block hatch).

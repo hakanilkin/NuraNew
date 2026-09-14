@@ -24,10 +24,10 @@
 The current tab reports staffing alignment as a ledger. It never answers the
 question the person actually has, which is **how many rooms should I open.**
 
-Utilisation is one identity:
+Utilization is one identity:
 
 ```
-utilisation = demand room-hours / staffed room-hours
+utilization = demand room-hours / staffed room-hours
 ```
 
 The forecast owns the numerator. Staffing owns the denominator. So the rooms
@@ -38,7 +38,7 @@ roomsForTarget = demandRoomHours / (targetPct * shiftHours)
 delta          = roomsForTarget - plannedRooms
 ```
 
-At 9 rooms and 50% utilisation, demand is 4.5 room-days; at a 75% target you
+At 9 rooms and 50% utilization, demand is 4.5 room-days; at a 75% target you
 staff 6. Close 3.
 
 **Framing matters here.** The previous version was rejected because every
@@ -62,7 +62,7 @@ from `StaffingPlan`).
 **Add exactly one function** to `staffingShape.js`:
 
 ```js
-// Rooms that yield `targetPct` utilisation for a day's demand.
+// Rooms that yield `targetPct` utilization for a day's demand.
 function roomsForTarget(demandRoomHours, shiftHours, targetPct) { ... }
 ```
 
@@ -80,7 +80,7 @@ from the forecast**:
 1. One query over `DS_CASES` giving average rooms in use by hour, per site x
    day-of-week, over the trailing quarter. Concurrency by hour = count of cases
    whose `Time_ORin`/`Time_OROut` span that hour.
-2. Normalise to a shape that sums to 1.
+2. Normalize to a shape that sums to 1.
 3. Scale by the forecast day's demand room-hours.
 
 Cache it per request; it is one query for the whole window. If it returns
@@ -97,7 +97,7 @@ Add to `params` for Demo (and `default`, so nothing breaks):
 "prime_util_target": 75
 ```
 
-Do **not** reuse `block_fill_target`. Block fill and prime-time room utilisation
+Do **not** reuse `block_fill_target`. Block fill and prime-time room utilization
 are different metrics that will drift apart, and sharing one number will produce
 a bug nobody can find later.
 
@@ -105,14 +105,14 @@ a bug nobody can find later.
 
 ## 5. UI — build to the mockup
 
-**Summary strip.** Projected utilisation, utilisation at the recommended plan,
+**Summary strip.** Projected utilization, utilization at the recommended plan,
 net change in room-days, and one sentence naming the redistribution (which days
 give up rooms, which need more).
 
 **Day list — one row per operating day:**
 
 ```
-Day        Demand against staffed rooms      Utilisation   To reach target   Rooms
+Day        Demand against staffed rooms      Utilization   To reach target   Rooms
 Fri Sep 18 [======|.........]   ^            44% -> 79%    Close 3.5 rooms   - 9 +
 ```
 
@@ -121,19 +121,19 @@ Fri Sep 18 [======|.........]   ^            44% -> 79%    Close 3.5 rooms   - 9
   tone. This is the same outline/fill idiom as the Block Allocations week shape —
   keep it consistent.
 - **Notch** on the track at `roomsForTarget`.
-- **Utilisation** as `now -> at target`.
+- **Utilization** as `now -> at target`.
 - **Action** in plain words: *"Close 3.5 rooms"*, *"Needs 1.5 more rooms"*, or
   *"Holds at target"*. Use a **deadband of +/- 0.5 rooms** so a day at 74%
   against a 75% target says "holds", not "add 0.1 rooms". Nagging is what killed
   the last version.
-- **Stepper** (- / +, half-room steps) that recomputes that row's utilisation and
+- **Stepper** (- / +, half-room steps) that recomputes that row's utilization and
   the summary strip live. This is the lever the tab exists to demonstrate.
 
 **Detail panel** for the selected day: rooms-in-use by hour as bars, the flat
 staffed plan as a dashed line, and the stepped plan as a solid line. One
 sentence above it stating the finding, e.g.:
 
-> A flat plan of 9 rooms runs at 44%. Peak demand is 6 rooms, so utilisation
+> A flat plan of 9 rooms runs at 44%. Peak demand is 6 rooms, so utilization
 > cannot be fixed by a smaller rectangle — the floor is set by the busiest hour.
 > Staffing 6 rooms to 13:00 and 2 after reaches 79% without moving a case.
 
@@ -166,7 +166,7 @@ already written.
 
 1. **`scripts/checks/shared_libs.test.js`** (exists — *append*) —
    `roomsForTarget(45, 10, 0.75) === 6`, and the round-trip holds: staffing
-   `roomsForTarget(d, h, t)` rooms yields utilisation `t` within rounding.
+   `roomsForTarget(d, h, t)` rooms yields utilization `t` within rounding.
 2. **`scripts/checks/census_staffing_acceptance.py`** (exists — *append ~10
    lines*) — in the demo window at least one day recommends closing rooms and at
    least one recommends opening them, so the tab does not read as all-flex-down.
@@ -185,7 +185,7 @@ Binding. Do not add these, and do not ask:
 - Per-room identity (robot rooms, hybrid ORs). Note it as a caveat in the UI
   copy; do not model it.
 - Cost or dollar figures.
-- Multi-day or window-level optimisation. Each day stands alone.
+- Multi-day or window-level optimization. Each day stands alone.
 - Any change to the ScenarioPanel.
 - Touching the other four tabs.
 
@@ -196,7 +196,7 @@ Binding. Do not add these, and do not ask:
 - [ ] `roomsForTarget` added to `staffingShape.js`; nothing else in that file
       changed.
 - [ ] `prime_util_target` read from tenant config, not `block_fill_target`.
-- [ ] Each day shows track/fill/notch, utilisation now -> at target, and a plain
+- [ ] Each day shows track/fill/notch, utilization now -> at target, and a plain
       action with the +/- 0.5 deadband.
 - [ ] The stepper recomputes the row and the summary strip live.
 - [ ] Detail panel shows the hour bars, the flat plan and the stepped plan, with

@@ -99,7 +99,7 @@ list view must not follow suit.
       > `BlockAllocationsFixes.md` and the reseed that came with it. Against the
       > current data Ortho A reads **`60% of 8.1h in block`** /
       > **`7.8h · N cases outside`**; the allocation is unchanged, the
-      > utilisation and spill moved with the seed. The caption is computed from
+      > utilization and spill moved with the seed. The caption is computed from
       > the same `byDow` the bars are drawn from, so it cannot disagree with them
       > whatever the numbers become.
 - [ ] Column width still fits the five bars without wrapping the caption.

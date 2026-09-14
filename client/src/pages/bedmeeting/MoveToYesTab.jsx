@@ -38,7 +38,7 @@ export default function MoveToYesTab({ date, unit, status, board, onUnit, onStat
   // The hospital only earns a place on a card when there is more than one.
   const showHospital = new Set(units.map(u => u.hospital).filter(Boolean)).size > 1
 
-  // The prioritised sequence: the Ns on the units that are short, then the Ys
+  // The prioritized sequence: the Ns on the units that are short, then the Ys
   // whose own morning is slipping, then — behind a toggle when nothing is
   // filtered — the units that have room. Numbered straight through, because
   // that is the order the room works them, and the collapsible group sits last

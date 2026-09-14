@@ -626,7 +626,7 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
   router.get('/staffing', async (req, res) => {
     try {
       const tenant = req.tenantName || 'default';
-      // Prime-time room utilisation, NOT block fill — different metrics that
+      // Prime-time room utilization, NOT block fill — different metrics that
       // drift apart (StaffingRoomsToTarget.md §4).
       const targetPct = (num(getParam(tenant, 'prime_util_target')) || 75) / 100;
       const packingCeiling = num(getParam(tenant, 'isscm')?.packingCeiling) || 0.8;
@@ -648,7 +648,7 @@ module.exports = function impactRoutes(getTenantPool, sql, requireTenant) {
         const demandRoomHours = round1(row.forecastMins / 60);
 
         // Shape from history, magnitude from the forecast: rooms in use per hour
-        // is the normalised concurrency shape scaled to the day's demand.
+        // is the normalized concurrency shape scaled to the day's demand.
         const hist = shapeMap.get(`${row.site}|${row.dow}`) || {};
         const raw = [];
         for (let h = startH; h < endH; h++) raw.push(num(hist[h]));

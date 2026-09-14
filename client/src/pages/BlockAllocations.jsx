@@ -3,7 +3,7 @@ import { AlertCircle, ChevronDown, ChevronRight, X, TrendingUp, TrendingDown, Mi
 
 /* ─── Block Allocations (BlockAllocations.md) ─────────────────────────────────
    A quarterly block committee review. The question is not "which blocks have
-   low utilisation" — it is "where does the allocated grid disagree with how
+   low utilization" — it is "where does the allocated grid disagree with how
    surgeons actually practise, and what should we change?" The action is
    reallocation, not release.
 
@@ -188,7 +188,7 @@ const SECTION_LABEL = { fontSize: 11, textTransform: 'uppercase', letterSpacing:
    why the number on the row is the number on the row; the scenario panel keeps
    its Release Time Mgmt host, where the question actually is "what if".
 
-   Exactly two things: the evidence behind the utilisation figure, and the
+   Exactly two things: the evidence behind the utilization figure, and the
    evidence behind the Pipeline column. Nothing restated, nothing linking out. */
 
 /* Forward booked cases a week against the owner's own trailing baseline. The

@@ -141,7 +141,7 @@ Two rules carried forward from the research:
 *What does it do downstream inside perioperative services?*
 
 The differentiator. Epic's staffing analysis stops at nursing and anaesthesia;
-LeanTaaS's deepest role claim is the word "specialisation"; Qventus does pre-op
+LeanTaaS's deepest role claim is the word "specialization"; Qventus does pre-op
 *patients*, not pre-op *staffing*. **Nobody converts a volume forecast into PACU
 bay demand.**
 

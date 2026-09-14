@@ -4,12 +4,12 @@ The block-allocation mismatch taxonomy (BlockAllocations.md section 2).
 
 Classifying a block as over- or under-allocated tells a committee *that* there
 is a mismatch. It does not tell them what kind, and the kind decides the fix.
-Two blocks at 58% utilisation can need opposite interventions.
+Two blocks at 58% utilization can need opposite interventions.
 
 The findings worth having are the ones nobody surfaces: a surgeon who holds
 Tuesday but books most of their work on Thursdays does not need less time, they
 need different time. That is a far more winnable conversation than "your
-utilisation is low", and it is invisible to any measure that sums the week.
+utilization is low", and it is invisible to any measure that sums the week.
 
 Pure: no I/O, no database handle. The pipeline calls it with aggregates; the
 tests call it with fixtures.
@@ -166,7 +166,7 @@ def classify_block(by_dow, release_events=0, release_of=0,
         return dd['outsidePrime'] if split_present else dd['outside']
 
     drivers = [
-        driver('utilisation', 'In-block utilisation', util,
+        driver('utilization', 'In-block utilization', util,
                f'{_round1(used)}h used of {_round1(alloc)}h allocated'
                + (f' ({_round1(util)}%)' if util is not None else '')),
         driver('outside', 'Booked outside block', outside,
@@ -222,9 +222,9 @@ def classify_block(by_dow, release_events=0, release_of=0,
         # The day the room actually runs has to be a real day. Without this a
         # half-empty block finishes early, shows plenty of slack, and reads as a
         # shape problem — sending the committee to shorten a window when what
-        # they should do is reduce the allocation. Gating on utilisation instead
+        # they should do is reduce the allocation. Gating on utilization instead
         # would be self-defeating: an over-long window is what depresses
-        # utilisation here, so the signature would suppress itself.
+        # utilization here, so the signature would suppress itself.
         if slack >= t['wrong_shape_slack_hours'] \
                 and _num(last_case_out_hours) >= t['wrong_shape_min_day_hours']:
             longest = max(held_days, key=lambda d: d['alloc'])
@@ -239,7 +239,7 @@ def classify_block(by_dow, release_events=0, release_of=0,
                 mismatch_override=slack * max(1, len(held_days)))
 
     # ── 4. Misplaced ────────────────────────────────────────────────────────
-    # Low utilisation with material volume outside matches neither volume
+    # Low utilization with material volume outside matches neither volume
     # pattern — over-allocated wants the volume absent, under-allocated wants
     # the block full. That gap is most of a roster, and it is a real finding.
     # Two departures from the spec, both to close holes it left open. The spec
@@ -283,7 +283,7 @@ def classify_block(by_dow, release_events=0, release_of=0,
     # ── 6. Volume patterns ──────────────────────────────────────────────────
     if util is not None and util > t['under_allocated_gt_pct'] \
             and outside >= t['material_outside_hours']:
-        # High utilisation with material spill was a single UNDER_ALLOCATED leaf;
+        # High utilization with material spill was a single UNDER_ALLOCATED leaf;
         # it is now a branch on where the spill lands. After-hours-dominant → the
         # answer is not more block; prime-dominant → it is; a middle band adds the
         # block for the daytime part and says so.

@@ -37,7 +37,7 @@ MOVE_HOURS = 4.0
 SITE = C.MAIN_SITE
 
 
-def block_utilisation(block_rows, block, weekday):
+def block_utilization(block_rows, block, weekday):
     rows = [r for r in block_rows if r['CaseBlock'] == block
             and r['BlockDate'].weekday() == weekday]
     alloc = sum(r['blockTime'] for r in rows)
@@ -145,7 +145,7 @@ def main():
     results = {}
     for label, weekday in (('Monday', 0), ('Tuesday', 1), ('Wednesday', 2),
                            ('Thursday', 3), ('Friday', 4)):
-        util = block_utilisation(tables['V4_BlockResultsView'], BLOCK, 3)   # the block's own day
+        util = block_utilization(tables['V4_BlockResultsView'], BLOCK, 3)   # the block's own day
         baseline = {
             'site': SITE, 'block': BLOCK, 'dayOfWeek': weekday,
             'surgeon': {**util, 'receivingService': RECEIVING,
@@ -219,13 +219,13 @@ def main():
             failures.append(f'Thursday degrades {sorted(degrading)}, but ST-6 is about '
                             'staffing and inpatient capacity')
     if thu['pillars']['surgeon']['status'] != 'improves':
-        failures.append('Thursday utilisation does not improve, so there is nothing '
+        failures.append('Thursday utilization does not improve, so there is nothing '
                         'for the other pillars to be in tension with')
 
     if tue['conflicts']:
         failures.append(f'Tuesday still conflicts: {tue["conflicts"][0]["summary"]}')
     if tue['pillars']['surgeon']['status'] != 'improves':
-        failures.append('Tuesday utilisation does not improve')
+        failures.append('Tuesday utilization does not improve')
     for k in ('staffing', 'capacity'):
         if tue['pillars'][k]['status'] == 'degrades':
             failures.append(f'Tuesday {k} degrades — the resolution does not clear')

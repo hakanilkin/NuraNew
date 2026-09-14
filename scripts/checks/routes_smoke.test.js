@@ -230,7 +230,7 @@ test('blocks: allocations respond and sort by mismatch hours', async () => {
   if (r.body.error) return;                       // no pipeline file in this checkout
   const hours = r.body.owners.map(o => o.mismatchHours ?? 0);
   assert.deepEqual(hours, [...hours].sort((a, b) => b - a),
-    'a committee reads this by magnitude, not by utilisation');
+    'a committee reads this by magnitude, not by utilization');
 });
 
 test('blocks: an unknown owner is a 404, never a lookup key', async () => {

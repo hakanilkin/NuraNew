@@ -50,7 +50,7 @@ const FIXTURES = [
   'BMH ICU', 'BMH STEPDOWN PCU',
 ]
 
-// Normalise whitespace so indentation differences between the five old copies
+// Normalize whitespace so indentation differences between the five old copies
 // do not count as a difference.
 const norm = s => s.replace(/\s+/g, ' ').trim()
 

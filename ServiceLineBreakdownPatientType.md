@@ -87,7 +87,7 @@ Flag on → type columns and rows render. Flag off → the tab is what it is tod
 
 `generate_all()` builds a single `np.random.default_rng(seed)` and threads it
 through ~35 call sites. **Adding one draw to the existing stream shifts every
-value generated after it** — utilisations, durations, block patterns — which
+value generated after it** — utilizations, durations, block patterns — which
 would break ST-1 through ST-9 and the prime-time work already verified on this
 branch.
 

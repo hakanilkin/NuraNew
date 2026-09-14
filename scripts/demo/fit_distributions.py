@@ -144,7 +144,7 @@ def _lognormal_params(values):
 
 
 def _shape(counter):
-    """Normalise a dict of counts into shares summing to 1."""
+    """Normalize a dict of counts into shares summing to 1."""
     total = sum(counter.values())
     if not total:
         return {}

@@ -48,14 +48,14 @@ test('all three pillars are reported, and never as one score', () => {
   assert.equal(r.pillars.surgeon.total, undefined);
 });
 
-test('moving hours to a service with a pipeline improves true utilisation', () => {
+test('moving hours to a service with a pipeline improves true utilization', () => {
   const r = E.evaluate(baseline(), decision());
   const h = r.pillars.surgeon.headline;
   assert.equal(r.pillars.surgeon.status, E.IMPROVES);
   assert.ok(h.after > h.before, `${h.after} should exceed ${h.before}`);
 });
 
-test('block and true utilisation are shown side by side', () => {
+test('block and true utilization are shown side by side', () => {
   const r = E.evaluate(baseline(), decision());
   const labels = r.pillars.surgeon.secondary.map(s => s.label);
   assert.equal(r.pillars.surgeon.headline.label, 'True utilization');

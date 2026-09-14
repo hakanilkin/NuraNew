@@ -25,7 +25,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, reca
 
 
 def _sanitize(o):
-    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    """Recursively replace float NaN/inf/-inf with None before JSON serialization."""
     if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
     if isinstance(o, list):  return [_sanitize(v) for v in o]
     if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None

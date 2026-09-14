@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 
 def _sanitize(o):
-    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    """Recursively replace float NaN/inf/-inf with None before JSON serialization."""
     if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
     if isinstance(o, list):  return [_sanitize(v) for v in o]
     if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
@@ -476,7 +476,7 @@ _prime_override = (
 _prime_windows = {}   # (site, dow) -> (start_min, end_min)
 _site_env = {}        # site -> (start_min, end_min): the fallback for a thin/absent dow
 
-# In-block cases are daytime, but normalise defensively so a case that crosses
+# In-block cases are daytime, but normalize defensively so a case that crosses
 # midnight (OutMin < InMin) does not corrupt the envelope quantiles.
 if len(df_inblock):
     df_inblock.loc[df_inblock['OutMin'] < df_inblock['InMin'], 'OutMin'] += 1440
@@ -690,7 +690,7 @@ for (block, service, site), grp in df_alloc.groupby(['CaseBlock', 'Service', 'Si
         last_case_out_hours=_tail.get(block), trend=trend,
         cfg=_tenant_block_thresholds)
     # Released hours are evidence, not a classifier input, so they are merged
-    # back onto the weekdays the taxonomy normalised rather than passed through
+    # back onto the weekdays the taxonomy normalized rather than passed through
     # it. The drawer's day table has to reconcile to the week shape beside it.
     found['byDow'] = [{**d,
                        'released': round(released_by_dow.get(d['dow'], 0.0), 2),

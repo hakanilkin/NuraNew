@@ -22,7 +22,7 @@ try {
       surgeon: { status: 'improves',
         headline: { label: 'True utilization', before: 61.8, after: 68, unit: '%' },
         secondary: [{ label: 'Block utilization', before: 55.8, after: 55.8, unit: '%' }],
-        drivers: [{ key: 'trueVsBlock', label: 'True vs block utilisation', contribution: 6,
+        drivers: [{ key: 'trueVsBlock', label: 'True vs block utilization', contribution: 6,
                     direction: 'up', detail: 'Six points of the practice’s work already runs outside its own block.' }] },
       staffing: { status: 'degrades',
         headline: { label: 'Overtime exposure', before: 5.3, after: 8.3, unit: 'room-h' },

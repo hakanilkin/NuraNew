@@ -183,7 +183,7 @@ def _alloc_minutes(block_name, nominal, weekday):
     One day, not all three: the classifier reads the longest held day, so a
     single long Monday carries the finding, while extending every day would add
     nine hours a week of empty denominator and drag the tenant's in-block
-    utilisation below its own target.
+    utilization below its own target.
     """
     st8 = C.STORYLINES['st8']
     if block_name == st8['wrong_shape_block'] and weekday == _WRONG_SHAPE_LONG_DAY:
@@ -195,7 +195,7 @@ OUT_OF_BLOCK_SHARE = 0.02
 
 # ST-1's light Thursday attracts more of it than a healthy block would: other
 # services already quietly back-fill that room, which is the three-point gap
-# between the block's utilisation and the room's true utilisation.
+# between the block's utilization and the room's true utilization.
 ST1_OUT_OF_BLOCK_SHARE = 0.06
 
 # Extra weight Spine carries in open time on forward dates — the surge has to
@@ -292,7 +292,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
     # Same-day-admit decision draws from an INDEPENDENT stream
     # (ServiceLineBreakdownPatientType.md section 3): spawn() derives a child
     # from the seed without consuming the shared rng, so every existing draw —
-    # utilisations, durations, block patterns, the prime-time work — stays
+    # utilizations, durations, block patterns, the prime-time work — stays
     # byte-identical and only the two new SDA columns appear.
     sda_rng = rng.spawn(1)[0]
 
@@ -419,7 +419,7 @@ def generate_cases(calendar, roster, params, rng, anchor):
                     # A scheduler fills the tail of a day with a case that fits,
                     # rather than abandoning the room because the first case they
                     # picked up was too long. Without this the greedy draw leaves
-                    # an hour on the table in most rooms and utilisation collapses.
+                    # an hour on the table in most rooms and utilization collapses.
                     p = dur_params.get(service, params['case_duration_pooled'])
                     sched_dur = None
                     for _ in range(4):
@@ -771,7 +771,7 @@ def rooms_running_at(cases, when_minutes, site, weekdays):
 # Grain: one row per case, plus one allocation-only row per block instance that
 # drew no cases. blockTime and ReleasedTime are carried on the first case of an
 # instance and zero elsewhere, so SUM(Total_Prime_Time) / SUM(blockTime) — the
-# expression every page uses — is the utilisation and not a multiple of it.
+# expression every page uses — is the utilization and not a multiple of it.
 
 def generate_block_results(cases, block_instances):
     alloc_seen = set()

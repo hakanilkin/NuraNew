@@ -4,7 +4,7 @@ Tests for block_patterns.py — the allocation mismatch taxonomy.
 
 What is being defended is the evaluation order. A block held on the wrong day
 looks over-allocated to anything that sums the week, and reporting it that way
-sends a committee into the wrong conversation: "your utilisation is low" instead
+sends a committee into the wrong conversation: "your utilization is low" instead
 of "your block is on the wrong day". The order is the product.
 
 Run: python scripts/checks/block_patterns_test.py
@@ -50,7 +50,7 @@ check('and it quantifies what is already happening there',
 
 # The same week summed looks simply over-allocated, which is the trap.
 summed_util = 3.0 / 8 * 100
-check('the summed week alone would have read as low utilisation', summed_util < 62)
+check('the summed week alone would have read as low utilization', summed_util < 62)
 
 # A solid seven-hour day inside a ten-hour window: the room is busy, the window
 # is simply the wrong length.

@@ -226,7 +226,7 @@ test('the recommendation keeps a room in hand, in both directions', () => {
   assert.equal(S.recommendedRooms(11, 9), 12, 'a day needing more rooms says so');
 });
 
-test('a day-of-week shift moves beds and room-time without claiming a utilisation gain', () => {
+test('a day-of-week shift moves beds and room-time without claiming a utilization gain', () => {
   const b = flexBaseline();
   b.capacity.units[0].projectedCensus = 29.5;   // receiving day already tight
   const r = E.evaluate(b, {
@@ -250,7 +250,7 @@ test('a shift onto a day with room is clean', () => {
 
 test('roomsForTarget divides demand by the target rectangle, to the half room', () => {
   assert.equal(S.roomsForTarget(45, 10, 0.75), 6);
-  // Round-trip: staffing that many rooms lands utilisation on target, within
+  // Round-trip: staffing that many rooms lands utilization on target, within
   // the half-room rounding it is deliberately snapped to.
   for (const [d, h, t] of [[45, 10, 0.75], [50, 10, 0.75], [62, 10, 0.70], [78.8, 10, 0.80]]) {
     const rooms = S.roomsForTarget(d, h, t);

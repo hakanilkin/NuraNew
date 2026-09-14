@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 
 
 def _sanitize(o):
-    """Recursively replace float NaN/inf/-inf with None before JSON serialisation."""
+    """Recursively replace float NaN/inf/-inf with None before JSON serialization."""
     if isinstance(o, dict):  return {k: _sanitize(v) for k, v in o.items()}
     if isinstance(o, list):  return [_sanitize(v) for v in o]
     if isinstance(o, float) and (math.isnan(o) or math.isinf(o)): return None
@@ -158,7 +158,7 @@ before = len(df)
 df = df[df['EXCESS_DAYS'] <= 30].reset_index(drop=True)
 print(f"  Dropped {before - len(df):,} rows with EXCESS_DAYS > 30")
 
-# String normalisation
+# String normalization
 df['ENC_DISCHDISPO']         = (df['ENC_DISCHDISPO']
     .fillna('Unknown').replace({'NULL': 'Unknown', 'None': 'Unknown', '': 'Unknown'}).astype(str))
 df['SERVICE_LINE']           = df['SERVICE_LINE'].fillna('Unknown').astype(str)

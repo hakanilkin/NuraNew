@@ -34,7 +34,7 @@
 Nine chips, and one of them — **Misplaced** — holds 8 of 20 blocks.
 
 `MISPLACED` is not a diagnosis; it is a residual. It exists to close the dead
-zone where low utilisation plus material outside volume matched nothing, and its
+zone where low utilization plus material outside volume matched nothing, and its
 bar is `util < 88%`, which almost any block with outside volume clears. Its
 recommendation says *"review day and shape with the owner"* — a punt, not an
 action.

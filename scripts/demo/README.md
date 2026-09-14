@@ -144,7 +144,7 @@ nothing else writes to `Demo`.
 every storyline in `DemoTenant.md` §4 against its target:
 
 ```
-[ok  ] ST-1 Ortho A Thu block utilisation (trailing 8wk)   57.7 %  (target 58 ±6.9%)
+[ok  ] ST-1 Ortho A Thu block utilization (trailing 8wk)   57.7 %  (target 58 ±6.9%)
 [ok  ] ST-2 Wednesday census attributable to the OR        28.9 %  (target 28 ±14.3%)
 [ok  ] ST-3 rooms running at 15:30 (Tue–Thu)                  3.2  (target 3–4)
 ```

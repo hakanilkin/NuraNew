@@ -52,7 +52,7 @@ vs. planned staffed rooms → `FLEX_DOWN` / `FLEX_UP`.
 
 Every competitor stops at the OR room. Epic's OR Staffing Analysis covers
 nursing and anaesthesia. LeanTaaS's deepest role claim is the word
-"specialisation." Qventus does pre-op *patients*, not pre-op *staffing*.
+"specialization." Qventus does pre-op *patients*, not pre-op *staffing*.
 **Nobody converts a volume forecast into downstream perioperative staffing.**
 
 We already forecast by service line, so this needs one config table:
